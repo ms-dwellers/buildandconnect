@@ -8,8 +8,9 @@ Hono backend with Better Auth, Convex persistence, Workers AI analysis, growth-o
 matching, recruiter discovery, opportunity-specific mutual interest, and exclusive
 local-request claims. See [the backend guide](docs/backend.md) for setup and API
 examples. For browser-based backend QA, run the frontend and open `/debug`.
-The public `/map` is currently a Calgary-only frontend demo, with cloud navigation,
-fictional job popups, and local pin placement. See [the map guide](docs/calgary-map.md).
+Signed-in users land on a role dashboard at `/dashboard` (developer, requester,
+company, or recruiter). The public Calgary `/map` shows live requests and
+opportunities with role-specific actions. See [the map guide](docs/calgary-map.md).
 The future native Swift iOS app is deliberately not scaffolded or built on Linux.
 
 ## Develop

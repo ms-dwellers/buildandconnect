@@ -91,9 +91,20 @@ try {
   assert.equal(cityMap.status, 200);
   const mapHtml = await cityMap.text();
   assert.match(mapHtml, /Calgary job map/);
-  assert.match(mapHtml, /Frontend demo/);
-  assert.match(mapHtml, /Kensington/);
-  assert.match(mapHtml, /Add demo job/);
+  assert.match(mapHtml, /Good work\./);
+  assert.doesNotMatch(mapHtml, /Frontend demo|Add demo job/);
+  for (const route of [
+    "/dashboard",
+    "/profile",
+    "/requests/new",
+    "/opportunities/new",
+  ]) {
+    const page = await fetch(`${origin}${route}`);
+    assert.equal(page.status, 200, `${route} must render`);
+  }
+  const mapFeed = await fetch(`${origin}/api/map`);
+  assert.ok([200, 503].includes(mapFeed.status), "Map feed must be public");
+  assert.equal(mapFeed.headers.get("Cache-Control"), "no-store");
 
   const debug = await fetch(`${origin}/debug`);
   assert.equal(debug.status, 200);
@@ -125,7 +136,7 @@ try {
   });
   assert.equal(protectedRoute.headers.get("Cache-Control"), "no-store");
   console.log(
-    "Smoke passed: home, CSS, QA console, health, protected backend, 404, 405, and environment-file denial.",
+    "Smoke passed: home, CSS, map, role pages, public map feed, QA console, health, protected backend, 404, 405, and environment-file denial.",
   );
 } finally {
   if (server.pid && server.exitCode === null && server.signalCode === null) {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CALGARY_BOUNDS, CALGARY_JOBS } from "../lib/calgary.ts";
+import { CALGARY_BOUNDS } from "../lib/calgary.ts";
+import { LISTINGS as CALGARY_JOBS } from "./fixtures/listings.ts";
 import {
   CITY_MAP_STYLE,
   JOB_SOURCE,
@@ -34,7 +35,11 @@ test("GeoJSON contains all postings, stable identifiers, and no private listing 
   data.features.forEach((feature, index) => {
     const job = CALGARY_JOBS[index];
     assert.equal(feature.id, job.id);
-    assert.deepEqual(feature.properties, { id: job.id, kind: job.kind });
+    assert.deepEqual(feature.properties, {
+      id: job.id,
+      kind: job.kind,
+      label: job.source === "request" ? "R" : job.kind === "paid" ? "P" : "V",
+    });
     assert.deepEqual(feature.geometry, {
       type: "Point",
       coordinates: [job.longitude, job.latitude],
@@ -99,11 +104,5 @@ test("cluster and point layers share a source and include non-colour labels", ()
   );
   const labels = layers.find((layer) => layer.id === `${POINT_LAYER}-label`);
   assert.ok(labels?.type === "symbol");
-  assert.deepEqual(labels.layout?.["text-field"], [
-    "match",
-    ["get", "kind"],
-    "paid",
-    "P",
-    "V",
-  ]);
+  assert.deepEqual(labels.layout?.["text-field"], ["get", "label"]);
 });

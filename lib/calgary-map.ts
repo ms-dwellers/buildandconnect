@@ -93,7 +93,7 @@ export function jobLayers(colors: MapPalette): LayerSpecification[] {
       slot: "top",
       filter: points,
       layout: {
-        "text-field": ["match", ["get", "kind"], "paid", "P", "V"],
+        "text-field": ["get", "label"],
         "text-size": 11,
         "text-allow-overlap": true,
       },
@@ -113,14 +113,21 @@ export function jobLayers(colors: MapPalette): LayerSpecification[] {
 
 export function jobFeatures(
   jobs: CityJob[],
-): FeatureCollection<Point, { id: string; kind: CityJob["kind"] }> {
+): FeatureCollection<
+  Point,
+  { id: string; kind: CityJob["kind"]; label: "P" | "V" | "R" }
+> {
   return {
     type: "FeatureCollection",
     features: jobs.map((job) => ({
       type: "Feature",
       id: job.id,
       geometry: { type: "Point", coordinates: [job.longitude, job.latitude] },
-      properties: { id: job.id, kind: job.kind },
+      properties: {
+        id: job.id,
+        kind: job.kind,
+        label: job.source === "request" ? "R" : job.kind === "paid" ? "P" : "V",
+      },
     })),
   };
 }

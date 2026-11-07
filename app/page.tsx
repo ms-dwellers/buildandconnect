@@ -1,4 +1,5 @@
 import { ArrowRightIcon, ArrowUpRightIcon, SproutIcon } from "lucide-react";
+import { AccountLinks } from "@/components/app/account-links";
 import { CommunityGarden } from "@/components/landing/community-garden";
 import { MapJourneyLink } from "@/components/map/map-journey";
 import { Badge } from "@/components/ui/badge";
@@ -27,16 +28,7 @@ export default function Home() {
           <MapJourneyLink variant="link" className="hidden px-0 sm:inline-flex">
             Nearby map
           </MapJourneyLink>
-          <Button
-            render={<a href="/sign-in" />}
-            variant="link"
-            className="px-0"
-          >
-            Sign in
-          </Button>
-          <Button render={<a href="/sign-up" />} variant="outline" size="sm">
-            Get started
-          </Button>
+          <AccountLinks />
         </nav>
       </header>
       <main id="main-content" tabIndex={-1} className="outline-none">

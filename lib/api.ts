@@ -1,3 +1,4 @@
+export type ApiIssue = { path: (string | number)[]; message: string };
 export type SessionUser = { id: string; name: string; email?: string };
 export type Role = "developer" | "company" | "recruiter" | "requester";
 
@@ -5,7 +6,8 @@ export async function api<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<
-  { ok: true; data: T } | { ok: false; status: number; error: string }
+  | { ok: true; data: T }
+  | { ok: false; status: number; error: string; issues?: ApiIssue[] }
 > {
   const headers = new Headers(init.headers);
   if (init.body && !headers.has("Content-Type"))
@@ -16,10 +18,13 @@ export async function api<T>(
     credentials: "include",
   });
   const text = await response.text();
-  let body: { error?: string } & T = {} as { error?: string } & T;
+  let body: { error?: string; issues?: ApiIssue[] } & T = {} as {
+    error?: string;
+    issues?: ApiIssue[];
+  } & T;
   if (text) {
     try {
-      body = JSON.parse(text) as { error?: string } & T;
+      body = JSON.parse(text) as typeof body;
     } catch {
       return {
         ok: false,
@@ -33,6 +38,7 @@ export async function api<T>(
       ok: false,
       status: response.status,
       error: body.error ?? "Request failed",
+      issues: body.issues,
     };
   return { ok: true, data: body };
 }

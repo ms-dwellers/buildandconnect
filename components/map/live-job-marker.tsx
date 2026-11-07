@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { CityJob } from "@/lib/calgary";
 import { JobMarker } from "./job-marker";
@@ -13,11 +13,13 @@ export function LiveJobMarker({
   job,
   showDetails,
   onSelect,
+  actions,
 }: {
   live: LiveCityMap;
   job: CityJob;
   showDetails: boolean;
   onSelect: (id: string | null) => void;
+  actions?: ReactNode;
 }) {
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -45,6 +47,7 @@ export function LiveJobMarker({
           selected
           showDetails={showDetails}
           onSelect={onSelect}
+          actions={actions}
         />,
         element,
       )

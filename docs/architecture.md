@@ -11,12 +11,15 @@
 | Job analysis and embeddings   | Workers AI, `backend/ai.ts`        | Requires Cloudflare access      |
 | Growth matching               | `backend/matching.ts`              | Deterministic, versioned        |
 | Mutual interest               | Convex interest records            | Opportunity-specific, revocable |
-| Maps                          | Mapbox                             | Nearby local requests           |
+| Role views                    | `app/dashboard`, `components/`     | One dashboard per account type  |
+| Maps                          | Mapbox, `GET /api/map`             | Public Calgary feed, role-aware |
 | Native iOS                    | Swift                              | Deferred                        |
 
 The backend follows the explicit switch from D1 to Convex. There is one Worker
 HTTP facade and one Convex application database; D1 is no longer bound.
-`app/api/[...path]/route.ts` forwards standard Requests to Hono. `/api/health`
+`app/api/[...path]/route.ts` forwards standard Requests to Hono.
+The web app's role routing (`components/app/require-role.tsx`) only sends people to
+the right page; Convex functions enforce every role and ownership rule. `/api/health`
 remains a minimal public liveness route, not a provider-readiness check.
 
 ## Data and request flow

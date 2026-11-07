@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { CompassIcon, LayersIcon, RotateCcwIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,14 @@ export function CalgaryCanvas({
   onSelect,
   placing,
   onPick,
+  renderActions,
 }: {
   jobs: CityJob[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   placing: boolean;
   onPick: (point: CityPoint) => void;
+  renderActions?: (job: CityJob) => ReactNode;
 }) {
   const { phase, ready } = useMapJourney();
   const container = useRef<HTMLDivElement>(null);
@@ -125,6 +127,7 @@ export function CalgaryCanvas({
                     job={job}
                     selected={selectedId === job.id}
                     onSelect={onSelect}
+                    actions={renderActions?.(job)}
                   />
                 </div>
               );
@@ -139,6 +142,7 @@ export function CalgaryCanvas({
           job={selectedJob}
           showDetails={!camera.moving && camera.settledJobId === selectedJob.id}
           onSelect={onSelect}
+          actions={renderActions?.(selectedJob)}
         />
       )}
       <div className="pointer-events-none absolute start-4 top-4 flex items-center gap-2 rounded-xl border bg-card/95 px-4 py-3 shadow-sm">
@@ -172,6 +176,9 @@ export function CalgaryCanvas({
           </span>
           <span className="flex items-center gap-1.5">
             <span className="map-key map-key-volunteer">V</span>Volunteer
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="map-key map-key-volunteer">R</span>Community
           </span>
           <span className="flex items-center gap-1.5 text-muted-foreground">
             <LayersIcon aria-hidden="true" className="size-3.5" />

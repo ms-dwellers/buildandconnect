@@ -6,25 +6,37 @@ render before parting the clouds. Direct map visits show clouds over the map
 while it loads, without replaying the journey. Reduced-motion
 preferences skip it; **Skip animation** or Escape also finishes it immediately.
 
-The map is a public frontend prototype, separate from the existing authenticated
-request API. It never creates profiles, saves locations, claims work, or invokes
-Workers AI. Existing backend routes and request-posting pages remain available
-but are not wired into this prototype.
+The map shows live Convex records through the public `GET /api/map` feed: open
+company opportunities that have a map pin, and open community requests. No demo
+data remains. Select a pin or list entry to open its details; search by skill,
+title, organisation or neighbourhood, and filter Paid, Volunteer or Community.
 
-## Jobs and placement
+## Who sees what
 
-`lib/calgary.ts` owns the Calgary bounds, central demo jobs, and preview projection.
-`lib/calgary-neighbourhoods.ts` adds fictional postings across all four quadrants,
-from Evanston and Tuscany to Seton and Somerset. Jobs have real geographic
-coordinates, not real vacancies. Select a map pin or a project in the list to
-open its details. Search by
-skill, title, organisation or neighbourhood, and filter paid/volunteer work.
+Browsing is public. `backend/listings.ts` decides what each viewer receives:
 
-**Add demo job** enables placement by clicking the map. **Use downtown Calgary**
-provides a keyboard-accessible placement alternative. Complete the dialog to add
-a job at that position. Additions live only in component state and disappear on
-reload or when the page is unmounted. Nothing is posted to the backend, and the
-popups do not pretend that applications or payments work.
+| Viewer                                      | Opportunities              | Community requests                                                      |
+| ------------------------------------------- | -------------------------- | ----------------------------------------------------------------------- |
+| Guest, company, recruiter, other requesters | Exact pin and company name | Location rounded to about 1 km, no requester name or place text         |
+| Developer                                   | Exact pin                  | Exact pin, place and requester name (as the request API already allows) |
+| Request owner or claimant                   | Exact pin                  | Exact, and still visible after it is accepted                           |
+
+Claimed requests leave the public map; closed requests and closed opportunities
+never appear. Postings outside Calgary's bounds are not listed.
+
+## Role actions
+
+Popups show actions for the signed-in role. Convex enforces every rule again:
+
+- Guests: **Sign in to respond**, returning to the same listing.
+- Developers: **Accept request** or **Release request**, and **See your fit** for
+  opportunities. The feed refreshes after each change.
+- Requesters and companies: **Post a request** / **Post an opportunity** in the
+  sidebar enters placement mode. Click the map or use **Use downtown Calgary**
+  (keyboard alternative) to open the form with that pin prefilled. Owners get
+  **Edit**, **Manage requests** or **View candidates**.
+
+Dashboards link to `/map?focus=<id>` to select a listing on arrival.
 
 ## Mapbox and the credential-free preview
 
@@ -32,7 +44,7 @@ Set a restricted `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` in an ignored `.env.local` an
 restart Vite to use Mapbox Standard. It is intentionally browser-visible; never
 use a private Mapbox token. The initial overhead view fits Calgary citywide;
 nearby postings cluster into numbered circles. Select a cluster to expand it,
-or a P (paid) / V (volunteer) point to fly into that job's neighbourhood. Selection
+or a P (paid), V (volunteer) or R (community request) point to fly into that job's neighbourhood. Selection
 uses zoom 16.6, a 60-degree pitch and Standard's real 3D building data. Building
 detail depends on Mapbox coverage; this is not a street-level photograph.
 
@@ -55,14 +67,15 @@ illustrated Calgary preview. The illustration is not a navigational street map.
 It is only a fallback, never the loading screen. A failed load releases the
 clouds and offers a retry; retrying returns to clouds until Mapbox is ready.
 It preserves its aspect ratio on narrow screens, uses the same job coordinates,
-and supports popups and local pin placement. It does not simulate 3D buildings.
+and supports popups, role actions and pin placement. It does not simulate 3D buildings.
 Without a token, it makes no map-provider requests.
 
 ## Verification
 
 Run `bun run check`, `bun run build`, and `bun run smoke`. The Calgary unit tests
-cover bounds, projection, responsive framing and job filters; smoke checks the
-public map and landing-page entry point. Browser QA should additionally cover:
+cover bounds, projection, responsive framing and filters; `tests/listings.test.ts`
+and `tests/convex/roles.test.ts` cover feed privacy and visibility; smoke checks
+the public map, its feed, and the role pages. Browser QA should additionally cover:
 
 - Landing link, cloud cover, city reveal, Escape/skip, browser Back and re-entry.
 - Direct `/map` visit and reduced-motion navigation, neither with a cloud replay.
@@ -71,9 +84,9 @@ public map and landing-page entry point. Browser QA should additionally cover:
 - Failed Mapbox loading releases the fallback; retry shows clouds again. Loading
   clouds remain static with reduced motion enabled.
 - Pin/list selection, popup close/focus, search, type filters and empty results.
-- Pointer placement, downtown keyboard placement, dialog cancellation and reload.
+- Pointer placement and downtown keyboard placement opening the prefilled form.
 - Mobile widths and desktop list scrolling, with no page-width overflow.
-- No `/api/*` calls from the map or landing page.
+- Map feed privacy for guests, developers, owners and claimants; role actions.
 - Real Mapbox tiles, citywide framing, cluster expansion, pin/list 3D selection,
   camera interruption, overview reset, reduced motion, and failure/retry fallback.
   Use an authorized public token. Do not retain credential-bearing network logs.

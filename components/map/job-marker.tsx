@@ -1,7 +1,9 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   BriefcaseBusinessIcon,
+  HandHelpingIcon,
   HeartHandshakeIcon,
   MapPinIcon,
   XIcon,
@@ -23,13 +25,15 @@ export function JobMarker({
   selected,
   showDetails = true,
   onSelect,
+  actions,
 }: {
   job: CityJob;
   selected: boolean;
   showDetails?: boolean;
   onSelect: (id: string | null) => void;
+  actions?: ReactNode;
 }) {
-  const Icon = job.kind === "paid" ? BriefcaseBusinessIcon : HeartHandshakeIcon;
+  const Icon = markerIcon(job);
   return (
     <Popover
       open={selected && showDetails}
@@ -56,8 +60,9 @@ export function JobMarker({
         <div className="space-y-4 pe-4">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={job.kind === "paid" ? "success" : "secondary"}>
-              {job.kind === "paid" ? "Paid project" : "Volunteer"}
+              {listingLabel(job)}
             </Badge>
+            {job.status === "claimed" && <Badge variant="info">Accepted</Badge>}
             {job.mentorship && (
               <span className="text-xs text-primary">Mentorship offered</span>
             )}
@@ -81,20 +86,22 @@ export function JobMarker({
               <dd className="mt-1 font-medium">{job.commitment}</dd>
             </div>
           </dl>
-          <div className="flex flex-wrap gap-1.5">
-            {job.skills.map((skill) => (
-              <Badge variant="outline" key={skill}>
-                {skill}
-              </Badge>
-            ))}
-          </div>
+          {job.skills.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {job.skills.map((skill) => (
+                <Badge variant="outline" key={skill}>
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          )}
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <MapPinIcon aria-hidden="true" className="size-3.5" />
-            {job.neighbourhood}, Calgary
+            {job.precise
+              ? `${job.neighbourhood}, Calgary`
+              : "Approximate location, within about 1 km"}
           </p>
-          <p className="text-xs leading-5 text-muted-foreground">
-            Demo listing. Applications are not enabled.
-          </p>
+          {actions}
         </div>
         <PopoverClose
           render={
@@ -111,4 +118,14 @@ export function JobMarker({
       </PopoverPopup>
     </Popover>
   );
+}
+
+export function markerIcon(job: CityJob) {
+  if (job.source === "request") return HandHelpingIcon;
+  return job.kind === "paid" ? BriefcaseBusinessIcon : HeartHandshakeIcon;
+}
+
+export function listingLabel(job: CityJob) {
+  if (job.source === "request") return "Community request";
+  return job.kind === "paid" ? "Paid project" : "Volunteer";
 }

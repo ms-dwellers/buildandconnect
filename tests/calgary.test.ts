@@ -3,48 +3,14 @@ import test from "node:test";
 import {
   CALGARY_CENTER,
   CALGARY_BOUNDS,
-  CALGARY_JOBS,
   filterCityJobs,
   isInCalgary,
   previewPoint,
   previewPosition,
   previewViewport,
 } from "../lib/calgary.ts";
+import { LISTINGS as CALGARY_JOBS } from "./fixtures/listings.ts";
 
-test("the demo's jobs are uniquely identified, Calgary-based, and clearly typed", () => {
-  assert.equal(
-    new Set(CALGARY_JOBS.map((job) => job.id)).size,
-    CALGARY_JOBS.length,
-  );
-  assert.ok(
-    CALGARY_JOBS.every(
-      (job) =>
-        isInCalgary(job) && job.title && job.organization && job.description,
-    ),
-  );
-  assert.ok(CALGARY_JOBS.some((job) => job.kind === "paid"));
-  assert.ok(
-    CALGARY_JOBS.some((job) => job.kind === "volunteer" && job.mentorship),
-  );
-});
-test("postings cover every quadrant and the north and south edges of the city", () => {
-  assert.ok(CALGARY_JOBS.length >= 30);
-  for (const north of [true, false]) {
-    for (const west of [true, false]) {
-      assert.ok(
-        CALGARY_JOBS.filter(
-          (job) =>
-            job.latitude > CALGARY_CENTER.latitude === north &&
-            job.longitude < CALGARY_CENTER.longitude === west,
-        ).length >= 4,
-      );
-    }
-  }
-  assert.ok(CALGARY_JOBS.some((job) => job.latitude > 51.17));
-  assert.ok(CALGARY_JOBS.some((job) => job.latitude < 50.89));
-  assert.ok(CALGARY_JOBS.some((job) => job.longitude < -114.23));
-  assert.ok(CALGARY_JOBS.some((job) => job.longitude > -113.94));
-});
 test("the illustrated overview fits every posting even on a narrow screen", () => {
   for (const width of [320, 390, 768, 1200]) {
     const viewport = previewViewport(width, 548);
@@ -97,19 +63,14 @@ test("the preview preserves map proportions and brings selected jobs into narrow
     }
   }
 });
-test("job filters combine type, neighbourhood, organisation, and skill without changing source data", () => {
-  assert.equal(filterCityJobs(CALGARY_JOBS, "  REACT ", "volunteer").length, 2);
-  assert.equal(
-    filterCityJobs(CALGARY_JOBS, "inglewood", "paid")[0].id,
-    "inglewood",
-  );
-  assert.equal(
-    filterCityJobs(CALGARY_JOBS, "borrowing", "all")[0].id,
-    "bridgeland",
-  );
-  assert.equal(filterCityJobs(CALGARY_JOBS, "no such job", "all").length, 0);
-  assert.equal(
-    filterCityJobs(CALGARY_JOBS, "", "all").length,
-    CALGARY_JOBS.length,
-  );
+test("filters separate paid, volunteer, and community listings and search their text", () => {
+  const ids = (filter: Parameters<typeof filterCityJobs>[2], query = "") =>
+    filterCityJobs(CALGARY_JOBS, query, filter).map((job) => job.id);
+  assert.deepEqual(ids("paid"), ["kensington", "evanston", "somerset"]);
+  assert.deepEqual(ids("volunteer"), ["tuscany", "west-springs"]);
+  assert.deepEqual(ids("request"), ["saddle-ridge", "forest-lawn", "seton"]);
+  assert.deepEqual(ids("all", "  DESIGN "), ["kensington"]);
+  assert.deepEqual(ids("request", "accessibility"), ["saddle-ridge"]);
+  assert.deepEqual(ids("paid", "saddle"), []);
+  assert.equal(ids("all").length, CALGARY_JOBS.length);
 });
