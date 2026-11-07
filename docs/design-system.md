@@ -52,6 +52,9 @@ intentionally light-only; OS dark-mode preference does not change its colors.
   held. Their shadow collapses by the same amount without moving surrounding
   layout. Ghost and link variants stay flat. Disabled and loading buttons do not
   press; reduced motion makes the feedback immediate rather than animated.
+- Toggles use the same raised edge. Selected toggles stay depressed and emerald;
+  unselected toggles rise back up. Group items move independently, including when
+  selected by keyboard. Their ARIA pressed state remains the source of truth.
 - Keep skeuomorphism minimal: tactile controls, a slight paper-like lift on cards,
   and the existing warm palette. Avoid large glows, glossy gradients, or textures.
 
