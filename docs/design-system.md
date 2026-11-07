@@ -61,12 +61,15 @@ percentages enforced on every component or the map.
   ground tiles above a teal waterfront. Keep
   decorative artwork out of the accessibility tree; do not treat it as map data.
 
-- `components/landing/hero-scene.tsx` owns the sprite composition and cloud reveal.
-  Background clouds stay behind the heading. Foreground cloud banks part after
-  window load and font readiness, with a four-second fail-safe. They never block
-  clicks or keyboard navigation. Reduced motion and JavaScript-disabled browsing
-  skip the reveal. Cloud sizes use whole-number multiples of their native SVG
-  dimensions; reflection does not change their aspect ratio.
+- `components/landing/hero-scene.tsx` owns the sprite composition. There is no
+  loading reveal or foreground curtain; the heading is available immediately.
+  Five native-size clouds drift behind the content in both directions, with
+  independent 180–300 second loops and staggered starting positions defined in
+  `lib/landing-clouds.ts`. Each cloud exits completely before wrapping to the
+  opposite side. Cloud artwork is never scaled, except horizontal reflection.
+  The “Pause clouds” control pauses all tracks without resetting their positions;
+  reduced motion keeps them stationary and hides the control. Animation works
+  without JavaScript; the unavailable pause control is hidden in that case.
 - All 22 supplied SVG files are copied unchanged with lowercase, hyphenated names.
   macOS archive metadata is excluded. Unused variations and `tets.svg` are retained
   in the asset folder but are not loaded by the homepage.
