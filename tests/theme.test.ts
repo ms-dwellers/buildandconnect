@@ -57,7 +57,7 @@ test("theme keeps beige dominant with wheat supporting surfaces", () => {
 });
 
 test("selected font families are self-hosted with swap and licenses", () => {
-  assert.match(tokens.get("--app-font-display") ?? "", /^"Space Mono"/);
+  assert.match(tokens.get("--app-font-display") ?? "", /^"League Spartan"/);
   assert.match(tokens.get("--app-font-sans") ?? "", /^"League Spartan"/);
   assert.match(tokens.get("--app-font-mono") ?? "", /^"DM Mono"/);
 

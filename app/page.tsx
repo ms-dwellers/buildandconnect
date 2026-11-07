@@ -47,7 +47,7 @@ export default function Home() {
           <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center text-center">
             <h1
               id="hero-heading"
-              className="font-display text-[clamp(1.75rem,5.1vw,4.375rem)] font-bold leading-[1.18] tracking-[-0.04em] text-balance"
+              className="font-display text-[clamp(3.25rem,9vw,7rem)] font-bold leading-[0.98] tracking-[-0.045em] text-balance"
             >
               Build experience.
               <br />

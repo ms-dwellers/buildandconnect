@@ -97,7 +97,7 @@ export function Foundations() {
             Great company.
           </p>
           <p className="text-base leading-7">
-            League Spartan for body text. Space Mono for large headings.
+            League Spartan for body text and bold, large headings.
           </p>
           <p className="text-sm text-muted-foreground">
             <span className="font-mono">DM Mono for labels and metadata.</span>

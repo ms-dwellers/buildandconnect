@@ -47,7 +47,7 @@ fixed percentages enforced on every component or the map.
 
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
-- The landing page uses open spacing, Space Mono headings, light paper
+- The landing page uses open spacing, bold League Spartan headings, light paper
   texture, and an original code-native neighborhood garden illustration. Keep
   decorative artwork out of the accessibility tree; do not treat it as map data.
 
@@ -69,7 +69,7 @@ fixed percentages enforced on every component or the map.
 - Prefer coss variants and sizes. Use local classes for layout, not a replacement
   set of component styles.
 - Body text, navigation, buttons, and compact component headings use League Spartan.
-  Large headings (`h1`, `h2`, and `font-display`) use Space Mono. Form labels and
+  Large headings (`h1`, `h2`, and `font-display`) use bold League Spartan. Form labels and
   legends use DM Mono, also available through `font-mono` for metadata and code.
   Fonts are self-hosted in `public/fonts/` with their SIL Open Font Licenses and
   use `font-display: swap`; no Google request is made when visiting the app.
