@@ -5,6 +5,7 @@ import {
   cpSync,
   mkdirSync,
   mkdtempSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -34,8 +35,8 @@ for (const launcher of launchers) {
         (launcher.name === "Bash" && process.platform === "win32"),
     },
     () => {
-      const temporary = mkdtempSync(
-        join(tmpdir(), "buildandconnect-launcher-"),
+      const temporary = realpathSync(
+        mkdtempSync(join(tmpdir(), "buildandconnect-launcher-")),
       );
       const root = join(temporary, "project with spaces");
       const binaries = join(temporary, "binaries");
