@@ -31,6 +31,7 @@
                 "components.json"
                 "lib"
                 "backend"
+                "convex"
                 "migrations"
                 "tests"
                 "scripts"
@@ -38,6 +39,7 @@
                 "bun.lock"
                 "tsconfig.json"
                 "vite.config.ts"
+                "vitest.config.ts"
                 "cloudflare.config.ts"
                 "next.config.ts"
                 "postcss.config.mjs"
@@ -72,7 +74,7 @@
               done < <(find "$out" -type l -lname "$out/*" -print0)
             '';
             dontInstall = true;
-            outputHash = "sha256-AmaKZ+kNnldbi9C+vhnITkIAaCihPCADdR1vaIabZqE=";
+            outputHash = "sha256-+Bb5Dd5L0tSZUi1R9KsCMMdDqUffyrjll0MadlczW/0=";
             outputHashAlgo = "sha256";
             outputHashMode = "recursive";
           };

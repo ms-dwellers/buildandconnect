@@ -7,10 +7,8 @@ import {
   type RequestInput,
 } from "./schemas.ts";
 import type { BackendEnv } from "./env.ts";
-
-export const ANALYSIS_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-export const EMBEDDING_MODEL = "@cf/baai/bge-small-en-v1.5";
-export const ANALYSIS_VERSION = "job-v1";
+import { ANALYSIS_MODEL, EMBEDDING_MODEL } from "./models.ts";
+export { ANALYSIS_MODEL, ANALYSIS_VERSION, EMBEDDING_MODEL } from "./models.ts";
 
 export class AnalysisUnavailable extends Error {}
 

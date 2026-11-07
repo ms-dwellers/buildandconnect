@@ -215,8 +215,8 @@ export function DebugConsole() {
               role="alert"
               className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm leading-6"
             >
-              Account API unavailable. Check local migrations, SITE_URL, and
-              BETTER_AUTH_SECRET.{" "}
+              Account API unavailable. Check the Convex deployment, SITE_URL,
+              and bridge configuration.{" "}
               <a
                 className="font-medium underline underline-offset-4"
                 href="#qa-setup"
@@ -726,10 +726,11 @@ export function DebugConsole() {
                 <p className="text-sm leading-6 text-muted-foreground">
                   Run{" "}
                   <code className="font-mono text-xs">
-                    npm run db:migrate:local
-                  </code>
-                  . Set SITE_URL to this page&apos;s origin and a random
-                  BETTER_AUTH_SECRET in an ignored .dev.vars file. Set
+                    bun run setup:backend
+                  </code>{" "}
+                  after selecting a Convex development deployment, then keep{" "}
+                  <code className="font-mono text-xs">bun run dev:backend</code>{" "}
+                  running. Set SITE_URL to this page&apos;s origin. Set{" "}
                   WORKERS_AI_REMOTE=true when launching Vite for real AI calls.
                   See <code className="font-mono text-xs">docs/backend.md</code>
                   .

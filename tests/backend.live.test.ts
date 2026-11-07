@@ -1,15 +1,24 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { build } from "esbuild";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { developer, opportunity } from "./fixtures/matching.ts";
 
 test(
-  "backend HTTP pipeline with real Better Auth, workerd, and D1",
-  { timeout: 120_000 },
+  "backend HTTP pipeline with real Better Auth, workerd, and Convex",
+  { timeout: 180_000, skip: process.env.CONVEX_LIVE_TESTS !== "1" },
   async (t) => {
+    assert.match(
+      process.env.CONVEX_DEPLOYMENT ?? "",
+      /^dev:/,
+      "Live verification requires a selected development deployment",
+    );
+    assert.ok(
+      !process.env.CONVEX_DEPLOY_KEY,
+      "Live verification does not accept deploy keys",
+    );
     const bundle = await build({
       entryPoints: ["tests/fixtures/api-worker.ts"],
       bundle: true,
@@ -27,41 +36,43 @@ test(
         script: bundle.outputFiles[0].text,
         compatibilityDate: "2026-11-07",
         compatibilityFlags: ["nodejs_compat"],
-        d1Databases: ["DB"],
         bindings: {
-          BETTER_AUTH_SECRET: randomBytes(48).toString("base64"),
-          SITE_URL: "http://localhost",
+          VITE_CONVEX_URL: process.env.VITE_CONVEX_URL!,
+          VITE_CONVEX_SITE_URL: process.env.VITE_CONVEX_SITE_URL!,
+          CONVEX_BRIDGE_SECRET: process.env.CONVEX_BRIDGE_SECRET!,
+          SITE_URL: "http://127.0.0.1:5180",
         },
       }),
     );
     t.after(() => runtime.dispose());
-    const db = await runtime.getD1Database("DB");
-    async function applyMigration(name: string) {
-      const migration = await readFile(
-        new URL(`../migrations/${name}`, import.meta.url),
-        "utf8",
+    const createdUsers: string[] = [];
+    t.after(() => {
+      if (!createdUsers.length) return;
+      const cleanup = spawnSync(
+        process.execPath,
+        [
+          "node_modules/convex/bin/main.js",
+          "run",
+          "maintenance:cleanupVerification",
+          JSON.stringify({ userIds: createdUsers }),
+        ],
+        { encoding: "utf8" },
       );
-      const statements = migration
-        .split(";")
-        .map((statement) => statement.trim())
-        .filter(Boolean);
-      await db.batch(statements.map((statement) => db.prepare(statement)));
-      return statements;
-    }
-    const initial = await applyMigration("0001_backend.sql");
-    // Reapplying the initial migration must not destroy records or fail.
-    await db.batch(initial.map((statement) => db.prepare(statement)));
-    await applyMigration("0002_requests.sql");
-
+      assert.equal(
+        cleanup.status,
+        0,
+        "Live verification account cleanup failed",
+      );
+    });
     const request = (
       path: string,
       method = "GET",
       body?: unknown,
       cookie?: string,
-      origin = "http://localhost",
+      origin = "http://127.0.0.1:5180",
       ip = "192.0.2.1",
     ) =>
-      runtime.dispatchFetch(`http://localhost/api${path}`, {
+      runtime.dispatchFetch(`http://127.0.0.1:5180/api${path}`, {
         method,
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +93,7 @@ test(
           password: randomBytes(24).toString("hex"),
         },
         undefined,
-        "http://localhost",
+        "http://127.0.0.1:5180",
         `192.0.2.${nextIP++}`,
       );
       assert.equal(result.status, 200, await result.clone().text());
@@ -92,6 +103,7 @@ test(
         .join("; ");
       assert.ok(cookie);
       const json = (await result.json()) as { user: { id: string } };
+      createdUsers.push(json.user.id);
       assert.equal(
         (await request("/me/role", "PUT", { role }, cookie)).status,
         200,
@@ -185,10 +197,10 @@ test(
     );
     assert.equal(
       (
-        await db
-          .prepare("SELECT count(*) AS count FROM opportunity")
-          .first<{ count: number }>()
-      )?.count,
+        (await (
+          await request("/opportunities", "GET", undefined, company.cookie)
+        ).json()) as { data: unknown[] }
+      ).data.length,
       0,
     );
     const created = await request(
@@ -325,10 +337,10 @@ test(
     );
     assert.equal(
       (
-        await db
-          .prepare("SELECT count(*) AS count FROM interest")
-          .first<{ count: number }>()
-      )?.count,
+        (await (
+          await request("/interests", "GET", undefined, junior.cookie)
+        ).json()) as { data: unknown[] }
+      ).data.length,
       1,
     );
     const connections = await request(
@@ -365,12 +377,10 @@ test(
     );
     assert.equal(
       (
-        await db
-          .prepare(
-            "SELECT count(*) AS count FROM interest WHERE first_company_interest_at IS NOT NULL",
-          )
-          .first<{ count: number }>()
-      )?.count,
+        (await (
+          await request("/interests", "GET", undefined, junior.cookie)
+        ).json()) as { data: unknown[] }
+      ).data.length,
       1,
     );
 

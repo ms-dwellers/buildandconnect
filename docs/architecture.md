@@ -6,35 +6,37 @@
 | ----------------------------- | ---------------------------------- | ------------------------------- |
 | Web routes and landing page   | React, Vinext App Router, Tailwind | Implemented                     |
 | API routing and authorization | Hono in `backend/api.ts`           | Implemented                     |
-| Accounts and sessions         | Better Auth, built-in D1 adapter   | Email/password                  |
-| Application and auth data     | Cloudflare D1, `migrations/`       | Implemented                     |
+| Accounts and sessions         | Better Auth's Convex component     | Email/password                  |
+| Application and auth data     | Convex, `convex/schema.ts`         | Implemented                     |
 | Job analysis and embeddings   | Workers AI, `backend/ai.ts`        | Requires Cloudflare access      |
 | Growth matching               | `backend/matching.ts`              | Deterministic, versioned        |
-| Mutual interest               | D1 interest records                | Opportunity-specific, revocable |
+| Mutual interest               | Convex interest records            | Opportunity-specific, revocable |
 | Maps                          | Mapbox                             | Nearby local requests           |
 | Native iOS                    | Swift                              | Deferred                        |
 
-The backend follows the requested Hono + D1 direction, replacing the original
-Convex plan. There is one Worker and one database, not a separate API server.
+The backend follows the explicit switch from D1 to Convex. There is one Worker
+HTTP facade and one Convex application database; D1 is no longer bound.
 `app/api/[...path]/route.ts` forwards standard Requests to Hono. `/api/health`
 remains a minimal public liveness route, not a provider-readiness check.
 
 ## Data and request flow
 
 1. Better Auth signs up or signs in an account and issues an HTTP-only session
-   cookie. The API retrieves the session server-side for each protected request.
+   cookie through the same-origin Hono proxy. Hono obtains a Convex JWT and calls
+   protected functions with it and the server-only bridge credential. Convex checks
+   the live session and role on every operation, including cached JWTs.
 2. The account chooses one immutable role: developer, company, recruiter, or
    requester. These are hackathon account types, not verified identities.
 3. Developers submit explicit skills, projects, interests, learning goals, and
    discovery consent. BGE Small embeds demonstrated experience, not aspirations.
 4. Companies post opportunities. Llama produces schema-constrained job analysis;
    Zod validates it. BGE Small embeds the structured requirements. Only after both
-   succeed is the complete record written to D1. A failure returns 503 and saves
+   succeed is the complete record written to Convex. A failure returns 503 and saves
    nothing. Updating a profile similarly preserves its previous version on failure.
-5. Companies fetch ranked candidates for their own opportunities. SQL narrows
+5. Companies fetch ranked candidates for their own opportunities. Convex narrows
    availability and location; deterministic hard gates and scoring run in TypeScript.
    Developers can retrieve their own match and eligibility reasons.
-6. Each side can express or withdraw interest. One SQL upsert changes only that
+6. Each side can express or withdraw interest. One atomic mutation changes only that
    side's flag, preserving the other side under concurrent requests. A connection
    is the derived state where both flags are true, so no second connection record
    can drift. Withdrawal removes it from connection listings, including after close.
@@ -44,8 +46,9 @@ remains a minimal public liveness route, not a provider-readiness check.
    scoring as opportunities. Accept claims an open request exclusively; release
    returns it to open.
 
-`schemas.ts` owns validation and domain shapes; `store.ts` owns reads and response
-redaction. Store model/version metadata with analysis and embeddings. There is no
+`backend/schemas.ts` owns validation and domain shapes; `convex/data.ts` owns
+authorized operations and `convex/domain.ts` owns response redaction. Store
+model/version metadata with analysis and embeddings. There is no
 Vectorize index: exact cosine comparison is sufficient for the hackathon pool and
 does not risk approximate retrieval dropping promising juniors.
 
@@ -92,14 +95,17 @@ colluding-company abuse prevention is outside this MVP.
 - Use same-origin cookie requests. Mutation origins are checked; Better Auth
   retains its own CSRF/cookie protections. API responses are never shared-cached.
   Request bodies are capped at 32 KB and input fields/collections are bounded.
-- Better Auth stores rate limits in D1 and trusts Cloudflare's overwritten
-  `CF-Connecting-IP` header. Do not put an untrusted proxy in front that preserves
-  attacker-supplied values. The rest of the API has no per-account AI quota yet;
+- Better Auth stores rate limits in Convex. Hono forwards Cloudflare's verified
+  client IP in a custom header; Convex accepts auth requests only with the bridge
+  credential. Public JWT key discovery is excluded from rate limiting so valid
+  authenticated operations cannot exhaust a shared key-discovery bucket.
+  Do not put an untrusted proxy in front that preserves attacker-supplied client
+  IP values. The rest of the API has no per-account AI quota yet;
   add quotas and email verification before opening public registration at scale.
 - Synchronous inference is deliberately simple for the MVP. There is no queue,
   automatic retry, or fabricated-analysis fallback. Repeated successful posts are
   distinct opportunities, so clients should disable duplicate submission.
-- Exact ranking supports up to 1,000 SQL-prefiltered profiles per opportunity;
+- Exact ranking supports up to 1,000 prefiltered profiles per opportunity;
   larger pools fail explicitly rather than return a silently incomplete ranking.
   Browse and connection endpoints use bounded cursor pagination.
 - Only status is editable on opportunities in this MVP. Profile updates regenerate
@@ -111,8 +117,8 @@ colluding-company abuse prevention is outside this MVP.
 
 ## Configuration
 
-See [backend.md](backend.md) for local database setup and the HTTP contract.
-`cloudflare.config.ts` owns the DB/AI/secret bindings. `vite.config.ts` controls
+See [backend.md](backend.md) for Convex setup and the HTTP contract.
+`cloudflare.config.ts` owns the AI and API bridge bindings. `vite.config.ts` controls
 local persistence and makes remote model calls opt-in. Production always uses the
 real AI binding; local preview disables remote connections by default. Use Worker
 secret storage for production credentials. Nothing is provisioned or deployed by

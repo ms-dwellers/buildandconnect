@@ -14,13 +14,10 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
-      DB: bindings.d1({
-        name: "buildandconnect",
-        id:
-          process.env.D1_DATABASE_ID ?? "00000000-0000-4000-8000-000000000001",
-      }),
       AI: bindings.ai(),
-      BETTER_AUTH_SECRET: bindings.secret(),
+      VITE_CONVEX_URL: bindings.secret(),
+      VITE_CONVEX_SITE_URL: bindings.secret(),
+      CONVEX_BRIDGE_SECRET: bindings.secret(),
       SITE_URL: bindings.secret(),
     },
   }),

@@ -2,7 +2,7 @@ import { createApi } from "../../backend/api.ts";
 import { AnalysisUnavailable } from "../../backend/ai.ts";
 import { analysis, embedding } from "./matching.ts";
 
-// Only the external model boundary is substituted. Auth, SQL, and HTTP run in workerd.
+// Only model inference is substituted. Auth and persistence use real Convex.
 export default createApi({
   async analyzeDeveloper(_ai, profile) {
     if (profile.bio.includes("AI_UNAVAILABLE"))

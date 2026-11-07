@@ -21,13 +21,16 @@ companies through shared interests and social-impact projects.
 - Prefer restrained tactile styling: raised solid buttons with a visible lower
   edge and real press travel, subtle card shadows, no heavy gloss. Keep navigation
   links flat and preserve keyboard, disabled, and reduced-motion behavior.
-- Backend and data: Hono mounted in Vinext route handlers, Cloudflare D1, and
-  Workers AI. `backend/` owns API logic; `migrations/` owns SQL schema changes.
-- Authentication: Better Auth with its built-in D1 support. Enforce ownership
-  and roles in the API, not only in the frontend.
+- Backend and data: Hono mounted in Vinext route handlers, Convex, and Workers AI.
+  `backend/` owns the HTTP facade and AI calls; `convex/` owns auth, schema,
+  persistence, and atomic transitions. D1 has been replaced; `migrations/` is
+  legacy reference only. Do not reintroduce a second application database.
+- Authentication: Better Auth's official Convex component. Keep browser requests
+  same-origin through `/api`. Convex functions enforce ownership and roles and
+  require the server-only bridge secret; never expose it to clients.
 - Maps: Mapbox.
 - Other infrastructure: prefer Cloudflare products (Workers, R2, Queues,
-  Durable Objects, etc.). Do not add a second application database.
+  Durable Objects, etc.), except the explicitly selected Convex backend.
 - Future iOS app: native Swift. Do not scaffold, build, or require iOS tooling
   until explicitly requested; the current development host is Linux.
 - Current scope includes growth-oriented matching and opportunity-specific mutual
@@ -47,6 +50,9 @@ configuration. This permission does not make the chat itself a secret vault.
   before writing a local secret. Prefer stdin over command-line arguments.
 - Keep `.env.example` value-free. Never put secrets in Nix expressions, derivation
   arguments, or store paths; the Nix store is not private storage.
+- `BETTER_AUTH_SECRET` belongs in Convex's environment. `CONVEX_BRIDGE_SECRET`
+  must match between Convex and the Worker. Keep Convex CLI account/deploy keys
+  outside tracked source; never publish production changes during local setup.
 - `NEXT_PUBLIC_*` and `VITE_*` values are public. Never place a private key or
   Better Auth secret there. A restricted Mapbox public token is intentionally
   browser-visible, but its value still does not belong in tracked source.

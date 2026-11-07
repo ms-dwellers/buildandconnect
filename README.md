@@ -4,7 +4,7 @@ A hackathon app connecting early-career developers with non-technical people and
 companies through shared interests and social-impact projects.
 
 **Current state:** landing page, Mapbox nearby-request UI, `/api/health`, and a
-Hono backend with Better Auth, D1 persistence, Workers AI analysis, growth-oriented
+Hono backend with Better Auth, Convex persistence, Workers AI analysis, growth-oriented
 matching, recruiter discovery, opportunity-specific mutual interest, and exclusive
 local-request claims. See [the backend guide](docs/backend.md) for setup and API
 examples. For browser-based backend QA, run the frontend and open `/debug`.
@@ -54,7 +54,21 @@ server, deployment, or migration runs automatically on shell entry.
 The dev server prints its local URL. Optional local configuration belongs in
 ignored `.env.local` or `.dev.vars` files, never in source. `.env.example` lists
 integration settings with no values. The landing page needs no credentials;
-the backend requires local migrations and auth settings from the backend guide.
+the backend requires a Convex development deployment and settings from the backend guide.
+
+### Connect the backend
+
+```sh
+bunx convex login
+bunx convex deployment select TEAM:PROJECT:dev
+bun run setup:backend
+bun run dev:backend
+```
+
+Keep `dev:backend` running in another terminal alongside the frontend. It syncs
+Convex functions to your cloud development deployment; it does not deploy the
+frontend or touch production. Keep the generated `convex/_generated/` files in
+source control. The existing `/api` routes remain the frontend contract.
 
 ## Commands
 
@@ -101,8 +115,8 @@ application build. Nix uses an explicit source allowlist and excludes local
 environment files. Never pass private build-time values into Nix. When changing
 dependencies, run `bun install` and update the Bun cache hash in `flake.nix`.
 
-Bun manages dependencies and runs package scripts; Vite, Cloudflare tooling,
-and the existing test suite still run on Node. Use `bun run test`, not Bun's
+Bun manages dependencies and runs package scripts; Vite and Cloudflare tooling
+still run on Node. Tests use Node and Vitest/convex-test. Use `bun run test`, not Bun's
 separate built-in `bun test` runner.
 
 ## Architecture and service setup
@@ -113,11 +127,13 @@ emerald, cream, wheat, apricot, and coral palette. See
 
 See [docs/architecture.md](docs/architecture.md) for ownership and integration
 steps. React/Vinext App Router, Tailwind, and Hono run in one Cloudflare Worker.
-D1 owns application and Better Auth data. Workers AI supplies Llama analysis and
+Convex owns application data and Better Auth's official Convex component. Workers AI supplies Llama analysis and
 BGE Small embeddings; TypeScript owns deterministic matching. Mapbox powers
-location search and nearby maps. No separate API server or Convex database is required.
+location search and nearby maps. Convex is the only application database; the
+Worker remains the browser-facing API.
 
-No remote service is created during setup. Deploy only when requested. After
+Dependency setup does not create remote services. Connecting the backend requires
+selecting a Convex development deployment. Deploy production only when requested. After
 reviewing configuration and authenticating with Cloudflare, `bun run deploy`
 builds and publishes the Worker; it is not part of local verification.
 

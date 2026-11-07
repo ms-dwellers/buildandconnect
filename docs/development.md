@@ -67,6 +67,12 @@ and [Windows ARM emulation](https://learn.microsoft.com/en-us/windows/arm/apps-o
 
 ## Daily tasks
 
+After dependency setup, follow [the backend setup guide](backend.md#local-setup)
+to select a Convex cloud development deployment and configure auth. Run
+`bun run dev:backend` alongside the frontend to sync Convex functions. Use
+`bun run test:live` only with the guide's disposable development test setup;
+ordinary `test` and `check` stay offline.
+
 Both launchers work from any directory, including paths with spaces. Arguments
 after the task go directly to the corresponding package script via `bun run`.
 
@@ -76,7 +82,7 @@ after the task go directly to the corresponding package script via `bun run`.
 | `dev`                                     | Start the development server; the default task      |
 | `build`                                   | Build the Worker                                    |
 | `start`                                   | Preview an existing build locally                   |
-| `test`                                    | Run the existing Node test suite                    |
+| `test`                                    | Run offline Node and Convex/Vitest tests            |
 | `typecheck`                               | Check TypeScript                                    |
 | `fmt` / `fmt:check`                       | Format / check web source and documentation         |
 | `check`                                   | Check web formatting, types, and tests              |

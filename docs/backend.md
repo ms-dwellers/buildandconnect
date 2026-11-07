@@ -2,23 +2,33 @@
 
 ## Local setup
 
-Use the repository's Bun and Node.js 26 toolchain and run `bun install --frozen-lockfile`. Initialize the local
-database with:
+Use Bun and Node.js 26, then install with `bun install --frozen-lockfile`.
+The frontend runs locally; auth and data live in a Convex cloud **development** deployment.
 
 ```sh
-bun run db:migrate:local
+bunx convex login
+bunx convex deployment select TEAM:PROJECT:dev
+bun run setup:backend
+bun run dev:backend
 ```
 
-This command only touches `.wrangler/state/`. Dev and preview use the same path.
-The local database uses the reserved placeholder ID in `cloudflare.config.ts`;
-leave `D1_DATABASE_ID` unset locally. For deployment, set it to the real database
-UUID before building. Do not deploy with the placeholder ID.
+Select the existing team/project instead of creating a duplicate. Convex writes
+`CONVEX_DEPLOYMENT`, `VITE_CONVEX_URL`, and `VITE_CONVEX_SITE_URL` into ignored
+`.env.local`. Setup adds `SITE_URL` and the server-only `CONVEX_BRIDGE_SECRET`,
+preserving Mapbox and other settings. It reuses existing development secrets rather
+than rotating them. The script refuses production selections and deploy keys.
+An optional argument changes the local origin: `bun run setup:backend http://localhost:5173`.
 
-Create an ignored `.dev.vars` with private permissions, set `SITE_URL` to the
-exact local origin printed by Vite, and generate a random `BETTER_AUTH_SECRET`
-of at least 32 characters. Never commit either value or put them in public vars.
-The landing page and health endpoint need neither value, but account/API requests
-do. Both settings are Worker secrets in production.
+`BETTER_AUTH_SECRET` exists only in Convex's environment. The bridge secret must
+match in Convex and the Worker; never prefix it with `VITE_` or `NEXT_PUBLIC_`.
+The public Convex URLs may be browser-visible. In production, configure the same
+URL/bridge/origin settings in the Worker and set Convex's `SITE_URL` to the deployed
+app's exact origin. No production deployment is part of local setup.
+
+Run `bun run dev` in a second terminal. All browser requests stay on `/api`;
+Hono proxies auth and calls Convex with the session's JWT and the bridge credential.
+The Convex mutations enforce ownership and atomically change interests/claims.
+Do not call protected data functions directly from the browser or expose the bridge key.
 
 Workers AI has no local inference engine. To exercise real model calls locally,
 authenticate the Cloudflare CLI, set `WORKERS_AI_REMOTE=true` in the environment
@@ -26,14 +36,14 @@ that launches Vite, and restart `bun run dev`. Calls may incur Workers AI charge
 Without opt-in, analysis returns 503 rather than fabricated data. Only authorized
 company/profile requests can invoke models.
 
-For an approved deployment, create the D1 database in Cloudflare, record its UUID
-in the build environment, apply `migrations/` using
-`cf d1 migrations apply <database-uuid> --dir migrations`, and configure Worker
-secrets before publishing. This task does not deploy or create remote resources.
+The old SQL files in `migrations/` are retained only as migration references.
+They no longer run and D1 is not bound to the app. Existing local D1 files are
+untouched. The selected Convex development deployment started empty; importing
+any existing production data requires a separate, reviewed migration.
 
 ## Browser QA console
 
-Run `npm run dev -- --host 127.0.0.1` and open `/debug` on the printed local
+Run `bun run dev --host 127.0.0.1` and open `/debug` on the printed local
 origin. The console includes:
 
 - Email/password sign-up, sign-in, role selection and sign-out using real cookies.
@@ -194,10 +204,15 @@ bun run build
 bun run smoke
 ```
 
-`tests/backend.test.ts` bundles the actual Hono API into workerd and drives HTTP
-signup, roles, profiles, job creation, ranking, discovery, mutual interest,
-withdrawal, logout and cross-account authorization with real D1 and Better Auth.
-Only the model-service boundary is replaced with deterministic fixtures, never
-authentication or SQL. `tests/matching.test.ts` exercises scoring and eligibility.
-The preview smoke test checks that Vinext mounts the protected backend correctly.
-Live model inference requires credentials and is not claimed by these tests.
+Normal tests run offline with `convex-test`, the real Better Auth component schema,
+and seeded test sessions. They cover access control, privacy, matching, interest,
+and atomic claims. The live suite separately bundles Hono into workerd and uses
+real cloud Convex auth and storage, substituting only the model-service boundary.
+
+To run it against a disposable development deployment, set Convex `DEV_SITE_URL`
+to `http://127.0.0.1:5180`, enable `ALLOW_TEST_CLEANUP=true` there, then run
+`bun run test:live`. It creates reserved `@example.test` accounts and removes
+their records through an operator-only internal function. Do not enable cleanup
+in production. Normal `check`, `build`, and `smoke` never push Convex functions.
+The public health endpoint stays a minimal liveness check, not a connectivity test.
+Live Workers AI inference still requires Cloudflare credentials and explicit opt-in.
