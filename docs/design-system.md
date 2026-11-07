@@ -1,5 +1,10 @@
 # Design system
 
+Open `/design-system` for the live component gallery. It covers foundations,
+actions, forms, choices, feedback, overlays, navigation, and content with more
+than 30 coss-ui component families. Examples use local state only and do not call
+the application backend. Reloading resets the examples.
+
 Use [coss ui](https://coss.com/ui/docs), built on Base UI, for controls and reusable
 UI primitives. Source is owned locally in `components/ui/`; the upstream MIT
 notice is retained there. `components.json` points `@coss` at the official registry.
@@ -45,6 +50,9 @@ intentionally light-only; OS dark-mode preference does not change its colors.
 - Keep focus visible, icons decorative unless they convey unique information,
   and motion optional. The global reduced-motion and forced-colors rules apply
   to the entire component layer.
+- Inputs, tab labels, and menu shortcuts use full-opacity muted text to retain
+  contrast on the warm backgrounds. Preserve these adaptations when updating
+  upstream coss components.
 
 The home page introduces the product; its links navigate to real page content.
 It does not simulate accounts, matching results, or completed project activity.

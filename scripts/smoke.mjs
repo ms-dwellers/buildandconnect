@@ -65,6 +65,14 @@ try {
   assert.match(html, /Local problems\. Nearby developers\./);
   assert.match(html, /Post a request/);
   assert.match(html, /Nearby map/);
+  assert.match(html, /data-slot="button"/);
+  assert.match(html, /data-slot="card"/);
+  const designSystem = await fetch(`${origin}/design-system`);
+  assert.equal(designSystem.status, 200);
+  const designHtml = await designSystem.text();
+  assert.match(designHtml, /Made to build together\./);
+  assert.match(designHtml, /data-slot="form"/);
+  assert.match(designHtml, /data-slot="tabs"/);
   const stylesheet = html.match(/href="([^\"]+\.css)"/);
   assert.ok(stylesheet, "Home must reference a built stylesheet");
   assert.equal((await fetch(new URL(stylesheet[1], origin))).status, 200);
