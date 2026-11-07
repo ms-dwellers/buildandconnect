@@ -2,19 +2,30 @@
 
 import { useEffect, useState, type CSSProperties, type RefObject } from "react";
 import { Meter } from "@/components/ui/meter";
+import { microphoneMotionRate } from "./voice-motion";
 
 export function Waveform({ microphone }: { microphone?: RefObject<number> }) {
-  const [level, setLevel] = useState(0);
+  const [{ level, phase }, setMotion] = useState({ level: 0, phase: 0 });
   useEffect(() => {
     if (!microphone) {
-      setLevel(0);
+      setMotion({ level: 0, phase: 0 });
       return;
     }
     let frame = 0;
     let previous = 0;
+    let phase = 0;
     const update = (now: number) => {
+      if (!previous) previous = now;
       if (now - previous >= 50) {
-        setLevel(microphone.current);
+        const level = microphone.current;
+        phase =
+          (phase +
+            (Math.min(now - previous, 100) / 1000) *
+              microphoneMotionRate(level) *
+              Math.PI *
+              2) %
+          (Math.PI * 2);
+        setMotion({ level, phase });
         previous = now;
       }
       frame = requestAnimationFrame(update);
@@ -30,7 +41,6 @@ export function Waveform({ microphone }: { microphone?: RefObject<number> }) {
         aria-hidden="true"
         data-reactive={Boolean(microphone)}
         data-level={level.toFixed(3)}
-        style={{ "--mic-level": level } as CSSProperties}
       >
         {Array.from({ length: 17 }, (_, index) => (
           <span
@@ -39,6 +49,7 @@ export function Waveform({ microphone }: { microphone?: RefObject<number> }) {
               {
                 "--bar": index,
                 "--height": `${24 + Math.sin(index * 1.4) * 18 + Math.sin((index / 16) * Math.PI) * 65}px`,
+                "--mic-scale": 0.6 + Math.sin(phase + index * 0.65) * 0.35,
               } as CSSProperties
             }
           />

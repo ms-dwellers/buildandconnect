@@ -220,7 +220,7 @@
 }
 .voice-waveform[data-reactive="true"] span {
   animation: none;
-  transform: scaleY(calc(0.08 + var(--mic-level) * 0.92));
+  transform: scaleY(var(--mic-scale));
   transition: none;
 }
 .voice-mic-meter {

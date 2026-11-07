@@ -12,8 +12,10 @@ application still performs its normal session check.
 - End the session or clear it to return to the initial state.
 - Enable the microphone explicitly to make the waveform and aurora respond to
   your voice volume. The browser asks for permission; the audio is analysed only
-  on your device, never recorded, transcribed, or uploaded. The visuals rise
-  quickly with speech and decay more slowly back to quiet.
+  on your device, never recorded, transcribed, or uploaded. Louder speech speeds
+  up the aurora and waveform; quiet slows them to a gentle drift. Volume changes
+  the motion rate (0.25–4×), not the ribbon size or color. Speed ramps up quickly
+  and eases back down without restarting the animation.
 - Turning the microphone off, pausing or ending a session, clearing the
   conversation, hiding the tab, or leaving the page stops all microphone tracks.
   Resuming a paused session restarts a microphone that was previously enabled.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { microphoneMotionRate } from "./voice-motion";
 
 const vertexSource = `
 attribute vec2 a_position;
@@ -135,10 +136,14 @@ export function Aurora({
           return;
         }
         const input = settings.current.microphone?.current;
-        const intensity = input ?? (settings.current.speaking ? 1 : 0);
+        const intensity =
+          input === undefined ? (settings.current.speaking ? 1 : 0) : 0.4;
+        const speed =
+          input === undefined
+            ? 1 + intensity * 0.75
+            : microphoneMotionRate(input);
         if (animate && previous)
-          time +=
-            (Math.min(now - previous, 80) / 1000) * (1 + intensity * 0.75);
+          time += (Math.min(now - previous, 80) / 1000) * speed;
         previous = now;
         gl.uniform2f(resolution, element.width, element.height);
         gl.uniform1f(clock, time);
