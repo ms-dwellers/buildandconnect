@@ -36,17 +36,22 @@ test(
     );
     t.after(() => runtime.dispose());
     const db = await runtime.getD1Database("DB");
-    const migration = await readFile(
-      new URL("../migrations/0001_backend.sql", import.meta.url),
-      "utf8",
-    );
-    const statements = migration
-      .split(";")
-      .map((statement) => statement.trim())
-      .filter(Boolean);
-    await db.batch(statements.map((statement) => db.prepare(statement)));
+    async function applyMigration(name: string) {
+      const migration = await readFile(
+        new URL(`../migrations/${name}`, import.meta.url),
+        "utf8",
+      );
+      const statements = migration
+        .split(";")
+        .map((statement) => statement.trim())
+        .filter(Boolean);
+      await db.batch(statements.map((statement) => db.prepare(statement)));
+      return statements;
+    }
+    const initial = await applyMigration("0001_backend.sql");
     // Reapplying the initial migration must not destroy records or fail.
-    await db.batch(statements.map((statement) => db.prepare(statement)));
+    await db.batch(initial.map((statement) => db.prepare(statement)));
+    await applyMigration("0002_requests.sql");
 
     const request = (
       path: string,
@@ -121,6 +126,7 @@ test(
       name: _name,
       embedding: _embedding,
       recentExposure: _recent,
+      location: _location,
       ...profile
     } = developer;
     assert.equal(
@@ -257,7 +263,11 @@ test(
     );
     const publicProfiles = await discovery.text();
     assert.match(publicProfiles, /Garden site/);
-    assert.ok(!/email|embedding|recentExposure|password/.test(publicProfiles));
+    assert.ok(
+      !/email|embedding|recentExposure|password|latitude|longitude|radiusKm/.test(
+        publicProfiles,
+      ),
+    );
 
     assert.equal(
       (
@@ -442,6 +452,179 @@ test(
       ).status,
       413,
     );
+
+    await request(
+      "/developers/me",
+      "PATCH",
+      { discoverable: true, available: true },
+      junior.cookie,
+    );
+    const requester = await signup("requester", "Neighbor");
+    const otherDeveloper = await signup("developer", "Other Developer");
+    assert.equal(
+      (await request("/developers/me", "PUT", profile, otherDeveloper.cookie))
+        .status,
+      200,
+    );
+    assert.equal(
+      (
+        await request(
+          "/developers/me/location",
+          "PATCH",
+          developer.location,
+          otherDeveloper.cookie,
+        )
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await request(
+          "/developers/me/location",
+          "PATCH",
+          developer.location,
+          junior.cookie,
+        )
+      ).status,
+      200,
+    );
+    const ownProfile = await request(
+      "/developers/me",
+      "GET",
+      undefined,
+      junior.cookie,
+    );
+    assert.match(await ownProfile.clone().text(), /latitude/);
+    assert.equal(
+      (
+        await request(
+          "/requests",
+          "POST",
+          {
+            title: "Fix garden site",
+            description:
+              "Need help building an accessible garden website with React for neighbors nearby.",
+            place: "Toronto Downtown",
+            latitude: 43.66,
+            longitude: -79.38,
+          },
+          company.cookie,
+        )
+      ).status,
+      403,
+    );
+    const posted = await request(
+      "/requests",
+      "POST",
+      {
+        title: "Fix garden site",
+        description:
+          "Need help building an accessible garden website with React for neighbors nearby.",
+        place: "Toronto Downtown",
+        latitude: 43.66,
+        longitude: -79.38,
+      },
+      requester.cookie,
+    );
+    assert.equal(posted.status, 201, await posted.clone().text());
+    const localRequest = (await posted.json()) as { id: string };
+    const nearby = await request(
+      "/requests/nearby",
+      "GET",
+      undefined,
+      junior.cookie,
+    );
+    const nearbyBody = (await nearby.json()) as {
+      data: { requestId: string; score: number }[];
+    };
+    assert.equal(nearby.status, 200, JSON.stringify(nearbyBody));
+    assert.equal(nearbyBody.data[0]?.requestId, localRequest.id);
+    assert.ok(!JSON.stringify(nearbyBody).includes("embedding"));
+    const firstAccept = await request(
+      `/requests/${localRequest.id}/accept`,
+      "POST",
+      {},
+      junior.cookie,
+    );
+    assert.equal(firstAccept.status, 200, await firstAccept.clone().text());
+    assert.equal(
+      (
+        await request(
+          `/requests/${localRequest.id}/accept`,
+          "POST",
+          {},
+          otherDeveloper.cookie,
+        )
+      ).status,
+      409,
+    );
+    assert.equal(
+      (
+        await request(
+          `/requests/${localRequest.id}/accept`,
+          "POST",
+          {},
+          junior.cookie,
+        )
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await request(
+          `/requests/${localRequest.id}/release`,
+          "POST",
+          {},
+          otherDeveloper.cookie,
+        )
+      ).status,
+      403,
+    );
+    assert.equal(
+      (
+        await request(
+          `/requests/${localRequest.id}/release`,
+          "POST",
+          {},
+          junior.cookie,
+        )
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await request(
+          `/requests/${localRequest.id}/accept`,
+          "POST",
+          {},
+          otherDeveloper.cookie,
+        )
+      ).status,
+      200,
+    );
+    const owned = await request(
+      "/requests",
+      "GET",
+      undefined,
+      requester.cookie,
+    );
+    const ownedBody = (await owned.json()) as {
+      data: { claimedBy: string; claimantName: string }[];
+    };
+    assert.equal(ownedBody.data[0]?.claimedBy, otherDeveloper.id);
+    assert.equal(ownedBody.data[0]?.claimantName, "Other Developer");
+    assert.equal(
+      (
+        await request(
+          `/requests/${localRequest.id}`,
+          "PATCH",
+          { status: "closed" },
+          requester.cookie,
+        )
+      ).status,
+      200,
+    );
+
     assert.equal(
       (await request("/auth/sign-out", "POST", {}, junior.cookie)).status,
       200,

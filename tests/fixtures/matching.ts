@@ -55,4 +55,9 @@ export const developer: Developer = {
   discoverable: true,
   recentExposure: 0,
   embedding,
+  location: {
+    latitude: 43.6532,
+    longitude: -79.3832,
+    radiusKm: 25,
+  },
 };

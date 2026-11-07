@@ -14,4 +14,9 @@ export default createApi({
       throw new AnalysisUnavailable("Model unavailable");
     return { analysis, embedding };
   },
+  async analyzeRequest(_ai, input) {
+    if (input.description.includes("AI_UNAVAILABLE"))
+      throw new AnalysisUnavailable("Model unavailable");
+    return { analysis, embedding };
+  },
 });

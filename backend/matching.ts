@@ -1,4 +1,9 @@
-import { normalizeSkill, type Developer, type Opportunity } from "./schemas.ts";
+import {
+  normalizeSkill,
+  type Developer,
+  type LocalRequest,
+  type Opportunity,
+} from "./schemas.ts";
 
 export const MATCH_VERSION = "growth-v1";
 export const WEIGHTS = {
@@ -8,6 +13,7 @@ export const WEIGHTS = {
   collaborationCompatibility: 0.1,
   opportunityExposure: 0.1,
 } as const;
+export const EARTH_RADIUS_KM = 6371;
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const percentage = (value: number) => Math.round(clamp(value) * 1000) / 10;
@@ -15,6 +21,58 @@ const overlap = (wanted: string[], actual: Set<string>) =>
   wanted.length
     ? wanted.filter((item) => actual.has(item)).length / wanted.length
     : 0;
+const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+
+export function haversineKm(
+  a: { latitude: number; longitude: number },
+  b: { latitude: number; longitude: number },
+): number {
+  const dLat = toRadians(b.latitude - a.latitude);
+  const dLng = toRadians(b.longitude - a.longitude);
+  const lat1 = toRadians(a.latitude);
+  const lat2 = toRadians(b.latitude);
+  const chord =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return EARTH_RADIUS_KM * 2 * Math.asin(Math.min(1, Math.sqrt(chord)));
+}
+
+export function boundingBox(
+  latitude: number,
+  longitude: number,
+  radiusKm: number,
+) {
+  const latDelta = (radiusKm / EARTH_RADIUS_KM) * (180 / Math.PI);
+  const lngDenominator = Math.cos(toRadians(latitude)) * EARTH_RADIUS_KM;
+  const lngDelta =
+    lngDenominator === 0 ? 180 : (radiusKm / lngDenominator) * (180 / Math.PI);
+  return {
+    minLat: Math.max(-90, latitude - latDelta),
+    maxLat: Math.min(90, latitude + latDelta),
+    minLng: Math.max(-180, longitude - lngDelta),
+    maxLng: Math.min(180, longitude + lngDelta),
+  };
+}
+
+/** Local requests share growth scoring; distance and unpaid work are separate gates. */
+export function asMatchOpportunity(request: LocalRequest): Opportunity {
+  return {
+    id: request.id,
+    ownerId: request.ownerId,
+    title: request.title,
+    description: request.description,
+    city: request.place,
+    remote: true,
+    kind: "volunteer",
+    essentialTechnologies: [],
+    minimumWeeklyHours: 1,
+    collaboration: "flexible",
+    interests: [],
+    status: request.status === "open" ? "open" : "closed",
+    analysis: request.analysis,
+    embedding: request.embedding,
+  };
+}
 
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (!a.length || a.length !== b.length) return 0;
@@ -172,5 +230,46 @@ export function rankDevelopers(
     .filter((match) => match !== null)
     .sort(
       (a, b) => b.score - a.score || a.developerId.localeCompare(b.developerId),
+    );
+}
+
+export function scoreNearbyRequest(
+  request: LocalRequest,
+  developer: Developer,
+) {
+  if (!developer.location) return null;
+  const distanceKm = haversineKm(developer.location, request);
+  if (distanceKm > developer.location.radiusKm) return null;
+  const match = scoreMatch(asMatchOpportunity(request), developer);
+  if (!match) return null;
+  return {
+    requestId: request.id,
+    title: request.title,
+    description: request.description,
+    place: request.place,
+    latitude: request.latitude,
+    longitude: request.longitude,
+    ownerName: request.ownerName,
+    distanceKm: Math.round(distanceKm * 10) / 10,
+    score: match.score,
+    scores: match.scores,
+    existingRelevantSkills: match.existingRelevantSkills,
+    skillsToDevelop: match.skillsToDevelop,
+    explanation: match.explanation,
+  };
+}
+
+export function rankNearbyRequests(
+  requests: LocalRequest[],
+  developer: Developer,
+) {
+  return requests
+    .map((request) => scoreNearbyRequest(request, developer))
+    .filter((match) => match !== null)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.distanceKm - b.distanceKm ||
+        a.requestId.localeCompare(b.requestId),
     );
 }

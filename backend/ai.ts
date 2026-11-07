@@ -4,6 +4,7 @@ import {
   vectorSchema,
   type DeveloperProfile,
   type OpportunityInput,
+  type RequestInput,
 } from "./schemas.ts";
 import type { BackendEnv } from "./env.ts";
 
@@ -103,4 +104,22 @@ export async function analyzeDeveloper(
       "Profile analysis is unavailable. Try again; nothing was saved.",
     );
   }
+}
+
+export async function analyzeRequest(
+  ai: BackendEnv["AI"],
+  input: RequestInput,
+) {
+  // Reuse job analysis: local requests are unpaid neighborhood problems, not company posts.
+  return analyzeOpportunity(ai, {
+    title: input.title,
+    description: input.description,
+    city: input.place,
+    remote: false,
+    kind: "volunteer",
+    essentialTechnologies: [],
+    minimumWeeklyHours: 1,
+    collaboration: "flexible",
+    interests: [],
+  });
 }

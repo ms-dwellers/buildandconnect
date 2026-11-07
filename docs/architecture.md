@@ -11,7 +11,7 @@
 | Job analysis and embeddings   | Workers AI, `backend/ai.ts`        | Requires Cloudflare access      |
 | Growth matching               | `backend/matching.ts`              | Deterministic, versioned        |
 | Mutual interest               | D1 interest records                | Opportunity-specific, revocable |
-| Maps                          | Mapbox                             | Not implemented                 |
+| Maps                          | Mapbox                             | Nearby local requests           |
 | Native iOS                    | Swift                              | Deferred                        |
 
 The backend follows the requested Hono + D1 direction, replacing the original
@@ -23,8 +23,8 @@ remains a minimal public liveness route, not a provider-readiness check.
 
 1. Better Auth signs up or signs in an account and issues an HTTP-only session
    cookie. The API retrieves the session server-side for each protected request.
-2. The account chooses one immutable role: developer, company, or recruiter.
-   These are hackathon account types, not verified company/recruiter identities.
+2. The account chooses one immutable role: developer, company, recruiter, or
+   requester. These are hackathon account types, not verified identities.
 3. Developers submit explicit skills, projects, interests, learning goals, and
    discovery consent. BGE Small embeds demonstrated experience, not aspirations.
 4. Companies post opportunities. Llama produces schema-constrained job analysis;
@@ -38,6 +38,11 @@ remains a minimal public liveness route, not a provider-readiness check.
    side's flag, preserving the other side under concurrent requests. A connection
    is the derived state where both flags are true, so no second connection record
    can drift. Withdrawal removes it from connection listings, including after close.
+7. A requester posts a local request with a Mapbox pin. Developers store a separate
+   pin and radius on the developer row (not in the public profile JSON). Nearby
+   browse uses a bounding-box prefilter, haversine distance, and the same growth
+   scoring as opportunities. Accept claims an open request exclusively; release
+   returns it to open.
 
 `schemas.ts` owns validation and domain shapes; `store.ts` owns reads and response
 redaction. Store model/version metadata with analysis and embeddings. There is no
@@ -100,8 +105,9 @@ colluding-company abuse prevention is outside this MVP.
 - Only status is editable on opportunities in this MVP. Profile updates regenerate
   embeddings; matching always uses the latest profile. Embeddings use mean pooling,
   384 dimensions, and a bounded 1,800-character summary. Long profiles lose detail.
-- No payment, messaging, verified project outcomes, identity verification, account
-  deletion UI, or frontend matching screens are implemented here.
+- No payment, messaging, verified project outcomes, identity verification, or
+  account deletion UI is implemented here. Local request accept is exclusive and
+  does not require requester confirmation before the claim.
 
 ## Configuration
 

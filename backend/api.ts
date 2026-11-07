@@ -6,6 +6,7 @@ import { createAuth } from "./auth.ts";
 import {
   analyzeDeveloper,
   analyzeOpportunity,
+  analyzeRequest,
   AnalysisUnavailable,
   ANALYSIS_MODEL,
   ANALYSIS_VERSION,
@@ -15,23 +16,31 @@ import type { BackendEnv } from "./env.ts";
 import {
   eligibility,
   rankDevelopers,
+  rankNearbyRequests,
   WEIGHTS,
   MATCH_VERSION,
 } from "./matching.ts";
 import {
+  developerLocationSchema,
   developerSchema,
   opportunitySchema,
+  requestSchema,
   type Role,
   type Opportunity,
 } from "./schemas.ts";
 import {
   getDeveloper,
   getOpportunity,
+  getRequest,
   listCandidates,
   listDevelopers,
+  listNearbyRequestCandidates,
   listOpportunities,
+  listOwnedRequests,
+  ownDeveloper,
   publicDeveloper,
   publicOpportunity,
+  publicRequest,
 } from "./store.ts";
 
 type ApiEnv = {
@@ -42,6 +51,7 @@ type ApiContext = Context<ApiEnv>;
 type AnalysisServices = {
   analyzeDeveloper: typeof analyzeDeveloper;
   analyzeOpportunity: typeof analyzeOpportunity;
+  analyzeRequest: typeof analyzeRequest;
 };
 
 function requireRole(c: ApiContext, ...roles: Role[]) {
@@ -70,7 +80,11 @@ function page<T extends { id: string }>(items: T[], limit: number) {
 }
 
 export function createApi(
-  services: AnalysisServices = { analyzeDeveloper, analyzeOpportunity },
+  services: AnalysisServices = {
+    analyzeDeveloper,
+    analyzeOpportunity,
+    analyzeRequest,
+  },
 ) {
   const api = new Hono<ApiEnv>().basePath("/api");
   api.use("*", async (c, next) => {
@@ -120,7 +134,9 @@ export function createApi(
   api.get("/me", (c) => c.json({ user: c.get("user"), role: c.get("role") }));
   api.put("/me/role", async (c) => {
     const { role } = z
-      .object({ role: z.enum(["developer", "company", "recruiter"]) })
+      .object({
+        role: z.enum(["developer", "company", "recruiter", "requester"]),
+      })
       .strict()
       .parse(await c.req.json());
     await c.env.DB.prepare(
@@ -163,7 +179,7 @@ export function createApi(
       throw new HTTPException(404, {
         message: "Create a developer profile first",
       });
-    return c.json(publicDeveloper(developer));
+    return c.json(ownDeveloper(developer));
   });
   api.patch("/developers/me", async (c) => {
     requireRole(c, "developer");
@@ -190,6 +206,26 @@ export function createApi(
         message: "Create a developer profile first",
       });
     return c.json({ id: c.get("user").id, ...input });
+  });
+  api.patch("/developers/me/location", async (c) => {
+    requireRole(c, "developer");
+    const location = developerLocationSchema.parse(await c.req.json());
+    const result = await c.env.DB.prepare(
+      "UPDATE developer SET latitude = ?, longitude = ?, radius_km = ?, updated_at = ? WHERE user_id = ?",
+    )
+      .bind(
+        location.latitude,
+        location.longitude,
+        location.radiusKm,
+        Date.now(),
+        c.get("user").id,
+      )
+      .run();
+    if (!result.meta.changes)
+      throw new HTTPException(404, {
+        message: "Create a developer profile first",
+      });
+    return c.json({ id: c.get("user").id, location });
   });
   api.get("/developers", async (c) => {
     requireRole(c, "company", "recruiter");
@@ -400,6 +436,197 @@ export function createApi(
         limit,
       ),
     );
+  });
+
+  api.post("/requests", async (c) => {
+    requireRole(c, "requester");
+    const input = requestSchema.parse(await c.req.json());
+    const { analysis, embedding } = await services.analyzeRequest(
+      c.env.AI,
+      input,
+    );
+    const id = crypto.randomUUID();
+    await c.env.DB.prepare(
+      `INSERT INTO request (
+        id, owner_id, title, description, place, latitude, longitude,
+        analysis, embedding, analysis_model, analysis_version, embedding_model,
+        status, claimed_by, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NULL, ?)`,
+    )
+      .bind(
+        id,
+        c.get("user").id,
+        input.title,
+        input.description,
+        input.place,
+        input.latitude,
+        input.longitude,
+        JSON.stringify(analysis),
+        JSON.stringify(embedding),
+        ANALYSIS_MODEL,
+        ANALYSIS_VERSION,
+        EMBEDDING_MODEL,
+        Date.now(),
+      )
+      .run();
+    return c.json(
+      {
+        id,
+        ...input,
+        analysis,
+        status: "open",
+        claimedBy: null,
+        claimantName: null,
+        ownerId: c.get("user").id,
+        ownerName: c.get("user").name,
+      },
+      201,
+    );
+  });
+  api.get("/requests", async (c) => {
+    requireRole(c, "requester");
+    const { after, limit } = pagination.parse(c.req.query());
+    return c.json(
+      page(
+        (await listOwnedRequests(c.env.DB, c.get("user").id, after, limit)).map(
+          publicRequest,
+        ),
+        limit,
+      ),
+    );
+  });
+  api.get("/requests/nearby", async (c) => {
+    requireRole(c, "developer");
+    const { after, limit } = pagination.parse(c.req.query());
+    if (after)
+      throw new HTTPException(400, {
+        message: "Nearby requests use a limit, not a cursor",
+      });
+    const developer = await getDeveloper(c.env.DB, c.get("user").id);
+    if (!developer)
+      throw new HTTPException(404, {
+        message: "Create a developer profile first",
+      });
+    if (!developer.location)
+      throw new HTTPException(400, {
+        message: "Set a map pin and radius before browsing nearby requests",
+      });
+    const candidates = await listNearbyRequestCandidates(
+      c.env.DB,
+      developer.location,
+    );
+    if (candidates.length > 1000)
+      throw new HTTPException(503, {
+        message:
+          "Nearby request pool exceeds the MVP limit; shrink your radius",
+      });
+    const ranked = rankNearbyRequests(candidates, developer);
+    return c.json({
+      data: ranked.slice(0, limit),
+      total: ranked.length,
+      version: MATCH_VERSION,
+      weights: WEIGHTS,
+      location: developer.location,
+    });
+  });
+  api.get("/requests/:id", async (c) => {
+    const request = await getRequest(c.env.DB, c.req.param("id"));
+    if (!request)
+      throw new HTTPException(404, { message: "Request not found" });
+    const role = c.get("role");
+    const userId = c.get("user").id;
+    const allowed =
+      (role === "requester" && request.ownerId === userId) ||
+      (role === "developer" &&
+        (request.status === "open" || request.claimedBy === userId));
+    if (!allowed)
+      throw new HTTPException(403, {
+        message: "Only the requester or an eligible developer can view this",
+      });
+    return c.json(publicRequest(request));
+  });
+  api.patch("/requests/:id", async (c) => {
+    requireRole(c, "requester");
+    const request = await getRequest(c.env.DB, c.req.param("id"));
+    if (!request)
+      throw new HTTPException(404, { message: "Request not found" });
+    if (request.ownerId !== c.get("user").id)
+      throw new HTTPException(403, {
+        message: "Only the requester can close this",
+      });
+    const { status } = z
+      .object({ status: z.literal("closed") })
+      .strict()
+      .parse(await c.req.json());
+    await c.env.DB.prepare(
+      "UPDATE request SET status = ?, claimed_by = NULL WHERE id = ?",
+    )
+      .bind(status, request.id)
+      .run();
+    return c.json({ id: request.id, status, claimedBy: null });
+  });
+  api.post("/requests/:id/accept", async (c) => {
+    requireRole(c, "developer");
+    const developer = await getDeveloper(c.env.DB, c.get("user").id);
+    if (!developer)
+      throw new HTTPException(404, {
+        message: "Create a developer profile first",
+      });
+    if (!developer.location)
+      throw new HTTPException(400, {
+        message: "Set a map pin and radius before accepting requests",
+      });
+    const request = await getRequest(c.env.DB, c.req.param("id"));
+    if (!request)
+      throw new HTTPException(404, { message: "Request not found" });
+    const match = rankNearbyRequests([request], developer)[0];
+    if (!match && request.status === "open")
+      throw new HTTPException(409, {
+        message: "This request is outside your radius or eligibility",
+      });
+    if (request.status === "claimed" && request.claimedBy === c.get("user").id)
+      return c.json(publicRequest(request));
+    if (request.status !== "open")
+      throw new HTTPException(409, {
+        message: "Only an open request can be accepted",
+      });
+    const result = await c.env.DB.prepare(
+      "UPDATE request SET status = 'claimed', claimed_by = ? WHERE id = ? AND status = 'open'",
+    )
+      .bind(c.get("user").id, request.id)
+      .run();
+    if (!result.meta.changes)
+      throw new HTTPException(409, {
+        message: "Another developer already accepted this request",
+      });
+    const claimed = await getRequest(c.env.DB, request.id);
+    return c.json(publicRequest(claimed!));
+  });
+  api.post("/requests/:id/release", async (c) => {
+    requireRole(c, "developer", "requester");
+    const request = await getRequest(c.env.DB, c.req.param("id"));
+    if (!request)
+      throw new HTTPException(404, { message: "Request not found" });
+    const userId = c.get("user").id;
+    const role = c.get("role");
+    const allowed =
+      (role === "developer" && request.claimedBy === userId) ||
+      (role === "requester" && request.ownerId === userId);
+    if (!allowed)
+      throw new HTTPException(403, {
+        message: "Only the claimant or requester can release this",
+      });
+    if (request.status !== "claimed")
+      throw new HTTPException(409, {
+        message: "Only a claimed request can be released",
+      });
+    await c.env.DB.prepare(
+      "UPDATE request SET status = 'open', claimed_by = NULL WHERE id = ? AND status = 'claimed'",
+    )
+      .bind(request.id)
+      .run();
+    const released = await getRequest(c.env.DB, request.id);
+    return c.json(publicRequest(released!));
   });
 
   api.notFound((c) => c.json({ error: "API route not found" }, 404));
