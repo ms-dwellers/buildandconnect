@@ -1,14 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  boundingBox,
   cosineSimilarity,
   eligibility,
+  haversineKm,
   rankDevelopers,
+  rankNearbyRequests,
   scoreMatch,
+  scoreNearbyRequest,
   WEIGHTS,
 } from "../backend/matching.ts";
-import { developerSchema, normalizeSkill } from "../backend/schemas.ts";
-import { developer, opportunity } from "./fixtures/matching.ts";
+import {
+  developerSchema,
+  normalizeSkill,
+  type LocalRequest,
+} from "../backend/schemas.ts";
+import {
+  analysis,
+  developer,
+  embedding,
+  opportunity,
+} from "./fixtures/matching.ts";
 
 test("growth matching uses the specified weights and explains relevant learning", () => {
   const match = scoreMatch(opportunity, developer)!;
@@ -130,6 +143,7 @@ test("profiles normalize aliases and reject duplicate skills and injected fields
     name: _name,
     embedding: _embedding,
     recentExposure: _exposure,
+    location: _location,
     ...profile
   } = developer;
   assert.equal(
@@ -145,5 +159,76 @@ test("profiles normalize aliases and reject duplicate skills and injected fields
       ],
     }).success,
     false,
+  );
+});
+
+const nearbyRequest: LocalRequest = {
+  id: "request",
+  ownerId: "neighbor",
+  ownerName: "Neighbor",
+  title: "Community website",
+  description:
+    "Build an accessible website for a community garden. React required; TypeScript preferred. Mentorship available.",
+  place: "Toronto",
+  latitude: 43.66,
+  longitude: -79.38,
+  analysis,
+  embedding,
+  status: "open",
+  claimedBy: null,
+  claimantName: null,
+  createdAt: 1,
+};
+
+test("haversine and bounding boxes keep nearby requests inside a radius", () => {
+  assert.ok(
+    haversineKm(developer.location!, nearbyRequest) <
+      developer.location!.radiusKm,
+  );
+  const box = boundingBox(
+    developer.location!.latitude,
+    developer.location!.longitude,
+    developer.location!.radiusKm,
+  );
+  assert.ok(nearbyRequest.latitude >= box.minLat);
+  assert.ok(nearbyRequest.latitude <= box.maxLat);
+  assert.equal(
+    scoreNearbyRequest(
+      {
+        ...nearbyRequest,
+        latitude: 45.42,
+        longitude: -75.69,
+      },
+      developer,
+    ),
+    null,
+  );
+});
+
+test("nearby request ranking uses growth scores and hides unpaid work from paid-only developers", () => {
+  const match = scoreNearbyRequest(nearbyRequest, developer)!;
+  assert.ok(match.score > 0);
+  assert.equal(match.requestId, nearbyRequest.id);
+  assert.equal(
+    scoreNearbyRequest(nearbyRequest, {
+      ...developer,
+      acceptsVolunteer: false,
+    }),
+    null,
+  );
+  assert.equal(
+    rankNearbyRequests(
+      [
+        nearbyRequest,
+        {
+          ...nearbyRequest,
+          id: "farther",
+          latitude: 43.7,
+          longitude: -79.4,
+        },
+      ],
+      developer,
+    )[0].requestId,
+    nearbyRequest.id,
   );
 });

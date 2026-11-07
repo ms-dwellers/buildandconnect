@@ -38,26 +38,34 @@ the same origin with `credentials: "include"`. JSON bodies use `Content-Type:
 application/json`. Errors return `{ "error": "..." }`; validation errors also
 include field paths under `issues`. Better Auth routes use its native error shape.
 
-| Method | Path                              | Caller and response                                                           |
-| ------ | --------------------------------- | ----------------------------------------------------------------------------- |
-| POST   | `/api/auth/sign-up/email`         | `{name,email,password}`; minimum 12-character password, sets session cookie   |
-| POST   | `/api/auth/sign-in/email`         | `{email,password}`, sets session cookie                                       |
-| POST   | `/api/auth/sign-out`              | Ends current session                                                          |
-| GET    | `/api/auth/get-session`           | Better Auth session                                                           |
-| GET    | `/api/me`                         | Own ID, name and selected role                                                |
-| PUT    | `/api/me/role`                    | `{role:"developer"\|"company"\|"recruiter"}`; one-time selection, retry-safe  |
-| PUT    | `/api/developers/me`              | Developer: save the complete profile and embed its experience                 |
-| GET    | `/api/developers/me`              | Developer: own profile, including when undiscoverable                         |
-| PATCH  | `/api/developers/me`              | Developer: `{available?:boolean,discoverable?:boolean}` without AI calls      |
-| GET    | `/api/developers`                 | Company/recruiter: consented profiles and project evidence                    |
-| POST   | `/api/opportunities`              | Company: analyze, embed, and persist a new opportunity; returns 201           |
-| GET    | `/api/opportunities`              | Open opportunities and structured analyses                                    |
-| GET    | `/api/opportunities/:id`          | Opportunity detail                                                            |
-| PATCH  | `/api/opportunities/:id`          | Owner: `{status:"open"\|"closed"}`                                            |
-| GET    | `/api/opportunities/:id/matches`  | Owner: ranked developers, score breakdowns, explanations, weights and version |
-| GET    | `/api/opportunities/:id/match`    | Developer: own match or null, eligibility reasons and opportunity status      |
-| PUT    | `/api/opportunities/:id/interest` | Developer: `{interested:boolean}`; owner: additionally supply `developerId`   |
-| GET    | `/api/connections`                | Participant's mutual-interest connections, scoped to opportunities            |
+| Method | Path                              | Caller and response                                                             |
+| ------ | --------------------------------- | ------------------------------------------------------------------------------- |
+| POST   | `/api/auth/sign-up/email`         | `{name,email,password}`; minimum 12-character password, sets session cookie     |
+| POST   | `/api/auth/sign-in/email`         | `{email,password}`, sets session cookie                                         |
+| POST   | `/api/auth/sign-out`              | Ends current session                                                            |
+| GET    | `/api/auth/get-session`           | Better Auth session                                                             |
+| GET    | `/api/me`                         | Own ID, name and selected role                                                  |
+| PUT    | `/api/me/role`                    | `{role:"developer"\|"company"\|"recruiter"\|"requester"}`; one-time, retry-safe |
+| PUT    | `/api/developers/me`              | Developer: save the complete profile and embed its experience                   |
+| GET    | `/api/developers/me`              | Developer: own profile and location, including when undiscoverable              |
+| PATCH  | `/api/developers/me`              | Developer: `{available?:boolean,discoverable?:boolean}` without AI calls        |
+| PATCH  | `/api/developers/me/location`     | Developer: `{latitude,longitude,radiusKm?}` without AI calls                    |
+| GET    | `/api/developers`                 | Company/recruiter: consented profiles and project evidence                      |
+| POST   | `/api/opportunities`              | Company: analyze, embed, and persist a new opportunity; returns 201             |
+| GET    | `/api/opportunities`              | Open opportunities and structured analyses                                      |
+| GET    | `/api/opportunities/:id`          | Opportunity detail                                                              |
+| PATCH  | `/api/opportunities/:id`          | Owner: `{status:"open"\|"closed"}`                                              |
+| GET    | `/api/opportunities/:id/matches`  | Owner: ranked developers, score breakdowns, explanations, weights and version   |
+| GET    | `/api/opportunities/:id/match`    | Developer: own match or null, eligibility reasons and opportunity status        |
+| PUT    | `/api/opportunities/:id/interest` | Developer: `{interested:boolean}`; owner: additionally supply `developerId`     |
+| GET    | `/api/connections`                | Participant's mutual-interest connections, scoped to opportunities              |
+| POST   | `/api/requests`                   | Requester: analyze, embed, and post a local request with a pin; returns 201     |
+| GET    | `/api/requests`                   | Requester: own requests, including claimant name when claimed                   |
+| GET    | `/api/requests/nearby`            | Developer: ranked open requests inside the saved radius                         |
+| GET    | `/api/requests/:id`               | Requester owner, or developer for open/own claimed request                      |
+| PATCH  | `/api/requests/:id`               | Requester: `{status:"closed"}`                                                  |
+| POST   | `/api/requests/:id/accept`        | Developer: exclusive claim while status is open; retry-safe for same claimant   |
+| POST   | `/api/requests/:id/release`       | Claimant or requester: return a claimed request to open                         |
 
 `GET /api/interests` lists a participant's pending and mutual interests, including
 both consent flags and `connected`. It uses the same pagination as connections.
@@ -133,6 +141,24 @@ Interest responses include `companyInterested`, `developerInterested`, and
 while both flags are true; either party can withdraw even after opportunity close.
 Closing an opportunity stops new interest and matching, but preserves existing
 connections. Browsing matches alone never creates interest or a connection.
+
+### Local request
+
+Requester posts are unpaid neighborhood problems. Analysis reuses the opportunity
+pipeline. Developer coordinates live on the `developer` row and never appear in
+company/recruiter browse responses. Default radius is 25 km (1-100). Nearby browse
+prefilters with a bounding box, applies haversine distance, then ranks with the
+growth matcher. Local requests skip company essential-technology gates.
+
+```json
+{
+  "title": "Community garden website",
+  "description": "Need help building an accessible React website for our neighborhood garden plot.",
+  "place": "Toronto Downtown",
+  "latitude": 43.6532,
+  "longitude": -79.3832
+}
+```
 
 ## Verification
 

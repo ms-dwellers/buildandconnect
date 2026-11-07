@@ -85,6 +85,29 @@ export const opportunitySchema = z
   })
   .strict();
 
+export const coordinatesSchema = z
+  .object({
+    latitude: z.number().finite().min(-90).max(90),
+    longitude: z.number().finite().min(-180).max(180),
+  })
+  .strict();
+
+export const developerLocationSchema = coordinatesSchema
+  .extend({
+    radiusKm: z.number().finite().min(1).max(100).default(25),
+  })
+  .strict();
+
+export const requestSchema = z
+  .object({
+    title: text,
+    description: z.string().trim().min(30).max(6000),
+    place: text,
+    latitude: z.number().finite().min(-90).max(90),
+    longitude: z.number().finite().min(-180).max(180),
+  })
+  .strict();
+
 export const vectorSchema = z
   .array(z.number().finite())
   .length(384)
@@ -96,13 +119,17 @@ export const vectorSchema = z
 export type JobAnalysis = z.infer<typeof analysisSchema>;
 export type DeveloperProfile = z.infer<typeof developerSchema>;
 export type OpportunityInput = z.infer<typeof opportunitySchema>;
-export type Role = "developer" | "company" | "recruiter";
+export type RequestInput = z.infer<typeof requestSchema>;
+export type DeveloperLocation = z.infer<typeof developerLocationSchema>;
+export type Role = "developer" | "company" | "recruiter" | "requester";
+export type RequestStatus = "open" | "claimed" | "closed";
 
 export type Developer = DeveloperProfile & {
   id: string;
   name: string;
   embedding: number[];
   recentExposure: number;
+  location: DeveloperLocation | null;
 };
 export type Opportunity = OpportunityInput & {
   id: string;
@@ -110,4 +137,15 @@ export type Opportunity = OpportunityInput & {
   analysis: JobAnalysis;
   embedding: number[];
   status: "open" | "closed";
+};
+export type LocalRequest = RequestInput & {
+  id: string;
+  ownerId: string;
+  ownerName: string;
+  analysis: JobAnalysis;
+  embedding: number[];
+  status: RequestStatus;
+  claimedBy: string | null;
+  claimantName: string | null;
+  createdAt: number;
 };
