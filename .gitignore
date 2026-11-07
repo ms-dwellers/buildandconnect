@@ -11,6 +11,7 @@ dist/
 .cloudflare/
 .wrangler/
 .convex/
+.portless/
 .direnv/
 result
 result-*

@@ -2,4 +2,4 @@ export function mergeEnvironment(
   text: string,
   values: Record<string, string>,
 ): string;
-export function configure(): Promise<void>;
+export function configure(siteUrl?: string): Promise<void>;

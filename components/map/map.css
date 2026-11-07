@@ -44,6 +44,30 @@
   isolation: isolate;
 }
 
+.map-loading-clouds {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  background: var(--cloud);
+}
+
+.map-loading-clouds .cloud-veil,
+.map-loading-clouds .cloud-bank {
+  animation: none;
+  opacity: 1;
+}
+
+.map-loading-clouds .cloud-bank {
+  width: 110%;
+  height: 110%;
+  filter: blur(12px);
+}
+
+.map-loading-clouds .cloud-veil {
+  background: color-mix(in oklab, var(--map-water) 24%, var(--cloud));
+}
+
 .cloud-veil {
   position: absolute;
   inset: 0;
@@ -116,8 +140,20 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .map-loading-clouds .cloud-bank {
+    animation: clouds-drift 6s ease-in-out infinite alternate;
+  }
   .city-preview-arriving {
     animation: city-arrival 1850ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+}
+
+@keyframes clouds-drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(3%, -2%) scale(1.06);
   }
 }
 

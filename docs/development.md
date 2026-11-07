@@ -109,6 +109,47 @@ root. Use **`bun run test`**, not the separate `bun test` runner. Do not pass
 The smoke test stops its process tree on Unix and Windows. Set `SMOKE_PORT` if
 4173 is occupied. No setup/check task provisions services or deploys the app.
 
+## Remote development
+
+Install Rex, OpenCode, and Tailscale on the development host, and connect Tailscale
+on your phone. Complete [Convex setup](backend.md#local-setup) first. Portless is a
+project dependency; no global install is required.
+
+```sh
+bun run dev:rex
+# Or start only the frontend and Convex watcher:
+bun run dev:remote
+```
+
+Both launchers accept these tasks: `bash scripts/dev.sh dev:rex` and
+`.\scripts\dev.ps1 dev:remote`. Rex opens **Agent** and **Server** tabs in a
+**build-and-connect** session. The agent uses OpenCode's latest project session;
+pass `--session SESSION_ID` to select one, or set `BANDC_AGENT` to the OpenCode
+executable path when it is not on PATH. No auto-approval flag is enabled.
+
+Portless registers a private Tailscale Serve endpoint, normally
+`https://<host>.<tailnet>.ts.net`. If another service uses port 443, Portless prints
+the selected HTTPS port. Use the printed URL, not a guessed hostname. Startup
+updates the selected **development** Convex deployment's auth origin and ignored
+`.env.local` without rotating secrets or changing the Mapbox token.
+
+The local proxy binds only to loopback on port 1355, with state under ignored
+`.portless/`. Tailscale terminates HTTPS with a trusted certificate; Funnel and
+other public tunnels are disabled. `bandc.flareon` is not a remotely resolvable
+MagicDNS name: exact custom hostnames need separate DNS and certificate trust.
+The remote mode needs neither local root port binding nor a private CA on the phone.
+
+Tailscale must permit this account to manage Serve. If it reports an access error,
+ask the machine administrator to grant the appropriate Tailscale operator access;
+the startup script does not change system permissions. Windows needs its Tailscale
+and Rex CLIs available on PATH. These remote launchers are verified on Linux only.
+
+Ctrl-C in **Server** stops its frontend, watcher, and Tailscale route; the agent
+tab and shared Portless proxy remain. A service failure also stops its sibling.
+Restart a stopped server by running `bun run dev:remote` in a new Rex shell tab. To return to
+ordinary localhost development, run
+`bun run setup:backend http://127.0.0.1:5173` before `bun run dev`.
+
 ## Formatters
 
 Prettier is installed by `setup`. Nix also supplies nixfmt and shfmt; use

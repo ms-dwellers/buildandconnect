@@ -1,8 +1,9 @@
 # Calgary map frontend
 
 Open `/`, select **Find a project**, or visit `/map` directly. The landing-page
-link gathers clouds, navigates beneath them, then parts the clouds as the city
-zooms into view. Direct map visits do not replay the journey. Reduced-motion
+link gathers clouds, navigates beneath them, then waits for Mapbox's first loaded
+render before parting the clouds. Direct map visits show clouds over the map
+while it loads, without replaying the journey. Reduced-motion
 preferences skip it; **Skip animation** or Escape also finishes it immediately.
 
 The map is a public frontend prototype, separate from the existing authenticated
@@ -51,6 +52,8 @@ live map and offer a retry.
 
 Without a token, or if Mapbox/WebGL fails, the page shows an explicitly labelled
 illustrated Calgary preview. The illustration is not a navigational street map.
+It is only a fallback, never the loading screen. A failed load releases the
+clouds and offers a retry; retrying returns to clouds until Mapbox is ready.
 It preserves its aspect ratio on narrow screens, uses the same job coordinates,
 and supports popups and local pin placement. It does not simulate 3D buildings.
 Without a token, it makes no map-provider requests.
@@ -63,6 +66,10 @@ public map and landing-page entry point. Browser QA should additionally cover:
 
 - Landing link, cloud cover, city reveal, Escape/skip, browser Back and re-entry.
 - Direct `/map` visit and reduced-motion navigation, neither with a cloud replay.
+- Delayed Mapbox loading: only clouds, no illustrated map or preview pins. The
+  landing transition must stay covered past five seconds until loading resolves.
+- Failed Mapbox loading releases the fallback; retry shows clouds again. Loading
+  clouds remain static with reduced motion enabled.
 - Pin/list selection, popup close/focus, search, type filters and empty results.
 - Pointer placement, downtown keyboard placement, dialog cancellation and reload.
 - Mobile widths and desktop list scrolling, with no page-width overflow.
