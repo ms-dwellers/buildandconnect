@@ -19,13 +19,13 @@ const palette = [
     name: "Soft mint",
     hex: "#CCE0D9",
     token: "--palette-mint",
-    role: "Background",
+    role: "Supporting surfaces",
   },
   {
     name: "Muted teal",
     hex: "#8FB3AC",
     token: "--palette-teal",
-    role: "Water and scenery",
+    role: "Background and water",
   },
   {
     name: "Pine",

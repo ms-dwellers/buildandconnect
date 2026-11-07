@@ -21,8 +21,8 @@ Semantic HTML is still the right choice for page structure and content.
 
 | Reference color | Value     | Role                                       |
 | --------------- | --------- | ------------------------------------------ |
-| Soft mint       | `#CCE0D9` | Page background                            |
-| Muted teal      | `#8FB3AC` | Map water and scenery                      |
+| Soft mint       | `#CCE0D9` | Supporting surfaces                        |
+| Muted teal      | `#8FB3AC` | Page background, map water and scenery     |
 | Pine            | `#174C43` | Primary actions, illustration, focus rings |
 | Emerald depths  | `#1E6348` | Original supporting green                  |
 | Cream           | `#F8F7DE` | Cards, clouds, text on pine                |
@@ -41,8 +41,8 @@ text, coral highlight buttons pair the original coral with deep green text, and
 primary buttons pair pine with cream. The current theme is
 intentionally light-only; OS dark-mode preference does not change its colors.
 
-Use the 60/30/10 rule as a visual balance: roughly 60% soft mint backgrounds,
-30% cream cards and muted teal/green supporting surfaces, and 10% warm accents.
+Use the 60/30/10 rule as a visual balance: roughly 60% muted teal backgrounds,
+30% cream cards and soft mint supporting surfaces, and 10% warm accents.
 The calm green reference supersedes the earlier beige-dominant composition, but
 keeps the original cream, wheat, apricot, and coral values. Reserve coral for
 selected calls to action and small illustration details, and apricot for the sun,
