@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [
     vinext(),
     cloudflare({
+      remoteBindings: process.env.WORKERS_AI_REMOTE === "true",
+      persistState: { path: ".wrangler/state" },
       viteEnvironment: {
         name: "rsc",
         childEnvironments: ["ssr"],

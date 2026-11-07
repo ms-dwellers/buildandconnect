@@ -3,8 +3,10 @@
 A hackathon app connecting early-career developers with non-technical people and
 companies through shared interests and social-impact projects.
 
-**Current state:** runnable web scaffold with a landing page and `/api/health`.
-Accounts, maps, persistence, matching, and marketplace flows are not implemented.
+**Current state:** landing page, `/api/health`, and a Hono backend with Better Auth,
+D1 persistence, Workers AI analysis, growth-oriented matching, recruiter discovery,
+and opportunity-specific mutual interest. Matching/account UI and maps are not
+implemented. See [the backend guide](docs/backend.md) for setup and API examples.
 The future native Swift iOS app is deliberately not scaffolded or built on Linux.
 
 ## Develop
@@ -48,7 +50,8 @@ server, deployment, or migration runs automatically on shell entry.
 
 The dev server prints its local URL. Optional local configuration belongs in
 ignored `.env.local` or `.dev.vars` files, never in source. `.env.example` lists
-future integration settings with no values. The scaffold needs no credentials.
+integration settings with no values. The landing page needs no credentials;
+the backend requires local migrations and auth settings from the backend guide.
 
 ## Commands
 
@@ -62,7 +65,7 @@ documented in the [team setup guide](docs/development.md#formatters).
 | ----------------------------------- | ------------------------------------------------ | ----------------------------------------- |
 | `nix run .#dev -- --host 127.0.0.1` | `npm run dev -- --host 127.0.0.1`                | Development server                        |
 | `nix run .#build`                   | `npm run build`                                  | Worker production build                   |
-| `nix run .#test`                    | `npm test`                                       | Health route tests                        |
+| `nix run .#test`                    | `npm test`                                       | API, matching, and scaffold tests         |
 | `nix run .#typecheck`               | `npm run typecheck`                              | TypeScript checks                         |
 | `nix run .#fmt`                     | `npm run fmt` plus nixfmt and shfmt              | Format source                             |
 | `nix run .#fmt-check`               | `npm run fmt:check` plus nixfmt and shfmt checks | Check formatting                          |
@@ -97,10 +100,10 @@ environment files. Never pass private build-time values into Nix.
 ## Architecture and service setup
 
 See [docs/architecture.md](docs/architecture.md) for ownership and integration
-steps. React/Vinext App Router and Tailwind run on Cloudflare Workers. Convex owns
-application data and backend functions; Better Auth will use its official Convex
-integration. Mapbox provides maps. Prefer Cloudflare for remaining infrastructure.
-Hono is unnecessary unless an actual API requirement cannot fit those services.
+steps. React/Vinext App Router, Tailwind, and Hono run in one Cloudflare Worker.
+D1 owns application and Better Auth data. Workers AI supplies Llama analysis and
+BGE Small embeddings; TypeScript owns deterministic matching. Mapbox remains
+planned for maps. No separate API server or Convex database is required.
 
 No remote service is created during setup. Deploy only when requested. After
 reviewing configuration and authenticating with Cloudflare, `npm run deploy`

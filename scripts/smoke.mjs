@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
@@ -21,7 +22,13 @@ const server = spawn(
   {
     detached: process.platform !== "win32",
     stdio: "inherit",
-    env: { ...process.env, BROWSER: "none" },
+    env: {
+      ...process.env,
+      BROWSER: "none",
+      WORKERS_AI_REMOTE: "false",
+      SITE_URL: origin,
+      BETTER_AUTH_SECRET: randomBytes(48).toString("base64"),
+    },
   },
 );
 let spawnError;
@@ -72,8 +79,11 @@ try {
     405,
   );
   assert.equal((await fetch(`${origin}/.env.local`)).status, 404);
+  const protectedRoute = await fetch(`${origin}/api/opportunities`);
+  assert.equal(protectedRoute.status, 401);
+  assert.equal(protectedRoute.headers.get("Cache-Control"), "no-store");
   console.log(
-    "Smoke passed: home, CSS, health, 404, 405, and environment-file denial.",
+    "Smoke passed: home, CSS, health, protected backend, 404, 405, and environment-file denial.",
   );
 } finally {
   if (server.pid && server.exitCode === null && server.signalCode === null) {

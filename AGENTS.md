@@ -6,16 +6,17 @@ companies through shared interests and social-impact projects.
 ## Scope and stack
 
 - Web: React, Vinext App Router, TypeScript, and Tailwind CSS.
-- Backend and data: Convex. Use its queries, mutations, actions, and HTTP actions
-  before adding a separate API server. Add Hono only for a concrete unmet need.
-- Authentication: Better Auth with the official Convex integration.
+- Backend and data: Hono mounted in Vinext route handlers, Cloudflare D1, and
+  Workers AI. `backend/` owns API logic; `migrations/` owns SQL schema changes.
+- Authentication: Better Auth with its built-in D1 support. Enforce ownership
+  and roles in the API, not only in the frontend.
 - Maps: Mapbox.
 - Other infrastructure: prefer Cloudflare products (Workers, R2, Queues,
-  Durable Objects, etc.). Do not duplicate Convex's database in D1.
+  Durable Objects, etc.). Do not add a second application database.
 - Future iOS app: native Swift. Do not scaffold, build, or require iOS tooling
   until explicitly requested; the current development host is Linux.
-- Current scope is a runnable scaffold, not a working marketplace. Do not invent
-  payment, matching, messaging, or account flows without product direction.
+- Current scope includes growth-oriented matching and opportunity-specific mutual
+  interest. Do not invent payment or messaging flows without product direction.
 
 ## Secrets in chat
 
