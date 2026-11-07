@@ -16,22 +16,40 @@ import { DemoCard, Section } from "./section";
 
 const palette = [
   {
+    name: "Soft mint",
+    hex: "#CCE0D9",
+    token: "--palette-mint",
+    role: "Background",
+  },
+  {
+    name: "Muted teal",
+    hex: "#8FB3AC",
+    token: "--palette-teal",
+    role: "Water and scenery",
+  },
+  {
+    name: "Pine",
+    hex: "#174C43",
+    token: "--palette-pine",
+    role: "Primary and focus",
+  },
+  {
     name: "Emerald depths",
     hex: "#1E6348",
     token: "--palette-emerald",
-    role: "Primary",
+    role: "Supporting green",
   },
   {
     name: "Cream",
     hex: "#F8F7DE",
     token: "--palette-cream",
-    role: "Background",
+    role: "Cards and clouds",
   },
   {
     name: "Wheat",
     hex: "#F6DFB3",
     token: "--palette-wheat",
-    role: "Secondary",
+    role: "Warm accent",
   },
   {
     name: "Golden apricot",
@@ -43,7 +61,7 @@ const palette = [
     name: "Coral",
     hex: "#EB5757",
     token: "--palette-coral",
-    role: "Illustration",
+    role: "Call to action",
   },
 ];
 

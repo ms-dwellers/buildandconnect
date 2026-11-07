@@ -21,7 +21,7 @@ export function AccountLinks() {
       <Button render={<a href="/sign-in" />} variant="link" className="px-0">
         Sign in
       </Button>
-      <Button render={<a href="/sign-up" />} variant="outline" size="sm">
+      <Button render={<a href="/sign-up" />} variant="highlight" size="sm">
         Get started
       </Button>
     </>

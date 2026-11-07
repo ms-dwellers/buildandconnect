@@ -19,13 +19,16 @@ Semantic HTML is still the right choice for page structure and content.
 
 ## Palette
 
-| Reference color | Value     | Role                                             |
-| --------------- | --------- | ------------------------------------------------ |
-| Emerald depths  | `#1E6348` | Primary actions, brand illustration, focus rings |
-| Cream           | `#F8F7DE` | Page background, text on emerald                 |
-| Wheat           | `#F6DFB3` | Secondary surfaces                               |
-| Golden apricot  | `#F0A345` | Illustration accent, warning tint                |
-| Coral           | `#EB5757` | Decorative illustration accent                   |
+| Reference color | Value     | Role                                       |
+| --------------- | --------- | ------------------------------------------ |
+| Soft mint       | `#CCE0D9` | Page background                            |
+| Muted teal      | `#8FB3AC` | Map water and scenery                      |
+| Pine            | `#174C43` | Primary actions, illustration, focus rings |
+| Emerald depths  | `#1E6348` | Original supporting green                  |
+| Cream           | `#F8F7DE` | Cards, clouds, text on pine                |
+| Wheat           | `#F6DFB3` | Warm supporting accent                     |
+| Golden apricot  | `#F0A345` | Illustration accent, warning tint          |
+| Coral           | `#EB5757` | Landing-page calls to action, illustration |
 
 `app/globals.css` maps these to the complete coss semantic token contract. Use
 `bg-primary`, `text-foreground`, `text-muted-foreground`, etc. in components, not
@@ -34,14 +37,17 @@ does not silently become a status or action color.
 
 The original coral is not a white-text button color. Destructive actions use a
 darker derived red; error copy uses a darker foreground. Pale surfaces use dark
-text, and primary buttons pair emerald with cream. The current theme is
+text, coral highlight buttons pair the original coral with deep green text, and
+primary buttons pair pine with cream. The current theme is
 intentionally light-only; OS dark-mode preference does not change its colors.
 
-Use the 60/30/10 rule as a visual balance: roughly 60% beige page and card
-backgrounds, 30% supporting wheat surfaces and emerald structure, and 10% accents.
-Keep apricot and coral concentrated in small illustration details and status
-indicators, not large background blocks. These are composition guidelines, not
-fixed percentages enforced on every component or the map.
+Use the 60/30/10 rule as a visual balance: roughly 60% soft mint backgrounds,
+30% cream cards and muted teal/green supporting surfaces, and 10% warm accents.
+The calm green reference supersedes the earlier beige-dominant composition, but
+keeps the original cream, wheat, apricot, and coral values. Reserve coral for
+selected calls to action and small illustration details, and apricot for the sun,
+warm roof accents, and warning tints. These are composition guidelines, not fixed
+percentages enforced on every component or the map.
 
 ## Components and typography
 
@@ -62,7 +68,8 @@ fixed percentages enforced on every component or the map.
   unselected toggles rise back up. Group items move independently, including when
   selected by keyboard. Their ARIA pressed state remains the source of truth.
 - Keep skeuomorphism minimal: tactile controls, a slight paper-like lift on cards,
-  and the existing warm palette. Avoid large glows, glossy gradients, or textures.
+  and calm mint/teal surfaces with warm accents. Avoid large glows, glossy
+  gradients, or textures.
 
 - Buttons, cards, badges, separators, and loading indicators come from coss.
 - Use `render` for element composition, not Radix's `asChild`.

@@ -10,9 +10,11 @@ companies through shared interests and social-impact projects.
   primitives from the `@coss` registry in `components.json`, not shadcn's default
   registry or a parallel custom component set. Native HTML remains appropriate
   for headings, landmarks, and ordinary content.
-- Theme: use the semantic tokens in `app/globals.css`. The palette is emerald
-  `#1E6348`, cream `#F8F7DE`, wheat `#F6DFB3`, apricot `#F0A345`, and coral
-  `#EB5757`. Keep raw palette values out of components; use contrast-safe text
+- Theme: use the semantic tokens in `app/globals.css`. Soft mint `#CCE0D9`,
+  muted teal `#8FB3AC`, and pine `#174C43` set the calm green foundation.
+  Preserve the original emerald `#1E6348`, cream `#F8F7DE`, wheat `#F6DFB3`,
+  apricot `#F0A345`, and coral `#EB5757` as supporting and warm accent colors.
+  Keep raw palette values out of components; use contrast-safe text
   pairings and keep the interface light unless dark mode is explicitly requested.
 - Avoid decorative pills. Use plain text for ordinary labels; reserve
   softly rectangular, comfortably padded badges for actual status or metadata.

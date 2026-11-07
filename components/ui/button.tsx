@@ -40,6 +40,8 @@ export const buttonVariants = cva(
       variant: {
         default:
           "border-(--button-primary-edge) bg-primary text-primary-foreground hover:bg-(--button-primary-hover) [--button-edge:var(--button-primary-edge)] *:data-[slot=button-loading-indicator]:text-primary-foreground",
+        highlight:
+          "border-(--button-highlight-edge) bg-highlight text-highlight-foreground hover:bg-(--button-highlight-hover) [--button-edge:var(--button-highlight-edge)] *:data-[slot=button-loading-indicator]:text-highlight-foreground",
         destructive:
           "border-(--button-destructive-edge) bg-destructive text-white hover:bg-destructive/90 [--button-edge:var(--button-destructive-edge)] *:data-[slot=button-loading-indicator]:text-white",
         "destructive-outline":
@@ -57,6 +59,7 @@ export const buttonVariants = cva(
       {
         variant: [
           "default",
+          "highlight",
           "secondary",
           "outline",
           "destructive",

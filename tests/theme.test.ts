@@ -49,11 +49,14 @@ test("theme preserves all five supplied reference colors", () => {
   assert.equal(tokens.get("--palette-coral"), "#eb5757");
 });
 
-test("theme keeps beige dominant with wheat supporting surfaces", () => {
-  assert.equal(tokens.get("--background"), "var(--palette-cream)");
+test("theme pairs the mint foundation with original warm accents", () => {
+  assert.equal(tokens.get("--palette-mint"), "#cce0d9");
+  assert.equal(tokens.get("--palette-teal"), "#8fb3ac");
+  assert.equal(tokens.get("--background"), "var(--palette-mint)");
   assert.equal(tokens.get("--card"), "var(--palette-cream)");
-  assert.equal(tokens.get("--secondary"), "var(--palette-wheat)");
-  assert.equal(tokens.get("--sidebar"), "var(--palette-wheat)");
+  assert.equal(tokens.get("--highlight"), "var(--palette-coral)");
+  assert.equal(tokens.get("--illustration-sun"), "var(--palette-apricot)");
+  assert.equal(tokens.get("--sidebar"), "var(--secondary)");
 });
 
 test("selected font families are self-hosted with swap and licenses", () => {
@@ -88,6 +91,10 @@ test("theme text pairings meet WCAG AA normal-text contrast", () => {
     ["var(--primary-foreground)", "var(--primary)"],
     ["var(--primary-foreground)", "var(--button-primary-hover)"],
     ["var(--secondary-foreground)", "var(--secondary)"],
+    ["var(--muted-foreground)", "var(--secondary)"],
+    ["var(--highlight-foreground)", "var(--highlight)"],
+    ["var(--highlight-foreground)", "var(--button-highlight-hover)"],
+    ["var(--foreground)", "var(--map-water)"],
     ["var(--accent-foreground)", "var(--accent)"],
     ["var(--destructive-foreground)", "var(--background)"],
     ["#ffffff", "var(--destructive)"],

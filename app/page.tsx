@@ -50,7 +50,7 @@ export default function Home() {
               and grow something good together.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-5">
-              <MapJourneyLink size="lg">
+              <MapJourneyLink variant="highlight" size="lg">
                 Find a project
                 <ArrowRightIcon aria-hidden="true" />
               </MapJourneyLink>
@@ -113,7 +113,7 @@ export default function Home() {
           aria-labelledby="join-heading"
           className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 sm:pb-24"
         >
-          <Card className="border-primary/15 bg-secondary">
+          <Card className="border-primary/15 bg-card">
             <CardPanel className="flex flex-col items-start justify-between gap-8 p-8 sm:p-12 md:flex-row md:items-center">
               <h2
                 id="join-heading"
@@ -122,7 +122,11 @@ export default function Home() {
                 Your next chapter could
                 <br className="hidden sm:block" /> start around the corner.
               </h2>
-              <Button render={<a href="/sign-up" />} size="lg">
+              <Button
+                render={<a href="/sign-up" />}
+                variant="highlight"
+                size="lg"
+              >
                 Get started
                 <ArrowRightIcon aria-hidden="true" />
               </Button>

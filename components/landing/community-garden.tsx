@@ -67,7 +67,7 @@ export function CommunityGarden() {
         <path d="M298 260V149l104-57 105 57v112" className="fill-card" />
         <path
           d="m278 156 124-69 124 68-11 16-113-62-112 63Z"
-          className="fill-secondary"
+          className="fill-illustration-sun/70"
         />
         <path d="m288 160 114-63 116 63" />
         <path d="M298 218v43h210v-43" className="fill-secondary/60" />
