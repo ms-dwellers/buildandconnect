@@ -37,7 +37,7 @@ and supports popups and local pin placement. It makes no map-provider requests.
 
 ## Verification
 
-Run `npm run check`, `npm run build`, and `npm run smoke`. The Calgary unit tests
+Run `bun run check`, `bun run build`, and `bun run smoke`. The Calgary unit tests
 cover bounds, projection, responsive framing and job filters; smoke checks the
 public map and landing-page entry point. Browser QA should additionally cover:
 
