@@ -1,7 +1,7 @@
 export function CommunityGarden() {
   return (
     <svg
-      viewBox="0 0 1000 350"
+      viewBox="0 0 1000 420"
       aria-hidden="true"
       focusable="false"
       className="block h-auto w-full overflow-visible text-primary"
@@ -12,6 +12,10 @@ export function CommunityGarden() {
       strokeLinejoin="round"
     >
       <defs>
+        <g id="garden-pine">
+          <path d="M0 0 19 35H11L31 64H21L40 96H-40L-21 64H-31L-11 35H-19Z" />
+          <path d="M0 72v38m-20-22 20 8 19-8m-31-26 12 7 12-7" fill="none" />
+        </g>
         <pattern
           id="garden-hatching"
           width="7"
@@ -22,6 +26,28 @@ export function CommunityGarden() {
           <path d="M0 0V7" strokeWidth="0.7" opacity="0.25" />
         </pattern>
       </defs>
+
+      <g className="fill-cloud" stroke="none">
+        <path d="M0 334V177c15-24 38-26 55-10-9-43 40-64 65-34-1-50 63-63 82-20 42-21 80 17 63 51 45-5 66 39 40 65 49 3 68 40 56 69l84 36Z" />
+        <path d="M1000 334V176c-23-26-55-20-67 7 1-52-56-69-82-32 5-55-63-72-86-24-37-23-80 14-62 49-45-6-73 40-44 69-43-4-72 40-53 65l-46 24Z" />
+      </g>
+      <g className="fill-map-land stroke-primary/25" opacity="0.65">
+        <use href="#garden-pine" transform="translate(62 155) scale(1.45)" />
+        <use href="#garden-pine" transform="translate(117 196) scale(1.1)" />
+        <use href="#garden-pine" transform="translate(913 175) scale(1.3)" />
+        <use href="#garden-pine" transform="translate(963 139) scale(1.65)" />
+      </g>
+      <path
+        d="M0 316Q160 295 315 315T640 316 1000 314V345H0Z"
+        className="fill-accent"
+        stroke="none"
+      />
+      <path d="M0 334H1000V420H0Z" className="fill-map-water" stroke="none" />
+      <path d="M0 334H1000" className="stroke-primary/50" />
+      <g className="stroke-cloud/60" strokeWidth="1.5">
+        <path d="M22 348h60m14 0h14m75 13h89m14 0h25m62-12h52m49 23h82m9 0h15m51-22h57m37 18h85m12 0h22m47-18h58" />
+        <path d="M57 384h83m36 16h49m104-12h93m64 16h51m91-20h76m43 18h96m48-17h58m16 0h21" />
+      </g>
 
       <ellipse
         cx="505"

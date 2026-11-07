@@ -21,11 +21,11 @@ Semantic HTML is still the right choice for page structure and content.
 
 | Reference color | Value     | Role                                       |
 | --------------- | --------- | ------------------------------------------ |
-| Soft mint       | `#CCE0D9` | Supporting surfaces                        |
-| Muted teal      | `#8FB3AC` | Page background, map water and scenery     |
+| Soft mint       | `#CCE0D9` | Framed hero and supporting surfaces        |
+| Muted teal      | `#8FB3AC` | Water and scenery                          |
 | Pine            | `#174C43` | Primary actions, illustration, focus rings |
 | Emerald depths  | `#1E6348` | Original supporting green                  |
-| Cream           | `#F8F7DE` | Cards, clouds, text on pine                |
+| Cream           | `#F8F7DE` | Page, cards, clouds, text on pine          |
 | Wheat           | `#F6DFB3` | Warm supporting accent                     |
 | Golden apricot  | `#F0A345` | Illustration accent, warning tint          |
 | Coral           | `#EB5757` | Landing-page calls to action, illustration |
@@ -41,10 +41,12 @@ text, coral highlight buttons pair the original coral with deep green text, and
 primary buttons pair pine with cream. The current theme is
 intentionally light-only; OS dark-mode preference does not change its colors.
 
-Use the 60/30/10 rule as a visual balance: roughly 60% muted teal backgrounds,
-30% cream cards and soft mint supporting surfaces, and 10% warm accents.
-The calm green reference supersedes the earlier beige-dominant composition, but
-keeps the original cream, wheat, apricot, and coral values. Reserve coral for
+Use the 60/30/10 rule as a visual balance: beige is the main page canvas,
+mint and teal form the framed landscape and supporting surfaces, and warm accents
+remain sparse. The reference informs the composition rather than a full-page
+color swap: a mint hero, cream clouds, layered trees, and a teal waterfront sit
+inside the beige page. Keep the original cream, wheat, apricot, and coral values.
+Reserve coral for
 selected calls to action and small illustration details, and apricot for the sun,
 warm roof accents, and warning tints. These are composition guidelines, not fixed
 percentages enforced on every component or the map.
@@ -54,7 +56,8 @@ percentages enforced on every component or the map.
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
 - The landing page uses open spacing, bold League Spartan headings, light paper
-  texture, and an original code-native neighborhood garden illustration. Keep
+  texture, and a softly framed mint hero with an original code-native neighborhood
+  garden, layered trees, clouds, and a teal waterfront. Keep
   decorative artwork out of the accessibility tree; do not treat it as map data.
 
 - No decorative pills. Ordinary labels are plain text. Badges are

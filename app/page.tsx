@@ -8,11 +8,11 @@ import { Card, CardPanel } from "@/components/ui/card";
 
 export default function Home() {
   return (
-    <div className="landing-paper">
+    <div className="landing-paper px-3 pt-3 sm:px-8 sm:pt-8">
       <a href="#main-content" className="landing-skip-link">
         Skip to content
       </a>
-      <header className="mx-auto flex min-h-24 max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-5 sm:px-10">
+      <header className="mx-auto flex min-h-24 max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-t-xl bg-secondary px-5 py-5 sm:px-10">
         <a
           href="/"
           aria-label="Build & Connect home"
@@ -34,12 +34,12 @@ export default function Home() {
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           aria-labelledby="hero-heading"
-          className="mx-auto max-w-6xl px-6 pt-12 sm:px-10 sm:pt-16"
+          className="relative mx-auto max-w-7xl overflow-hidden rounded-b-xl bg-secondary pt-10 sm:pt-14"
         >
-          <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center text-center">
+          <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-5 text-center sm:px-10">
             <h1
               id="hero-heading"
-              className="font-display text-[clamp(3.25rem,9vw,7rem)] font-bold leading-[0.98] tracking-[-0.045em] text-balance"
+              className="font-display text-[clamp(3.25rem,8vw,6.5rem)] font-bold leading-[0.98] tracking-[-0.045em] text-balance"
             >
               Build experience.
               <br />
@@ -63,7 +63,7 @@ export default function Home() {
               </Button>
             </div>
           </div>
-          <div className="-mx-6 mt-10 overflow-hidden sm:mx-auto sm:mt-4 sm:max-w-5xl">
+          <div className="relative mt-8 overflow-hidden sm:mt-0">
             <div className="-ml-[25%] w-[150%] sm:ml-0 sm:w-full">
               <CommunityGarden />
             </div>
@@ -71,7 +71,7 @@ export default function Home() {
         </section>
         <section
           aria-label="Ways to get involved"
-          className="mx-auto grid max-w-5xl gap-12 border-t px-6 py-14 sm:gap-16 sm:px-10 sm:py-20 md:grid-cols-2"
+          className="mx-auto grid max-w-5xl gap-12 px-6 py-14 sm:gap-16 sm:px-10 sm:py-20 md:grid-cols-2"
         >
           <article>
             <h2 className="font-display text-3xl leading-tight tracking-tight sm:text-4xl">
@@ -113,7 +113,7 @@ export default function Home() {
           aria-labelledby="join-heading"
           className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 sm:pb-24"
         >
-          <Card className="border-primary/15 bg-card">
+          <Card className="border-primary/15 bg-secondary/50">
             <CardPanel className="flex flex-col items-start justify-between gap-8 p-8 sm:p-12 md:flex-row md:items-center">
               <h2
                 id="join-heading"

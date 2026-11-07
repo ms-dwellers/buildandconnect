@@ -225,7 +225,7 @@
   --palette-teal: #8fb3ac;
   --palette-pine: #174c43;
 
-  --background: var(--palette-teal);
+  --background: var(--palette-cream);
   --foreground: #123d37;
   --card: var(--palette-cream);
   --card-foreground: var(--foreground);

@@ -19,13 +19,13 @@ const palette = [
     name: "Soft mint",
     hex: "#CCE0D9",
     token: "--palette-mint",
-    role: "Supporting surfaces",
+    role: "Hero and supporting surfaces",
   },
   {
     name: "Muted teal",
     hex: "#8FB3AC",
     token: "--palette-teal",
-    role: "Background and water",
+    role: "Water and scenery",
   },
   {
     name: "Pine",
@@ -43,7 +43,7 @@ const palette = [
     name: "Cream",
     hex: "#F8F7DE",
     token: "--palette-cream",
-    role: "Cards and clouds",
+    role: "Page, cards and clouds",
   },
   {
     name: "Wheat",

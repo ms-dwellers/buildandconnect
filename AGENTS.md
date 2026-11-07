@@ -14,6 +14,8 @@ companies through shared interests and social-impact projects.
   muted teal `#8FB3AC`, and pine `#174C43` set the calm green foundation.
   Preserve the original emerald `#1E6348`, cream `#F8F7DE`, wheat `#F6DFB3`,
   apricot `#F0A345`, and coral `#EB5757` as supporting and warm accent colors.
+  Use beige as the page canvas, mint for the framed landing hero, and teal for
+  landscape/water accents rather than tinting the whole site teal.
   Keep raw palette values out of components; use contrast-safe text
   pairings and keep the interface light unless dark mode is explicitly requested.
 - Avoid decorative pills. Use plain text for ordinary labels; reserve
