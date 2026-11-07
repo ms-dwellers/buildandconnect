@@ -52,7 +52,7 @@ export function Inputs() {
   const [formats, setFormats] = useState<string[]>(["bold"]);
   const [saved, setSaved] = useState(false);
   return (
-    <Section id="inputs" number="03" title="Inputs & choices">
+    <Section id="inputs" title="Inputs & choices">
       <div className="grid gap-4 lg:grid-cols-2">
         <DemoCard title="Form · field · input · textarea · select">
           <Form

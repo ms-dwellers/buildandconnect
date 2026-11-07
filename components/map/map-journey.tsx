@@ -122,9 +122,6 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
           <div className="cloud-bank cloud-bank-sw" aria-hidden="true" />
           <div className="cloud-bank cloud-bank-se" aria-hidden="true" />
           <div className="journey-caption" aria-hidden="true">
-            <span className="text-xs tracking-[.25em] uppercase">
-              A little closer to possibility
-            </span>
             <p className="mt-3 font-display text-6xl sm:text-8xl">Calgary.</p>
           </div>
           <Button

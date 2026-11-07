@@ -94,9 +94,6 @@ export function DesignSystem() {
               className="min-w-0 pt-3 pb-10 outline-none lg:pt-12"
             >
               <div className="flex flex-col items-start gap-5 pb-10 sm:pb-14">
-                <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-                  The shared language
-                </p>
                 <h1 className="font-display text-5xl tracking-[-0.055em] sm:text-7xl">
                   Made to build together.
                 </h1>

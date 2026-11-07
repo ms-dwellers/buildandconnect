@@ -1,6 +1,6 @@
 # Calgary map frontend
 
-Open `/`, select **Explore Calgary**, or visit `/map` directly. The landing-page
+Open `/`, select **Find a project**, or visit `/map` directly. The landing-page
 link gathers clouds, navigates beneath them, then parts the clouds as the city
 zooms into view. Direct map visits do not replay the journey. Reduced-motion
 preferences skip it; **Skip animation** or Escape also finishes it immediately.

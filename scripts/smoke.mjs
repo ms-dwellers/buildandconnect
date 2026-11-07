@@ -62,11 +62,24 @@ try {
   assert.equal(home.status, 200);
   const html = await home.text();
   assert.match(html, /Build &amp; Connect/);
-  assert.match(html, /Good work\./);
-  assert.match(html, /Explore Calgary/);
-  assert.match(html, /Starting in Calgary/);
+  assert.match(html, /Build experience\./);
+  assert.match(html, /Make a difference\./);
+  assert.match(html, /Post a request/);
+  assert.match(html, /Nearby map/);
   assert.match(html, /data-slot="button"/);
   assert.match(html, /data-slot="card"/);
+  for (const route of [
+    "/map",
+    "/requests/new",
+    "/sign-up",
+    "/sign-in",
+    "/design-system",
+  ]) {
+    assert.ok(
+      html.includes(`href="${route}"`),
+      `Missing landing-page link: ${route}`,
+    );
+  }
   const designSystem = await fetch(`${origin}/design-system`);
   assert.equal(designSystem.status, 200);
   const designHtml = await designSystem.text();

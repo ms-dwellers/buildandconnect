@@ -28,6 +28,7 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
   const circleRef = useRef<string | null>(null);
   const [query, setQuery] = useState(value?.place ?? "");
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !containerRef.current || mapRef.current) return;
@@ -39,6 +40,10 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
       zoom: 11,
     });
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
+    map.on("error", () =>
+      setMapError("Unable to load the map. Check your connection and reload."),
+    );
+    map.on("load", () => setMapError(null));
     map.on("click", (event) => {
       onChange({
         latitude: event.lngLat.lat,
@@ -99,8 +104,7 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
     else map.once("load", drawCircle);
   }, [value, radiusKm]);
 
-  async function searchPlace(event: React.FormEvent) {
-    event.preventDefault();
+  async function searchPlace() {
     if (!token || !query.trim()) return;
     setSearchError(null);
     const url = new URL(
@@ -108,8 +112,8 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
     );
     url.searchParams.set("access_token", token);
     url.searchParams.set("limit", "1");
-    const response = await fetch(url);
-    if (!response.ok) {
+    const response = await fetch(url).catch(() => null);
+    if (!response?.ok) {
       setSearchError("Place search failed. Try another query.");
       return;
     }
@@ -140,21 +144,32 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
 
   return (
     <div className={className}>
-      <form onSubmit={searchPlace} className="mb-3 flex gap-2">
+      <div
+        role="search"
+        aria-label="Find a location"
+        className="mb-3 flex gap-2"
+      >
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              void searchPlace();
+            }
+          }}
           placeholder="Search for a place"
           className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm"
           aria-label="Search for a place"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={() => void searchPlace()}
           className="rounded-xl bg-emerald-800 px-4 py-2 text-sm font-medium text-white"
         >
           Search
         </button>
-      </form>
+      </div>
       {searchError ? (
         <p className="mb-2 text-sm text-red-700">{searchError}</p>
       ) : null}
@@ -162,6 +177,11 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
         ref={containerRef}
         className="h-80 overflow-hidden rounded-2xl border border-stone-200"
       />
+      {mapError ? (
+        <p role="alert" className="mt-2 text-sm text-destructive-foreground">
+          {mapError}
+        </p>
+      ) : null}
       <p className="mt-2 text-sm text-stone-600">
         Click the map to drop a pin
         {radiusKm != null ? `, or adjust your ${radiusKm} km radius.` : "."}

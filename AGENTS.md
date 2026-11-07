@@ -14,8 +14,10 @@ companies through shared interests and social-impact projects.
   `#1E6348`, cream `#F8F7DE`, wheat `#F6DFB3`, apricot `#F0A345`, and coral
   `#EB5757`. Keep raw palette values out of components; use contrast-safe text
   pairings and keep the interface light unless dark mode is explicitly requested.
-- Avoid decorative pills. Use plain text for eyebrows and section labels; reserve
+- Avoid decorative pills. Use plain text for ordinary labels; reserve
   softly rectangular, comfortably padded badges for actual status or metadata.
+- Do not add heading prefixes, decorative section numbers, or eyebrow labels
+  before headings. Start with the heading itself, including in the design system.
 - Prefer restrained tactile styling: raised solid buttons with a visible lower
   edge and real press travel, subtle card shadows, no heavy gloss. Keep navigation
   links flat and preserve keyboard, disabled, and reduced-motion behavior.

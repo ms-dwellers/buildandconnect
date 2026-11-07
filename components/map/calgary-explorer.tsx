@@ -100,13 +100,6 @@ export function CalgaryExplorer() {
           aria-label="Calgary projects"
         >
           <div className="space-y-5 p-6">
-            <div className="flex items-center justify-between gap-3">
-              <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-primary">
-                <MapPinIcon aria-hidden="true" className="size-3.5" />
-                CALGARY, ALBERTA
-              </p>
-              <Badge variant="secondary">Frontend demo</Badge>
-            </div>
             <h1
               id="calgary-map-title"
               tabIndex={-1}
@@ -116,6 +109,13 @@ export function CalgaryExplorer() {
               <br />
               Close to home.
             </h1>
+            <div className="flex items-center justify-between gap-3">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                <MapPinIcon aria-hidden="true" className="size-3.5" />
+                Calgary, Alberta
+              </p>
+              <Badge variant="secondary">Frontend demo</Badge>
+            </div>
             <p className="text-sm leading-6 text-muted-foreground">
               A new skill, a shared purpose, a neighbour worth knowing. Find
               your starting point.

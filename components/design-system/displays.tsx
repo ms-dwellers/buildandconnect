@@ -64,7 +64,7 @@ import { DemoCard, Section } from "./section";
 export function Feedback() {
   const [progress, setProgress] = useState(40);
   return (
-    <Section id="feedback" number="04" title="Feedback & progress">
+    <Section id="feedback" title="Feedback & progress">
       <div className="grid gap-4 lg:grid-cols-2">
         <DemoCard title="Alert variants">
           <Alert variant="success" role="note">
@@ -139,7 +139,7 @@ export function Feedback() {
 
 export function Navigation() {
   return (
-    <Section id="navigation" number="06" title="One thing at a time">
+    <Section id="navigation" title="One thing at a time">
       <div className="grid gap-4 lg:grid-cols-2">
         <DemoCard title="Tabs">
           <Tabs defaultValue="overview">
@@ -199,7 +199,7 @@ export function Navigation() {
 
 export function Content() {
   return (
-    <Section id="content" number="07" title="People & projects">
+    <Section id="content" title="People & projects">
       <div className="grid gap-4 lg:grid-cols-2">
         <DemoCard title="Avatar & avatar group">
           <div className="flex flex-wrap items-center gap-5">
