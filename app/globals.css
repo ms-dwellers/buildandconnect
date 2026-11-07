@@ -264,6 +264,35 @@
   --cloud: #fffdf2;
 }
 
+.voice-studio {
+  --voice-paper: #f7f5ed;
+  --voice-card: #fffdf7;
+  --voice-ink: #353a31;
+  --voice-muted: #696d61;
+  --voice-border: #d9dccf;
+  --voice-sand: #f1e7d6;
+  --voice-moss: #83947b;
+  --voice-rust: #c78060;
+  --voice-plum: #978794;
+  --voice-ochre: #d7b581;
+  --voice-accent-ink: #835338;
+  --voice-soft: #ebeee3;
+  --background: var(--voice-paper);
+  --foreground: var(--voice-ink);
+  --card: var(--voice-card);
+  --popover: var(--voice-card);
+  --primary: #4c5944;
+  --primary-foreground: var(--voice-card);
+  --muted-foreground: var(--voice-muted);
+  --accent: var(--voice-soft);
+  --border: var(--voice-border);
+  --input: #a1aa94;
+  --ring: #586c4c;
+  --button-primary-edge: #35402f;
+  --button-primary-hover: #3e4d37;
+  --button-outline-edge: #c1c6b7;
+}
+
 @layer base {
   * {
     @apply border-border;

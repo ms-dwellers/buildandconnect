@@ -114,6 +114,13 @@ try {
   assert.match(debugHtml, /data-slot="input"/);
   assert.match(debugHtml, /noindex/);
 
+  const voice = await fetch(`${origin}/wip-voice-ai`);
+  assert.equal(voice.status, 200);
+  const voiceHtml = await voice.text();
+  assert.match(voiceHtml, /Begin conversation/);
+  assert.match(voiceHtml, /Simulated conversation/);
+  assert.match(voiceHtml, /noindex/);
+
   const health = await fetch(`${origin}/api/health`);
   assert.equal(health.headers.get("Cache-Control"), "no-store");
   assert.deepEqual(await health.json(), {
