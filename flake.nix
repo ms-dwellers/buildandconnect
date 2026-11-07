@@ -50,7 +50,7 @@
             version = "0.1.0";
             src = source;
             nodejs = node;
-            npmDepsHash = "sha256-ZwtUGkQNgy/05HqZxKOiiDAHaaLNV7OSh91hO/iHOgw=";
+            npmDepsHash = "sha256-5df7l3v5zXIDZ3v59EoTfy1iqSMLzb1kJq8uyy6EHvY=";
             SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
             nativeBuildInputs = [
               pkgs.makeWrapper
