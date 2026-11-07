@@ -43,6 +43,24 @@ export function taskError(task, installed) {
   return undefined;
 }
 
+export function bunVersionError(version) {
+  const required = manifest.packageManager.split("@")[1];
+  const minimum = required.split(".").map(Number);
+  const actual = /^v?(\d+)\.(\d+)\.(\d+)$/
+    .exec(version ?? "")
+    ?.slice(1)
+    .map(Number);
+  if (
+    !actual ||
+    actual[0] !== minimum[0] ||
+    actual[1] !== minimum[1] ||
+    actual[2] < minimum[2]
+  ) {
+    return `Bun ${manifest.engines.bun} is required; found ${version || "no version"}. See docs/development.md.`;
+  }
+  return undefined;
+}
+
 if (
   process.argv[1] &&
   realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
@@ -53,15 +71,16 @@ if (
        scripts/dev.ps1 [task] [arguments...]
 
 Tasks: ${tasks.join(", ")}
-Default: dev. Setup installs locked npm dependencies, not system tools.
-Arguments are forwarded unchanged to npm. Deploy separately with npm run deploy.`);
+Default: dev. Setup installs locked Bun dependencies, not system tools.
+Arguments are forwarded unchanged to Bun. Deploy separately with bun run deploy.`);
   } else {
     const error =
       runtimeError(process.versions.node) ??
+      bunVersionError(process.argv[3]) ??
       taskError(
         task,
         existsSync(
-          new URL("../node_modules/.package-lock.json", import.meta.url),
+          new URL("../node_modules/vite/package.json", import.meta.url),
         ),
       );
     if (error) {

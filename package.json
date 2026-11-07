@@ -2,9 +2,10 @@
   "name": "buildandconnect",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "npm@11.19.0",
+  "packageManager": "bun@1.4.2",
   "engines": {
-    "node": ">=26.13.0 <27"
+    "node": ">=26.13.0 <27",
+    "bun": ">=1.4.2 <1.5.0"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -44,6 +45,10 @@
       "fflate": "0.7.5"
     }
   },
+  "trustedDependencies": [
+    "esbuild",
+    "workerd"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -54,7 +59,7 @@
     "test": "node --test tests/*.test.ts",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
-    "check": "npm run fmt:check && npm run typecheck && npm test",
+    "check": "bun run fmt:check && bun run typecheck && bun run test",
     "smoke": "node scripts/smoke.mjs",
     "db:migrate:local": "cf d1 migrations apply 00000000-0000-4000-8000-000000000001 --dir migrations --local --persist-to .wrangler/state",
     "fmt:powershell": "pwsh -NoProfile -File scripts/format-powershell.ps1",

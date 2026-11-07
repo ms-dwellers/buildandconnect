@@ -10,7 +10,7 @@ UI primitives. Source is owned locally in `components/ui/`; the upstream MIT
 notice is retained there. `components.json` points `@coss` at the official registry.
 
 ```sh
-npx shadcn@latest add @coss/input
+bunx shadcn@latest add @coss/input
 ```
 
 Add only what a feature needs. Do not install similarly named shadcn/Radix

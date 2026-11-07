@@ -15,7 +15,7 @@ on Linux.
 Nix is optional. See [the team setup guide](docs/development.md) for macOS ARM,
 Fedora x86-64, and Windows ARM setup.
 
-With Node.js 26.13 or newer within version 26 and npm installed:
+With Bun 1.4.2 or newer within 1.4.x and Node.js 26.13 or newer within 26.x:
 
 ```sh
 bash scripts/dev.sh setup
@@ -30,23 +30,23 @@ In PowerShell:
 ```
 
 Both entrypoints support the same tasks, forward arguments, and work regardless
-of your current directory. Use `--help` to list tasks. `setup` only runs `npm ci`;
+of your current directory. Use `--help` to list tasks. `setup` runs `bun install --frozen-lockfile`;
 it never installs system tools, creates secrets, or deploys anything.
 
 ### NixOS / optional Nix setup
 
 Install Nix with flakes enabled, direnv with nix-direnv, and your shell's direnv
-hook. The flake pins Node.js 26 (the Cloudflare CLI needs a newer runtime than
+hook. The flake pins Bun and Node.js 26 (the Cloudflare CLI needs a newer runtime than
 Node.js 24.21). Linux x86-64, Linux ARM64, and Apple Silicon development shells
 are declared; only Linux x86-64 is verified here.
 
 ```sh
 direnv allow
-npm ci
-npm run dev -- --host 127.0.0.1
+bun install --frozen-lockfile
+bun run dev --host 127.0.0.1
 ```
 
-Without direnv, use `nix develop` before those npm commands. No dependency install,
+Without direnv, use `nix develop` before those Bun commands. No dependency install,
 server, deployment, or migration runs automatically on shell entry.
 
 The dev server prints its local URL. Optional local configuration belongs in
@@ -56,28 +56,28 @@ the backend requires local migrations and auth settings from the backend guide.
 
 ## Commands
 
-Run source commands from the repository root after `npm ci`. Without Nix, use
-`bash scripts/dev.sh TASK` or `.\scripts\dev.ps1 TASK`; these call the npm scripts
-below. The npm formatting checks cover JS/TS, CSS, JSON, and Markdown. Nix also
+Run source commands from the repository root after `bun install --frozen-lockfile`. Without Nix, use
+`bash scripts/dev.sh TASK` or `.\scripts\dev.ps1 TASK`; these call the package scripts
+below. The formatting checks cover JS/TS, CSS, JSON, and Markdown. Nix also
 checks Nix and Bash formatting. PowerShell has a separate pinned formatter,
 documented in the [team setup guide](docs/development.md#formatters).
 
-| Nix command                         | npm equivalent                                   | Purpose                                   |
+| Nix command                         | Bun equivalent                                   | Purpose                                   |
 | ----------------------------------- | ------------------------------------------------ | ----------------------------------------- |
-| `nix run .#dev -- --host 127.0.0.1` | `npm run dev -- --host 127.0.0.1`                | Development server                        |
-| `nix run .#build`                   | `npm run build`                                  | Worker production build                   |
-| `nix run .#test`                    | `npm test`                                       | API, matching, and scaffold tests         |
-| `nix run .#typecheck`               | `npm run typecheck`                              | TypeScript checks                         |
-| `nix run .#fmt`                     | `npm run fmt` plus nixfmt and shfmt              | Format source                             |
-| `nix run .#fmt-check`               | `npm run fmt:check` plus nixfmt and shfmt checks | Check formatting                          |
-| `nix run .#check`                   | `npm run check` plus nixfmt and shfmt checks     | Formatting, types, tests                  |
-| `nix run .#smoke`                   | `npm run smoke`                                  | Start built preview, verify HTTP, stop it |
+| `nix run .#dev -- --host 127.0.0.1` | `bun run dev --host 127.0.0.1`                   | Development server                        |
+| `nix run .#build`                   | `bun run build`                                  | Worker production build                   |
+| `nix run .#test`                    | `bun run test`                                   | API, matching, and scaffold tests         |
+| `nix run .#typecheck`               | `bun run typecheck`                              | TypeScript checks                         |
+| `nix run .#fmt`                     | `bun run fmt` plus nixfmt and shfmt              | Format source                             |
+| `nix run .#fmt-check`               | `bun run fmt:check` plus nixfmt and shfmt checks | Check formatting                          |
+| `nix run .#check`                   | `bun run check` plus nixfmt and shfmt checks     | Formatting, types, tests                  |
+| `nix run .#smoke`                   | `bun run smoke`                                  | Start built preview, verify HTTP, stop it |
 
 For example, run `build` followed by `smoke` using either script. The `start`
 task previews an existing build. Deployment is intentionally not exposed by
 these development entrypoints.
 
-`npm run start -- --host 127.0.0.1` previews the built Worker locally. Build first.
+`bun run start --host 127.0.0.1` previews the built Worker locally. Build first.
 The smoke test checks the home page, built CSS, health response, unknown route,
 unsupported health method, and refusal to serve `.env.local`. It uses port 4173
 by default; set `SMOKE_PORT` if needed.
@@ -94,9 +94,14 @@ nix run . -- --host 127.0.0.1 --port 3000
 The default package contains the built Worker, assets, and its local preview
 runtime. The default app serves that built artifact, not the source dev server.
 This preview is for local testing; deploy the Worker for hosting. Dependencies
-are fetched through the pinned npm cache derivation, not during the sandboxed
+are fetched from `bun.lock` into a fixed-output Bun cache, not during the sandboxed
 application build. Nix uses an explicit source allowlist and excludes local
-environment files. Never pass private build-time values into Nix.
+environment files. Never pass private build-time values into Nix. When changing
+dependencies, run `bun install` and update the Bun cache hash in `flake.nix`.
+
+Bun manages dependencies and runs package scripts; Vite, Cloudflare tooling,
+and the existing test suite still run on Node. Use `bun run test`, not Bun's
+separate built-in `bun test` runner.
 
 ## Architecture and service setup
 
@@ -107,11 +112,11 @@ emerald, cream, wheat, apricot, and coral palette. See
 See [docs/architecture.md](docs/architecture.md) for ownership and integration
 steps. React/Vinext App Router, Tailwind, and Hono run in one Cloudflare Worker.
 D1 owns application and Better Auth data. Workers AI supplies Llama analysis and
-BGE Small embeddings; TypeScript owns deterministic matching. Mapbox remains
-planned for maps. No separate API server or Convex database is required.
+BGE Small embeddings; TypeScript owns deterministic matching. Mapbox powers
+location search and nearby maps. No separate API server or Convex database is required.
 
 No remote service is created during setup. Deploy only when requested. After
-reviewing configuration and authenticating with Cloudflare, `npm run deploy`
+reviewing configuration and authenticating with Cloudflare, `bun run deploy`
 builds and publishes the Worker; it is not part of local verification.
 
 No license has been selected for this repository.

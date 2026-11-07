@@ -6,7 +6,7 @@ dist
 .wrangler
 result
 result-*
-package-lock.json
+bun.lock
 flake.lock
 next-env.d.ts
 .env*

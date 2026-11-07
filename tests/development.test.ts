@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   runtimeError,
+  bunVersionError,
   taskError,
   tasks,
 } from "../scripts/check-development.mjs";
@@ -21,6 +22,15 @@ test("development rejects old, unsupported, and malformed Node versions", () => 
 test("setup can run before dependencies exist", () => {
   assert.equal(taskError("setup", false), undefined);
   assert.match(taskError("dev", false) ?? "", /Dependencies are missing/);
+});
+
+test("development pins the Bun package manager independently of Node", () => {
+  assert.equal(bunVersionError("1.4.2"), undefined);
+  assert.equal(bunVersionError("v1.4.2"), undefined);
+  assert.equal(bunVersionError("1.4.4"), undefined);
+  for (const version of ["1.3.0", "1.4.1", "1.5.0", "2.0.0", "", undefined]) {
+    assert.match(bunVersionError(version) ?? "", /Bun .* is required/);
+  }
 });
 
 test("development tasks reuse package scripts but do not expose deployment", () => {
