@@ -181,6 +181,17 @@ export const developers = query({
   },
 });
 
+export const getDeveloper = query({
+  args: { secret, id: v.string() },
+  handler: async (ctx, args) => {
+    await access(ctx, args.secret, ["company", "recruiter"]);
+    const row = await findDeveloper(ctx, args.id);
+    if (!row || !row.profile.discoverable)
+      fail(404, "This developer is no longer discoverable");
+    return publicDeveloper(await developerData(ctx, row));
+  },
+});
+
 export const createOpportunity = mutation({
   args: {
     secret,
@@ -396,7 +407,12 @@ export const setInterest = mutation({
 });
 
 export const connections = query({
-  args: { secret, ...pagination, connectedOnly: v.boolean() },
+  args: {
+    secret,
+    ...pagination,
+    connectedOnly: v.boolean(),
+    opportunityId: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const actor = await access(ctx, args.secret, ["requester", "developer"]);
     checkLimit(args.limit);
@@ -411,6 +427,8 @@ export const connections = query({
         : await ctx.db.query("interests").collect();
     const result = [];
     for (const row of rows) {
+      if (args.opportunityId && row.opportunityId !== args.opportunityId)
+        continue;
       if (
         args.connectedOnly
           ? !row.companyInterested || !row.developerInterested

@@ -45,7 +45,7 @@ export async function createAuthenticatedClient(
 /** For public reads: attach the session when there is one, otherwise none. */
 export async function createOptionalClient(env: BackendEnv, request: Request) {
   const client = new ConvexHttpClient(env.VITE_CONVEX_URL);
-  if (request.headers.get("cookie")) {
+  if (request.headers.get("cookie") || request.headers.get("authorization")) {
     const token = await sessionToken(env, request);
     if (token) client.setAuth(token);
   }

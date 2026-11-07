@@ -104,6 +104,12 @@ test("profile privacy, location, and availability remain independent of AI", asy
   });
   expect(browse.data[0]).not.toHaveProperty("location");
   expect(browse.data[0]).not.toHaveProperty("embedding");
+  const detail = await recruiter.client.query(api.data.getDeveloper, {
+    secret,
+    id: dev.id,
+  });
+  expect(detail).not.toHaveProperty("location");
+  expect(detail).not.toHaveProperty("embedding");
   await dev.client.mutation(api.data.patchDeveloper, {
     secret,
     discoverable: false,
@@ -118,6 +124,9 @@ test("profile privacy, location, and availability remain independent of AI", asy
       })
     ).data,
   ).toHaveLength(0);
+  await expect(
+    recruiter.client.query(api.data.getDeveloper, { secret, id: dev.id }),
+  ).rejects.toThrow(/no longer discoverable/);
   await expect(
     company.client.mutation(api.data.setLocation, {
       secret,

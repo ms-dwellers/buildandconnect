@@ -1,6 +1,7 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
 import { betterAuth } from "better-auth/minimal";
+import { bearer } from "better-auth/plugins/bearer";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
@@ -50,6 +51,6 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
         }
       }),
     },
-    plugins: [convex({ authConfig })],
+    plugins: [bearer({ requireSignature: true }), convex({ authConfig })],
   });
 }

@@ -185,6 +185,14 @@ export function createApi(
       }),
     ),
   );
+  app.get("/developers/:id", async (c) =>
+    c.json(
+      await client(c).query(convex.data.getDeveloper, {
+        secret: secret(c),
+        id: c.req.param("id"),
+      }),
+    ),
+  );
   app.post("/opportunities", async (c) => {
     requireRole(c, "requester");
     const details = opportunitySchema.parse(await c.req.json());
@@ -294,6 +302,7 @@ export function createApi(
         secret: secret(c),
         ...pagination.parse(c.req.query()),
         connectedOnly: c.req.path === "/api/connections",
+        opportunityId: c.req.query("opportunityId"),
       }),
     ),
   );
