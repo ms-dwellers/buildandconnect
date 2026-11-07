@@ -31,6 +31,32 @@ in the build environment, apply `migrations/` using
 `cf d1 migrations apply <database-uuid> --dir migrations`, and configure Worker
 secrets before publishing. This task does not deploy or create remote resources.
 
+## Browser QA console
+
+Run `npm run dev -- --host 127.0.0.1` and open `/debug` on the printed local
+origin. The console includes:
+
+- Email/password sign-up, sign-in, role selection and sign-out using real cookies.
+- Searchable request presets for every application endpoint, with editable JSON,
+  query parameters, and opportunity/developer ID context.
+- HTTP status, elapsed time, cache headers, raw JSON, validation errors and match
+  score cards. Returned IDs can be reused without retyping them.
+- A ten-response in-memory history and redacted JSON copying. Passwords and
+  token/secret/cookie fields are removed; other profile and project data remain
+  visible. Signing in or out clears the previous history. Nothing is saved to
+  localStorage, and there is no auth bypass or privileged debug API.
+
+Requests change the connected database. Use test accounts and separate browser
+profiles/private windows to exercise different roles. The page is not an admin
+dashboard: all calls retain backend authorization, including expected 401, 403,
+400 and 409 failures. It is marked `noindex`, but remains a public web route;
+restrict access at deployment if the console should not be publicly reachable.
+
+Use the local setup above first. Without remote Workers AI, valid profile saves
+and job posts return 503, with no partial persistence. This console does not seed
+fake data or substitute models. `QA walkthrough` on the page covers the matching
+and mutual-interest flow when AI is available.
+
 ## HTTP contract
 
 All application endpoints below require a Better Auth session cookie. Fetch from

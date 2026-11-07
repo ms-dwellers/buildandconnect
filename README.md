@@ -7,6 +7,7 @@ companies through shared interests and social-impact projects.
 D1 persistence, Workers AI analysis, growth-oriented matching, recruiter discovery,
 and opportunity-specific mutual interest. Matching/account UI and maps are not
 implemented. See [the backend guide](docs/backend.md) for setup and API examples.
+For browser-based backend QA, run the frontend and open `/debug`.
 The future native Swift iOS app is deliberately not scaffolded or built on Linux.
 
 ## Develop

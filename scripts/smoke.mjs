@@ -70,6 +70,14 @@ try {
   assert.ok(stylesheet, "Home must reference a built stylesheet");
   assert.equal((await fetch(new URL(stylesheet[1], origin))).status, 200);
 
+  const debug = await fetch(`${origin}/debug`);
+  assert.equal(debug.status, 200);
+  const debugHtml = await debug.text();
+  assert.match(debugHtml, /Backend playground/);
+  assert.match(debugHtml, /QA walkthrough/);
+  assert.match(debugHtml, /data-slot="input"/);
+  assert.match(debugHtml, /noindex/);
+
   const health = await fetch(`${origin}/api/health`);
   assert.equal(health.headers.get("Cache-Control"), "no-store");
   assert.deepEqual(await health.json(), {
@@ -86,7 +94,7 @@ try {
   assert.equal(protectedRoute.status, 401);
   assert.equal(protectedRoute.headers.get("Cache-Control"), "no-store");
   console.log(
-    "Smoke passed: home, CSS, health, protected backend, 404, 405, and environment-file denial.",
+    "Smoke passed: home, CSS, QA console, health, protected backend, 404, 405, and environment-file denial.",
   );
 } finally {
   if (server.pid && server.exitCode === null && server.signalCode === null) {
