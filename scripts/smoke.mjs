@@ -62,9 +62,9 @@ try {
   assert.equal(home.status, 200);
   const html = await home.text();
   assert.match(html, /Build &amp; Connect/);
-  assert.match(html, /Local problems\. Nearby developers\./);
-  assert.match(html, /Post a request/);
-  assert.match(html, /Nearby map/);
+  assert.match(html, /Good work\./);
+  assert.match(html, /Explore Calgary/);
+  assert.match(html, /Starting in Calgary/);
   assert.match(html, /data-slot="button"/);
   assert.match(html, /data-slot="card"/);
   const designSystem = await fetch(`${origin}/design-system`);
@@ -76,6 +76,13 @@ try {
   const stylesheet = html.match(/href="([^\"]+\.css)"/);
   assert.ok(stylesheet, "Home must reference a built stylesheet");
   assert.equal((await fetch(new URL(stylesheet[1], origin))).status, 200);
+  const cityMap = await fetch(`${origin}/map`);
+  assert.equal(cityMap.status, 200);
+  const mapHtml = await cityMap.text();
+  assert.match(mapHtml, /Calgary job map/);
+  assert.match(mapHtml, /Frontend demo/);
+  assert.match(mapHtml, /Kensington/);
+  assert.match(mapHtml, /Add demo job/);
 
   const debug = await fetch(`${origin}/debug`);
   assert.equal(debug.status, 200);

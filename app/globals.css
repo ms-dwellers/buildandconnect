@@ -42,6 +42,9 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-illustration-sun: var(--illustration-sun);
   --color-illustration-flower: var(--illustration-flower);
+  --color-map-land: var(--map-land);
+  --color-map-water: var(--map-water);
+  --color-cloud: var(--cloud);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -185,6 +188,15 @@
   --sidebar-ring: var(--ring);
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
+  --map-land: #eeeedb;
+  --map-block: #e2e5cd;
+  --map-road: #fffdf0;
+  --map-park: #c6d4b1;
+  --map-water: #aed0c8;
+  --map-water-edge: #94bbb0;
+  --map-arterial: #dfc999;
+  --map-label: #5c6e59;
+  --cloud: #fffdf2;
 }
 
 @layer base {

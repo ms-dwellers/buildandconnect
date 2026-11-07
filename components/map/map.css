@@ -1,0 +1,147 @@
+.map-job-marker {
+  border-radius: 0.9rem 0.9rem 0.9rem 0.2rem;
+  rotate: -6deg;
+  box-shadow:
+    0 3px 0 var(--button-edge),
+    0 7px 16px --alpha(var(--primary) / 18%);
+}
+
+.map-job-marker > svg {
+  rotate: 6deg;
+}
+.map-job-marker-selected {
+  outline: 3px solid var(--card);
+  outline-offset: 4px;
+}
+
+.map-journey {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.cloud-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--cloud);
+  animation: cloud-cover 650ms ease-in forwards;
+}
+
+.cloud-bank {
+  position: absolute;
+  width: 110vw;
+  height: 110svh;
+  filter: blur(18px);
+  background:
+    radial-gradient(ellipse at 35% 35%, var(--cloud) 0 24%, transparent 57%),
+    radial-gradient(ellipse at 65% 65%, var(--cloud) 0 27%, transparent 61%),
+    radial-gradient(ellipse at 58% 30%, var(--card) 0 20%, transparent 56%),
+    radial-gradient(
+      ellipse at 28% 72%,
+      var(--background) 0 24%,
+      transparent 60%
+    );
+  animation: clouds-gather 650ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.cloud-bank-nw {
+  top: -45%;
+  left: -40%;
+  --cloud-x: -60%;
+  --cloud-y: -60%;
+}
+.cloud-bank-ne {
+  top: -45%;
+  right: -40%;
+  --cloud-x: 60%;
+  --cloud-y: -60%;
+}
+.cloud-bank-sw {
+  bottom: -45%;
+  left: -40%;
+  --cloud-x: -60%;
+  --cloud-y: 60%;
+}
+.cloud-bank-se {
+  bottom: -45%;
+  right: -40%;
+  --cloud-x: 60%;
+  --cloud-y: 60%;
+}
+
+.journey-caption {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  opacity: 0;
+  animation: cloud-cover 350ms 300ms ease-out forwards;
+}
+
+.map-journey[data-phase="revealing"] .cloud-veil {
+  animation: clouds-unveil 1200ms ease-out both;
+}
+.map-journey[data-phase="revealing"] .cloud-bank {
+  animation: clouds-part 1850ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+.map-journey[data-phase="revealing"] .journey-caption {
+  animation: clouds-unveil 450ms ease-out both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .city-preview-arriving {
+    animation: city-arrival 1850ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+}
+
+@keyframes cloud-cover {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes clouds-unveil {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes clouds-gather {
+  from {
+    transform: translate(var(--cloud-x), var(--cloud-y)) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes clouds-part {
+  from {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--cloud-x), var(--cloud-y)) scale(1.25);
+    opacity: 0;
+  }
+}
+@keyframes city-arrival {
+  from {
+    transform: scale(0.78);
+    filter: blur(3px);
+  }
+  to {
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
