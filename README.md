@@ -139,6 +139,10 @@ separate built-in `bun test` runner.
 
 ## Architecture and service setup
 
+The isolated [voice studio prototype](docs/voice-prototype.md) lives at
+`/wip-voice-ai`. It uses a local mock conversation and an autumn aurora shader;
+there is no ElevenLabs integration or microphone recording.
+
 The component foundation is [coss ui](https://coss.com/ui/docs), with the supplied
 emerald, cream, wheat, apricot, and coral palette. See
 [docs/design-system.md](docs/design-system.md) before adding UI components.
