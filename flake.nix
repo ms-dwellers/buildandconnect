@@ -132,17 +132,17 @@
             typecheck = task "typecheck" ''exec npm run typecheck -- "$@"'';
             fmt = task "fmt" ''
               nixfmt flake.nix
-              shfmt -w scripts/preview-built.sh
+              shfmt -w scripts/*.sh
               exec npm run fmt -- "$@"
             '';
             fmt-check = task "fmt-check" ''
               nixfmt --check flake.nix
-              shfmt -d scripts/preview-built.sh
+              shfmt -d scripts/*.sh
               exec npm run fmt:check -- "$@"
             '';
             check = task "check" ''
               nixfmt --check flake.nix
-              shfmt -d scripts/preview-built.sh
+              shfmt -d scripts/*.sh
               exec npm run check -- "$@"
             '';
             smoke = task "smoke" ''exec npm run smoke -- "$@"'';

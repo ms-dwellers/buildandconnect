@@ -1,18 +1,25 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { setTimeout } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
 
 const port = process.env.SMOKE_PORT ?? "4173";
 const origin = `http://127.0.0.1:${port}`;
 const invocation = process.argv.slice(2);
 const [command, ...args] = invocation.length
   ? invocation
-  : ["npm", "run", "start", "--"];
+  : [
+      process.execPath,
+      fileURLToPath(
+        new URL("../node_modules/vite/bin/vite.js", import.meta.url),
+      ),
+      "preview",
+    ];
 const server = spawn(
   command,
   [...args, "--host", "127.0.0.1", "--port", port, "--strictPort"],
   {
-    detached: true,
+    detached: process.platform !== "win32",
     stdio: "inherit",
     env: { ...process.env, BROWSER: "none" },
   },
@@ -69,15 +76,26 @@ try {
     "Smoke passed: home, CSS, health, 404, 405, and environment-file denial.",
   );
 } finally {
-  if (server.pid) {
+  if (server.pid && server.exitCode === null && server.signalCode === null) {
     try {
-      process.kill(-server.pid, "SIGTERM");
+      if (process.platform === "win32") {
+        const stopped = spawnSync(
+          "taskkill.exe",
+          ["/PID", String(server.pid), "/T", "/F"],
+          {
+            stdio: "ignore",
+          },
+        );
+        if (stopped.error) throw stopped.error;
+      } else {
+        process.kill(-server.pid, "SIGTERM");
+      }
     } catch (error) {
       if (error.code !== "ESRCH") throw error;
     }
     await Promise.race([
       exited,
-      setTimeout(5000).then(() => {
+      setTimeout(5000, undefined, { ref: false }).then(() => {
         throw new Error("Preview did not stop after SIGTERM");
       }),
     ]);

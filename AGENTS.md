@@ -45,7 +45,13 @@ configuration. This permission does not make the chat itself a secret vault.
   Nix and direnv commands are documented in `README.md`.
 - Formatter approval: use project-pinned Prettier for TypeScript, CSS, JSON, and
   Markdown, nixfmt for Nix, and Nix-pinned shfmt for shell scripts. These are
-  approved for this repository.
+  approved for this repository. PSScriptAnalyzer 1.25.0 is approved for PowerShell;
+  install it locally with `scripts/format-powershell.ps1 -Install`, then run its
+  `-Check` mode for PowerShell changes. Do not install modules globally.
+- Support NixOS x86-64, macOS ARM64, Fedora x86-64, and Windows ARM64 (using the
+  pinned workerd's x64 compatibility path). Keep Bash and PowerShell entrypoints
+  aligned and keep npm scripts as the task owner. Never require Nix on teammates'
+  machines or share native `node_modules` between operating systems.
 - Keep server secrets out of client components and public health responses.
 - Keep generated outputs, local credentials, and installed dependencies ignored.
 

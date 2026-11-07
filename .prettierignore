@@ -11,3 +11,4 @@ flake.lock
 next-env.d.ts
 .env*
 .dev.vars*
+.tools

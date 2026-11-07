@@ -16,3 +16,4 @@ result-*
 *.tsbuildinfo
 *.log
 .DS_Store
+.tools/

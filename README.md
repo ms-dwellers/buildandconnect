@@ -9,6 +9,29 @@ The future native Swift iOS app is deliberately not scaffolded or built on Linux
 
 ## Develop
 
+Nix is optional. See [the team setup guide](docs/development.md) for macOS ARM,
+Fedora x86-64, and Windows ARM setup.
+
+With Node.js 26.13 or newer within version 26 and npm installed:
+
+```sh
+bash scripts/dev.sh setup
+bash scripts/dev.sh dev --host 127.0.0.1
+```
+
+In PowerShell:
+
+```powershell
+.\scripts\dev.ps1 setup
+.\scripts\dev.ps1 dev --host 127.0.0.1
+```
+
+Both entrypoints support the same tasks, forward arguments, and work regardless
+of your current directory. Use `--help` to list tasks. `setup` only runs `npm ci`;
+it never installs system tools, creates secrets, or deploys anything.
+
+### NixOS / optional Nix setup
+
 Install Nix with flakes enabled, direnv with nix-direnv, and your shell's direnv
 hook. The flake pins Node.js 26 (the Cloudflare CLI needs a newer runtime than
 Node.js 24.21). Linux x86-64, Linux ARM64, and Apple Silicon development shells
@@ -29,7 +52,11 @@ future integration settings with no values. The scaffold needs no credentials.
 
 ## Commands
 
-Run source commands from the repository root after `npm ci`.
+Run source commands from the repository root after `npm ci`. Without Nix, use
+`bash scripts/dev.sh TASK` or `.\scripts\dev.ps1 TASK`; these call the npm scripts
+below. The npm formatting checks cover JS/TS, CSS, JSON, and Markdown. Nix also
+checks Nix and Bash formatting. PowerShell has a separate pinned formatter,
+documented in the [team setup guide](docs/development.md#formatters).
 
 | Nix command                         | npm equivalent                                   | Purpose                                   |
 | ----------------------------------- | ------------------------------------------------ | ----------------------------------------- |
@@ -41,6 +68,10 @@ Run source commands from the repository root after `npm ci`.
 | `nix run .#fmt-check`               | `npm run fmt:check` plus nixfmt and shfmt checks | Check formatting                          |
 | `nix run .#check`                   | `npm run check` plus nixfmt and shfmt checks     | Formatting, types, tests                  |
 | `nix run .#smoke`                   | `npm run smoke`                                  | Start built preview, verify HTTP, stop it |
+
+For example, run `build` followed by `smoke` using either script. The `start`
+task previews an existing build. Deployment is intentionally not exposed by
+these development entrypoints.
 
 `npm run start -- --host 127.0.0.1` previews the built Worker locally. Build first.
 The smoke test checks the home page, built CSS, health response, unknown route,
