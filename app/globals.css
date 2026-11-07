@@ -207,6 +207,34 @@
 }
 
 @layer components {
+  .landing-paper {
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      --alpha(var(--primary) / 1.5%) 3px,
+      --alpha(var(--primary) / 1.5%) 4px
+    );
+  }
+
+  .landing-skip-link {
+    position: fixed;
+    z-index: 50;
+    top: 1rem;
+    left: 1rem;
+    transform: translateY(-200%);
+    border-radius: var(--button-radius);
+    padding: 0.75rem 1rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .landing-skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+
   .button-control {
     transition:
       transform 100ms ease-out,

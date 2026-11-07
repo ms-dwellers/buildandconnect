@@ -39,7 +39,13 @@ intentionally light-only; OS dark-mode preference does not change its colors.
 
 ## Components and typography
 
-- No decorative pills: eyebrows and section labels are plain text. Badges are
+- Start directly with headings. No decorative section numbers, eyebrow labels,
+  or other heading prefixes. This applies to both the app and this gallery.
+- The landing page uses open spacing, editorial serif headings, light paper
+  texture, and an original code-native neighborhood garden illustration. Keep
+  decorative artwork out of the accessibility tree; do not treat it as map data.
+
+- No decorative pills. Ordinary labels are plain text. Badges are
   softly rectangular with a small radius, explicit line height, and enough padding
   for their text. They do not shrink to squashed capsules on desktop.
 - Filled and outlined buttons have a solid lower edge and depress by 2–4px while

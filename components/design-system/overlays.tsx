@@ -38,7 +38,7 @@ import { DemoCard, Section } from "./section";
 
 export function Overlays() {
   return (
-    <Section id="overlays" number="05" title="A little context">
+    <Section id="overlays" title="A little context">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <DemoCard title="Dialog">
           <Dialog>

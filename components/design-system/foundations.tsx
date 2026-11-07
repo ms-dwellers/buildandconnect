@@ -58,7 +58,7 @@ async function copyColor(hex: string) {
 
 export function Foundations() {
   return (
-    <Section id="foundations" number="01" title="A warm foundation">
+    <Section id="foundations" title="A warm foundation">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         {palette.map((color) => (
           <Card key={color.hex} className="overflow-hidden">
@@ -153,7 +153,7 @@ export function Actions() {
       description: "Demo action only. Nothing was saved.",
     });
   return (
-    <Section id="actions" number="02" title="Actions & labels">
+    <Section id="actions" title="Actions & labels">
       <div className="grid gap-4 lg:grid-cols-2">
         <DemoCard title="Press & release" className="lg:col-span-2">
           <div className="flex flex-wrap items-center gap-5 pb-1">
