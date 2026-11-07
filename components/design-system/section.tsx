@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -21,9 +20,9 @@ export function Section({
       className="scroll-mt-28 space-y-6 border-t py-10 sm:py-12"
     >
       <div className="flex items-center gap-3">
-        <Badge variant="outline" className="font-mono">
+        <span className="font-mono text-xs text-muted-foreground">
           {number}
-        </Badge>
+        </span>
         <h2
           id={`${id}-heading`}
           className="font-display text-3xl tracking-tight sm:text-4xl"

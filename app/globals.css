@@ -47,6 +47,9 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
+  --shadow-card:
+    0 2px 0 --alpha(var(--primary) / 8%),
+    0 5px 14px --alpha(var(--primary) / 4%);
   --animate-skeleton: skeleton 2s -1s infinite linear;
   --animate-toast-success-odd: toast-success-odd 0.32s
     cubic-bezier(0.5, 1, 0.89, 1);
@@ -132,6 +135,14 @@
   --app-font-display: "Georgia", "Times New Roman", ui-serif, serif;
   --app-font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
   --radius: 0.75rem;
+  --badge-radius: 0.3rem;
+  --button-radius: 0.625rem;
+  --button-depth: 3px;
+  --button-primary-edge: #124b35;
+  --button-primary-hover: #236d50;
+  --button-secondary-edge: #99713b;
+  --button-outline-edge: #9ca789;
+  --button-destructive-edge: #7f1e27;
 
   --palette-emerald: #1e6348;
   --palette-cream: #f8f7de;
@@ -192,6 +203,37 @@
 
   [id] {
     scroll-margin-top: 2rem;
+  }
+}
+
+@layer components {
+  .button-control {
+    transition:
+      transform 100ms ease-out,
+      box-shadow 100ms ease-out,
+      background-color 120ms ease-out;
+  }
+
+  .button-raised {
+    --button-shadow-depth: var(--button-depth);
+    transform: translateY(0);
+  }
+
+  .button-raised::before {
+    box-shadow: inset 0 1px 0 --alpha(var(--color-white) / 16%);
+  }
+
+  .button-raised:not(:disabled, [aria-disabled="true"]):is(
+      :active,
+      [data-pressed],
+      [data-keyboard-pressed]
+    ) {
+    --button-shadow-depth: 0px;
+    transform: translateY(var(--button-depth));
+  }
+
+  .button-raised:is(:disabled, [aria-disabled="true"]) {
+    --button-shadow-depth: 0px;
   }
 }
 

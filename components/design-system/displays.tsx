@@ -259,7 +259,7 @@ export function Content() {
           </Empty>
         </DemoCard>
         <DemoCard title="Table · sample projects" className="lg:col-span-2">
-          <Table>
+          <Table aria-label="Sample projects">
             <TableCaption>
               Illustrative data for this component preview.
             </TableCaption>

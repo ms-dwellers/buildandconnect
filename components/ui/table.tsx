@@ -29,7 +29,11 @@ export function Table({
         {...props}
       />
     ),
-    className: "relative w-full overflow-x-auto",
+    className:
+      "relative w-full overflow-x-auto rounded-md outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+    role: "region",
+    "aria-label": props["aria-label"] ?? "Scrollable table",
+    tabIndex: 0,
     "data-slot": "table-container",
     "data-variant": variant,
   };

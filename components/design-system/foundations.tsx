@@ -155,6 +155,28 @@ export function Actions() {
   return (
     <Section id="actions" number="02" title="Actions & labels">
       <div className="grid gap-4 lg:grid-cols-2">
+        <DemoCard title="Press & release" className="lg:col-span-2">
+          <div className="flex flex-wrap items-center gap-5 pb-1">
+            <Button
+              size="xl"
+              onClick={() => notify("Primary example activated")}
+            >
+              Start building
+              <ArrowUpRightIcon aria-hidden="true" />
+            </Button>
+            <Button
+              size="xl"
+              variant="secondary"
+              onClick={() => notify("Secondary example activated")}
+            >
+              Explore an idea
+            </Button>
+          </div>
+          <p className="text-xs leading-6 text-muted-foreground">
+            Press and hold to preview the raised edge collapsing. Release to
+            bring it back.
+          </p>
+        </DemoCard>
         <DemoCard title="Button variants">
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => notify("Primary clicked")}>
