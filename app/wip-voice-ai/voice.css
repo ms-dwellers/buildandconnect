@@ -218,6 +218,44 @@
   transform: scaleY(0.35);
   transition: transform 500ms ease;
 }
+.voice-waveform[data-reactive="true"] span {
+  animation: none;
+  transform: scaleY(calc(0.08 + var(--mic-level) * 0.92));
+  transition: none;
+}
+.voice-mic-meter {
+  max-width: 110px;
+  margin: 0.6rem auto -0.6rem;
+}
+.voice-mic-meter [data-slot="meter-track"] {
+  height: 3px;
+  background: color-mix(in srgb, var(--voice-ink) 12%, transparent);
+}
+.voice-mic-meter [data-slot="meter-indicator"] {
+  transition: none;
+}
+.voice-mic-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  margin-top: 1rem;
+}
+.voice-mic-controls button {
+  font-size: 0.75rem;
+}
+.voice-mic-controls p,
+.voice-mic-error {
+  font-size: 0.625rem;
+  color: var(--voice-muted);
+}
+.voice-mic-error:not(:empty) {
+  margin-top: 0.65rem;
+  max-width: 28rem;
+  text-align: center;
+  color: var(--destructive-foreground);
+}
 .voice-controls {
   position: relative;
   display: flex;
@@ -506,14 +544,24 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .voice-stage[data-phase="speaking"] .voice-waveform span {
+  .voice-stage[data-phase="speaking"]
+    .voice-waveform:not([data-reactive="true"])
+    span {
     animation: voice-wave 550ms calc(var(--bar) * -75ms) ease-in-out infinite
       alternate;
   }
-  .voice-stage[data-phase="thinking"] .voice-waveform span {
+  .voice-stage[data-phase="thinking"]
+    .voice-waveform:not([data-reactive="true"])
+    span {
     animation: voice-wave 1s calc(var(--bar) * -60ms) ease-in-out infinite
       alternate;
     opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-waveform[data-reactive="true"] span {
+    transform: scaleY(0.35);
   }
 }
 

@@ -1,8 +1,8 @@
 # Voice studio prototype
 
 Open `/wip-voice-ai` for the isolated autumn-aurora voice concept. It does not
-connect to ElevenLabs, record audio, request microphone access, or write to
-Convex. The surrounding application still performs its normal session check.
+connect to ElevenLabs, record audio, or write to Convex. The surrounding
+application still performs its normal session check.
 
 ## Try the experience
 
@@ -10,6 +10,13 @@ Convex. The surrounding application still performs its normal session check.
 - Begin a conversation, or choose one of the three starting points.
 - Follow the scripted response, pause/resume, and type another thought.
 - End the session or clear it to return to the initial state.
+- Enable the microphone explicitly to make the waveform and aurora respond to
+  your voice volume. The browser asks for permission; the audio is analysed only
+  on your device, never recorded, transcribed, or uploaded. The visuals rise
+  quickly with speech and decay more slowly back to quiet.
+- Turning the microphone off, pausing or ending a session, clearing the
+  conversation, hiding the tab, or leaving the page stops all microphone tracks.
+  Resuming a paused session restarts a microphone that was previously enabled.
 - Enable the optional voice preview to hear an installed **local** device voice.
   If the browser has none, the transcript remains usable. No remote voice is used.
 - Pause the atmosphere to stop the shader. Reduced-motion preferences also stop
@@ -27,6 +34,7 @@ a CSS fallback if WebGL is unavailable. Colors are scoped semantic tokens in
 `app/globals.css`; other routes retain their existing theme.
 
 Run `bun run check`, `bun run build`, and `bun run smoke`. Browser checks should
-cover the session lifecycle, local-only voice fallback, keyboard controls, the
-320px mobile layout, reduced motion, and disabled WebGL. Watch the Network panel:
+cover the session lifecycle, microphone denial and cancellation, loud/quiet
+reactivity, stopped microphone tracks, local-only voice fallback, keyboard
+controls, the 320px mobile layout, reduced motion, and disabled WebGL. Watch the Network panel:
 voice interactions must not send requests, and no ElevenLabs endpoint should load.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 const vertexSource = `
 attribute vec2 a_position;
@@ -24,16 +24,16 @@ void main() {
   float t = u_time * 0.36;
   vec3 color = mix(u_sand, vec3(0.989, 0.978, 0.954), smoothstep(0.35, 1.0, uv.y));
   float x = uv.x * 1.9;
-  float flow = sin(x * 2.4 + t) * 0.13 + sin(x * 4.2 - t * 0.7) * 0.045;
+  float flow = sin(x * 2.4 + t) * (0.13 + u_energy * 0.06) + sin(x * 4.2 - t * 0.7) * 0.045;
   for (int i = 0; i < 4; i++) {
     float n = float(i);
     float ridge = 0.20 + n * 0.115 + flow + sin(x * 3.0 + n * 0.9 + t * 0.6) * 0.05;
     float d = uv.y - ridge;
-    float width = 0.045 + n * 0.016 + u_energy * 0.014;
+    float width = 0.045 + n * 0.016 + u_energy * 0.045;
     float ribbon = exp(-d * d / (width * width));
     float mist = exp(-d * d / (width * width * 9.0));
     vec3 tint = n < 1.0 ? u_moss : n < 2.0 ? u_plum : u_rust;
-    color = mix(color, tint, ribbon * (0.34 + u_energy * 0.08));
+    color = mix(color, tint, ribbon * (0.34 + u_energy * 0.22));
     color = mix(color, tint, mist * 0.07);
     float edge = exp(-pow((d - width * 0.6) / (width * 0.12), 2.0));
     color = mix(color, vec3(1.0, 0.985, 0.955), edge * 0.12);
@@ -48,19 +48,21 @@ void main() {
 export function Aurora({
   moving,
   speaking,
+  microphone,
 }: {
   moving: boolean;
   speaking: boolean;
+  microphone?: RefObject<number>;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const settings = useRef({ moving, speaking });
+  const settings = useRef({ moving, speaking, microphone });
   const draw = useRef<(() => void) | null>(null);
   const [available, setAvailable] = useState(false);
 
   useEffect(() => {
-    settings.current = { moving, speaking };
+    settings.current = { moving, speaking, microphone };
     draw.current?.();
-  }, [moving, speaking]);
+  }, [moving, speaking, microphone]);
 
   useEffect(() => {
     const element = canvas.current;
@@ -132,11 +134,15 @@ export function Aurora({
           frame = requestAnimationFrame(render);
           return;
         }
-        if (animate && previous) time += Math.min(now - previous, 80) / 1000;
+        const input = settings.current.microphone?.current;
+        const intensity = input ?? (settings.current.speaking ? 1 : 0);
+        if (animate && previous)
+          time +=
+            (Math.min(now - previous, 80) / 1000) * (1 + intensity * 0.75);
         previous = now;
         gl.uniform2f(resolution, element.width, element.height);
         gl.uniform1f(clock, time);
-        gl.uniform1f(energy, settings.current.speaking ? 1 : 0);
+        gl.uniform1f(energy, intensity);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         if (animate) frame = requestAnimationFrame(render);
       };
@@ -194,6 +200,7 @@ export function Aurora({
       className="voice-aurora"
       aria-hidden="true"
       data-renderer={available ? "webgl" : "fallback"}
+      data-input={microphone ? "microphone" : "demo"}
     >
       <canvas ref={canvas} className={available ? "is-ready" : ""} />
     </div>

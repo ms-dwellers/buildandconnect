@@ -5,7 +5,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type FormEvent,
 } from "react";
 import {
@@ -16,6 +15,8 @@ import {
   AudioLinesIcon,
   CheckIcon,
   MicIcon,
+  MicOffIcon,
+  LoaderCircleIcon,
   PauseIcon,
   PlayIcon,
   RotateCcwIcon,
@@ -37,6 +38,8 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Aurora } from "./aurora";
+import { useMicrophone } from "./use-microphone";
+import { Waveform } from "./waveform";
 import {
   formatDuration,
   greeting,
@@ -65,6 +68,10 @@ export function VoiceStudio() {
   const speakingAudio = useRef(false);
   const transcript = useRef<HTMLDivElement>(null);
   const nextId = useRef(0);
+  const microphone = useMicrophone();
+  const resumeMicrophone = useRef(false);
+  const micOn = microphone.status === "on";
+  const micPending = microphone.status === "requesting";
   const voice =
     voiceStyles.find((item) => item.id === voiceId) ?? voiceStyles[0];
   const active = isSessionActive(phase);
@@ -188,18 +195,28 @@ export function VoiceStudio() {
     if (phase === "paused") {
       setPhase(previousPhase.current);
       if (sound) window.speechSynthesis?.resume();
+      if (resumeMicrophone.current) {
+        resumeMicrophone.current = false;
+        void microphone.enable();
+      }
     } else {
+      resumeMicrophone.current = micOn || micPending;
+      microphone.disable();
       previousPhase.current = phase;
       setPhase("paused");
       window.speechSynthesis?.pause();
     }
   }
   function end() {
+    resumeMicrophone.current = false;
+    microphone.disable();
     speakingAudio.current = false;
     window.speechSynthesis?.cancel();
     setPhase("ended");
   }
   function reset() {
+    resumeMicrophone.current = false;
+    microphone.disable();
     speakingAudio.current = false;
     window.speechSynthesis?.cancel();
     setPhase("ready");
@@ -260,6 +277,7 @@ export function VoiceStudio() {
               <Aurora
                 moving={moving && phase !== "paused"}
                 speaking={phase === "speaking"}
+                microphone={micOn ? microphone.level : undefined}
               />
               <div className="voice-stage-top">
                 <span>
@@ -290,19 +308,7 @@ export function VoiceStudio() {
 
               <div className="voice-presence">
                 <div className="voice-presence-caption">
-                  <div className="voice-waveform" aria-hidden="true">
-                    {Array.from({ length: 17 }, (_, index) => (
-                      <span
-                        key={index}
-                        style={
-                          {
-                            "--bar": index,
-                            "--height": `${24 + Math.sin(index * 1.4) * 18 + Math.sin((index / 16) * Math.PI) * 65}px`,
-                          } as CSSProperties
-                        }
-                      />
-                    ))}
-                  </div>
+                  <Waveform microphone={micOn ? microphone.level : undefined} />
                   <p className="voice-phase" role="status">
                     {phaseLabel(phase)}
                   </p>
@@ -362,8 +368,47 @@ export function VoiceStudio() {
                   <span className="voice-control-spacer" />
                 )}
               </div>
+              <div className="voice-mic-controls">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={phase === "paused"}
+                  aria-pressed={micOn || micPending}
+                  onClick={() => {
+                    if (micOn || micPending) microphone.disable();
+                    else void microphone.enable();
+                  }}
+                >
+                  {micPending ? (
+                    <LoaderCircleIcon aria-hidden="true" />
+                  ) : micOn ? (
+                    <MicOffIcon aria-hidden="true" />
+                  ) : (
+                    <MicIcon aria-hidden="true" />
+                  )}
+                  {micPending
+                    ? "Cancel microphone request"
+                    : micOn
+                      ? "Turn microphone off"
+                      : microphone.status === "error"
+                        ? "Retry microphone"
+                        : "Enable microphone"}
+                </Button>
+                <p role="status">
+                  {micPending
+                    ? "Waiting for microphone permission."
+                    : micOn
+                      ? "Microphone on · processed on this device"
+                      : phase === "paused"
+                        ? "Microphone off while paused."
+                        : "Optional · reacts to your voice volume"}
+                </p>
+              </div>
+              <p className="voice-mic-error" role="alert">
+                {microphone.error}
+              </p>
               <p className="voice-stage-footnote">
-                Simulated conversation. No microphone needed.
+                Simulated conversation. Audio is never recorded or sent.
               </p>
             </div>
 
@@ -527,7 +572,7 @@ export function VoiceStudio() {
             Voice prototype
           </span>
           <p>
-            Scripted replies · device voice only · nothing is recorded or sent
+            Scripted replies · microphone stays local · nothing recorded or sent
           </p>
         </footer>
       </main>
