@@ -27,6 +27,9 @@
               in
               builtins.elem top [
                 "app"
+                "components"
+                "components.json"
+                "lib"
                 "backend"
                 "migrations"
                 "tests"
@@ -47,7 +50,7 @@
             version = "0.1.0";
             src = source;
             nodejs = node;
-            npmDepsHash = "sha256-FBE0WTPilMdh8A43L4uLw8nQ2RDNIl0HU3wxEFtX0xo=";
+            npmDepsHash = "sha256-ZwtUGkQNgy/05HqZxKOiiDAHaaLNV7OSh91hO/iHOgw=";
             SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
             nativeBuildInputs = [
               pkgs.makeWrapper

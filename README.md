@@ -99,6 +99,10 @@ environment files. Never pass private build-time values into Nix.
 
 ## Architecture and service setup
 
+The component foundation is [coss ui](https://coss.com/ui/docs), with the supplied
+emerald, cream, wheat, apricot, and coral palette. See
+[docs/design-system.md](docs/design-system.md) before adding UI components.
+
 See [docs/architecture.md](docs/architecture.md) for ownership and integration
 steps. React/Vinext App Router, Tailwind, and Hono run in one Cloudflare Worker.
 D1 owns application and Better Auth data. Workers AI supplies Llama analysis and

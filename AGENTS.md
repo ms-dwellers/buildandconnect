@@ -6,6 +6,14 @@ companies through shared interests and social-impact projects.
 ## Scope and stack
 
 - Web: React, Vinext App Router, TypeScript, and Tailwind CSS.
+- UI: use coss-ui components from `components/ui/`, backed by Base UI. Add missing
+  primitives from the `@coss` registry in `components.json`, not shadcn's default
+  registry or a parallel custom component set. Native HTML remains appropriate
+  for headings, landmarks, and ordinary content.
+- Theme: use the semantic tokens in `app/globals.css`. The palette is emerald
+  `#1E6348`, cream `#F8F7DE`, wheat `#F6DFB3`, apricot `#F0A345`, and coral
+  `#EB5757`. Keep raw palette values out of components; use contrast-safe text
+  pairings and keep the interface light unless dark mode is explicitly requested.
 - Backend and data: Hono mounted in Vinext route handlers, Cloudflare D1, and
   Workers AI. `backend/` owns API logic; `migrations/` owns SQL schema changes.
 - Authentication: Better Auth with its built-in D1 support. Enforce ownership

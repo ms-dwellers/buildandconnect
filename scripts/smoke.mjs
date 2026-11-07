@@ -62,7 +62,10 @@ try {
   assert.equal(home.status, 200);
   const html = await home.text();
   assert.match(html, /Build &amp; Connect/);
-  assert.match(html, /Build experience\. Make a difference\./);
+  assert.match(html, /Build experience\./);
+  assert.match(html, /Make a difference\./);
+  assert.match(html, /data-slot="button"/);
+  assert.match(html, /data-slot="card"/);
   const stylesheet = html.match(/href="([^\"]+\.css)"/);
   assert.ok(stylesheet, "Home must reference a built stylesheet");
   assert.equal((await fetch(new URL(stylesheet[1], origin))).status, 200);

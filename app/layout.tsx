@@ -12,7 +12,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="relative">
+        <div className="relative isolate flex min-h-svh flex-col">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
