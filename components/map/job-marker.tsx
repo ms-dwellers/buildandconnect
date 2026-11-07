@@ -21,16 +21,18 @@ import type { CityJob } from "@/lib/calgary";
 export function JobMarker({
   job,
   selected,
+  showDetails = true,
   onSelect,
 }: {
   job: CityJob;
   selected: boolean;
+  showDetails?: boolean;
   onSelect: (id: string | null) => void;
 }) {
   const Icon = job.kind === "paid" ? BriefcaseBusinessIcon : HeartHandshakeIcon;
   return (
     <Popover
-      open={selected}
+      open={selected && showDetails}
       onOpenChange={(open) => onSelect(open ? job.id : null)}
     >
       <PopoverTrigger

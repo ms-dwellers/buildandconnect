@@ -1,3 +1,5 @@
+import { NEIGHBOURHOOD_JOBS } from "./calgary-neighbourhoods.ts";
+
 export type CityPoint = { longitude: number; latitude: number };
 export type CityJob = CityPoint & {
   id: string;
@@ -20,10 +22,7 @@ export const CALGARY_BOUNDS = [
   [-114.32, 50.84],
   [-113.85, 51.22],
 ] as const;
-export const PREVIEW_BOUNDS = [
-  [-114.16, 51.005],
-  [-114.005, 51.09],
-] as const;
+export const PREVIEW_BOUNDS = CALGARY_BOUNDS;
 
 export function isInCalgary(point: CityPoint) {
   return (
@@ -65,8 +64,17 @@ export function previewPoint(x: number, y: number): CityPoint {
 export function previewViewport(
   width: number,
   height: number,
-  center = CALGARY_CENTER,
+  center?: CityPoint,
 ) {
+  if (!center) {
+    const scale = Math.min(width / 1000, height / 700);
+    return {
+      width: 1000 * scale,
+      height: 700 * scale,
+      left: (width - 1000 * scale) / 2,
+      top: (height - 700 * scale) / 2,
+    };
+  }
   const scale = Math.max(width / 1000, height / 700);
   const mapWidth = 1000 * scale;
   const mapHeight = 700 * scale;
@@ -191,6 +199,7 @@ export const CALGARY_JOBS: CityJob[] = [
       "Explore a frontend dashboard for a demo research group. Translate a sample climate dataset into clear, approachable charts with guidance from a project lead.",
     mentorship: true,
   },
+  ...NEIGHBOURHOOD_JOBS,
 ];
 
 export function filterCityJobs(

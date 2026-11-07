@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
@@ -36,6 +36,15 @@ export function CalgaryExplorer() {
   const [placing, setPlacing] = useState(false);
   const [draftLocation, setDraftLocation] = useState<CityPoint | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const mapSection = useRef<HTMLElement>(null);
+  const selectJob = useCallback((id: string | null) => {
+    setSelectedId(id);
+    if (id && window.matchMedia("(max-width: 1023px)").matches)
+      mapSection.current?.scrollIntoView({
+        block: "start",
+        behavior: "instant",
+      });
+  }, []);
   const visibleJobs = useMemo(
     () => filterCityJobs(jobs, query, kind),
     [jobs, query, kind],
@@ -57,7 +66,7 @@ export function CalgaryExplorer() {
     setQuery("");
     setKind("all");
     setDraftLocation(null);
-    setSelectedId(job.id);
+    selectJob(job.id);
     setAnnouncement(
       "Demo job added at your Calgary pin. It will disappear when this page is refreshed.",
     );
@@ -166,10 +175,10 @@ export function CalgaryExplorer() {
               {visibleJobs.length}{" "}
               {visibleJobs.length === 1 ? "project" : "projects"} in Calgary
             </p>
-            <span>Click a pin to explore</span>
+            <span>Select a pin for 3D</span>
           </div>
           <ol
-            className="min-h-0 flex-1 divide-y overflow-y-auto"
+            className="max-h-[32rem] min-h-0 flex-1 divide-y overflow-y-auto overscroll-contain lg:max-h-none"
             aria-label="Project list"
           >
             {visibleJobs.map((job) => {
@@ -185,7 +194,7 @@ export function CalgaryExplorer() {
                     aria-label={`View ${job.title}`}
                     aria-pressed={selectedId === job.id}
                     onClick={() =>
-                      setSelectedId(selectedId === job.id ? null : job.id)
+                      selectJob(selectedId === job.id ? null : job.id)
                     }
                   >
                     <span
@@ -247,13 +256,14 @@ export function CalgaryExplorer() {
           </p>
         </aside>
         <section
+          ref={mapSection}
           aria-label="Calgary job map"
           className="relative order-1 h-[65svh] min-h-[27rem] lg:order-2 lg:h-full lg:min-h-0"
         >
           <CalgaryCanvas
             jobs={visibleJobs}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={selectJob}
             placing={placing}
             onPick={pickLocation}
           />

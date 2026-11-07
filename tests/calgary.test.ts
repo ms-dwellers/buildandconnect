@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   CALGARY_CENTER,
+  CALGARY_BOUNDS,
   CALGARY_JOBS,
   filterCityJobs,
   isInCalgary,
@@ -25,6 +26,39 @@ test("the demo's jobs are uniquely identified, Calgary-based, and clearly typed"
   assert.ok(
     CALGARY_JOBS.some((job) => job.kind === "volunteer" && job.mentorship),
   );
+});
+test("postings cover every quadrant and the north and south edges of the city", () => {
+  assert.ok(CALGARY_JOBS.length >= 30);
+  for (const north of [true, false]) {
+    for (const west of [true, false]) {
+      assert.ok(
+        CALGARY_JOBS.filter(
+          (job) =>
+            job.latitude > CALGARY_CENTER.latitude === north &&
+            job.longitude < CALGARY_CENTER.longitude === west,
+        ).length >= 4,
+      );
+    }
+  }
+  assert.ok(CALGARY_JOBS.some((job) => job.latitude > 51.17));
+  assert.ok(CALGARY_JOBS.some((job) => job.latitude < 50.89));
+  assert.ok(CALGARY_JOBS.some((job) => job.longitude < -114.23));
+  assert.ok(CALGARY_JOBS.some((job) => job.longitude > -113.94));
+});
+test("the illustrated overview fits every posting even on a narrow screen", () => {
+  for (const width of [320, 390, 768, 1200]) {
+    const viewport = previewViewport(width, 548);
+    for (const job of CALGARY_JOBS) {
+      const point = previewPosition(job);
+      const x = viewport.left + (point.x / 100) * viewport.width;
+      const y = viewport.top + (point.y / 100) * viewport.height;
+      assert.ok(x >= 0 && x <= width && y >= 0 && y <= 548);
+    }
+    assert.deepEqual(previewPoint(0, 0), {
+      longitude: CALGARY_BOUNDS[0][0],
+      latitude: CALGARY_BOUNDS[1][1],
+    });
+  }
 });
 test("Calgary bounds reject other cities and malformed coordinates", () => {
   assert.ok(isInCalgary(CALGARY_CENTER));
