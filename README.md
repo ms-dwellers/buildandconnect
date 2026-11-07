@@ -70,6 +70,23 @@ Convex functions to your cloud development deployment; it does not deploy the
 frontend or touch production. Keep the generated `convex/_generated/` files in
 source control. The existing `/api` routes remain the frontend contract.
 
+### Remote development with Rex
+
+With Rex, OpenCode, and Tailscale installed on the development host:
+
+```sh
+bun run dev:rex
+```
+
+Open **build-and-connect** in Rex on your phone. **Agent** continues the latest
+project conversation; **Server** starts the frontend and Convex watcher and prints
+the private Tailscale HTTPS link. Pass `--session SESSION_ID` to resume a specific
+OpenCode conversation. The launcher reuses an existing project session.
+
+To run only the server stack in an existing terminal, use `bun run dev:remote`.
+Your phone must be connected to the same tailnet. See
+[remote development](docs/development.md#remote-development) for requirements.
+
 ## Commands
 
 Run source commands from the repository root after `bun install --frozen-lockfile`. Without Nix, use

@@ -18,7 +18,7 @@ export function mergeEnvironment(text, values) {
     .join("\n")}\n`;
 }
 
-export async function configure() {
+export async function configure(siteUrl = process.argv[2]) {
   const info = await lstat(environmentFile);
   if (!info.isFile() || info.isSymbolicLink())
     throw new Error("Use a regular .env.local file in this checkout.");
@@ -33,9 +33,7 @@ export async function configure() {
       "Select a cloud development deployment first; this setup never targets production or deploy keys.",
     );
   }
-  const site = new URL(
-    process.argv[2] ?? config.SITE_URL ?? "http://127.0.0.1:5173",
-  );
+  const site = new URL(siteUrl ?? config.SITE_URL ?? "http://127.0.0.1:5173");
   if (
     !["http:", "https:"].includes(site.protocol) ||
     site.username ||
