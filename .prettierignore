@@ -1,0 +1,13 @@
+node_modules
+dist
+.cloudflare
+.vinext
+.direnv
+.wrangler
+result
+result-*
+package-lock.json
+flake.lock
+next-env.d.ts
+.env*
+.dev.vars*

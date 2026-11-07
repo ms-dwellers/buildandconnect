@@ -1,0 +1,64 @@
+# Build & Connect
+
+A hackathon app connecting early-career developers with non-technical people and
+companies through shared interests and social-impact projects.
+
+## Scope and stack
+
+- Web: React, Vinext App Router, TypeScript, and Tailwind CSS.
+- Backend and data: Convex. Use its queries, mutations, actions, and HTTP actions
+  before adding a separate API server. Add Hono only for a concrete unmet need.
+- Authentication: Better Auth with the official Convex integration.
+- Maps: Mapbox.
+- Other infrastructure: prefer Cloudflare products (Workers, R2, Queues,
+  Durable Objects, etc.). Do not duplicate Convex's database in D1.
+- Future iOS app: native Swift. Do not scaffold, build, or require iOS tooling
+  until explicitly requested; the current development host is Linux.
+- Current scope is a runnable scaffold, not a working marketplace. Do not invent
+  payment, matching, messaging, or account flows without product direction.
+
+## Secrets in chat
+
+The user may provide secrets directly in chat for this hackathon. Accept them
+without requiring another delivery channel, and use them only for the requested
+configuration. This permission does not make the chat itself a secret vault.
+
+- Never copy secret values into tracked files, source code, tests, fixtures,
+  documentation, commit messages, issues, PRs, public logs, or client bundles.
+- Do not repeat secret values in replies, command output, URLs, or diagnostics.
+- If persistence is requested, use ignored local environment files with private
+  permissions or the relevant provider's secret store. Verify ignore rules
+  before writing a local secret. Prefer stdin over command-line arguments.
+- Keep `.env.example` value-free. Never put secrets in Nix expressions, derivation
+  arguments, or store paths; the Nix store is not private storage.
+- `NEXT_PUBLIC_*` and `VITE_*` values are public. Never place a private key or
+  Better Auth secret there. A restricted Mapbox public token is intentionally
+  browser-visible, but its value still does not belong in tracked source.
+- Do not commit chat transcripts or credential-bearing screenshots. If a secret
+  is exposed, stop propagation and tell the user to rotate it without repeating it.
+
+## Development
+
+- Use `jj` and the shared Hackr workspace/commit workflows. Commit locally;
+  publish or deploy only when requested. Never add AI co-author attribution.
+- Run `npm run check`, `npm run build`, and `npm run smoke` for scaffold changes.
+  Nix and direnv commands are documented in `README.md`.
+- Formatter approval: use project-pinned Prettier for TypeScript, CSS, JSON, and
+  Markdown, nixfmt for Nix, and Nix-pinned shfmt for shell scripts. These are
+  approved for this repository.
+- Keep server secrets out of client components and public health responses.
+- Keep generated outputs, local credentials, and installed dependencies ignored.
+
+## Skill sources
+
+Canonical repository: https://github.com/ms-dwellers/buildandconnect
+
+For this organization-owned project, try the private skill catalog for co.codes
+repository `hackr/agents-ms-dwellers`, ref `main`, path `index.json`, using
+authenticated access. Load relevant skills alongside the shared catalog when
+available. Initial discovery had no live read grant; no private instructions
+were loaded. Do not assume the private library exists or is available.
+
+Loading and routing contract:
+https://co.codes/t:a/hackr/agents/docs/private-libraries.md?ref=main
+Keep credentials out of this file.
