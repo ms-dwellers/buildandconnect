@@ -88,7 +88,10 @@ include field paths under `issues`. Better Auth routes use its native error shap
 | PATCH  | `/api/developers/me/location`     | Developer: `{latitude,longitude,radiusKm?}` without AI calls                    |
 | GET    | `/api/developers`                 | Company/recruiter: consented profiles and project evidence                      |
 | POST   | `/api/opportunities`              | Company: analyze, embed, and persist a new opportunity; returns 201             |
+| GET    | `/api/map`                        | Public: Calgary map listings, precision depending on viewer (see map guide)     |
 | GET    | `/api/opportunities`              | Open opportunities and structured analyses                                      |
+| GET    | `/api/opportunities/mine`         | Company: own opportunities, open and closed, paginated                          |
+| PUT    | `/api/opportunities/:id`          | Owner: replace details; re-analyses and re-embeds; status unchanged             |
 | GET    | `/api/opportunities/:id`          | Opportunity detail                                                              |
 | PATCH  | `/api/opportunities/:id`          | Owner: `{status:"open"\|"closed"}`                                              |
 | GET    | `/api/opportunities/:id/matches`  | Owner: ranked developers, score breakdowns, explanations, weights and version   |
@@ -97,6 +100,8 @@ include field paths under `issues`. Better Auth routes use its native error shap
 | GET    | `/api/connections`                | Participant's mutual-interest connections, scoped to opportunities              |
 | POST   | `/api/requests`                   | Requester: analyze, embed, and post a local request with a pin; returns 201     |
 | GET    | `/api/requests`                   | Requester: own requests, including claimant name when claimed                   |
+| GET    | `/api/requests/claimed`           | Developer: requests they have accepted, paginated                               |
+| PUT    | `/api/requests/:id`               | Requester owner: replace details while open (409 when claimed or closed)        |
 | GET    | `/api/requests/nearby`            | Developer: ranked open requests inside the saved radius                         |
 | GET    | `/api/requests/:id`               | Requester owner, or developer for open/own claimed request                      |
 | PATCH  | `/api/requests/:id`               | Requester: `{status:"closed"}`                                                  |
@@ -177,6 +182,15 @@ Interest responses include `companyInterested`, `developerInterested`, and
 while both flags are true; either party can withdraw even after opportunity close.
 Closing an opportunity stops new interest and matching, but preserves existing
 connections. Browsing matches alone never creates interest or a connection.
+
+Opportunities accept optional listing fields: `compensation` and `commitment`
+(each up to 80 characters), and a map pin given as `place`, `latitude` and
+`longitude` together (all three or none). Unpinned opportunities stay off the map.
+Edits replace the whole record and re-run analysis, so they return 503 and save
+nothing when Workers AI is unavailable.
+
+Nothing is deleted through the API yet. Requests close and opportunities close or
+reopen; archive-versus-delete policy and account deletion await a product decision.
 
 ### Local request
 

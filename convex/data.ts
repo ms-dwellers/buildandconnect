@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { access, fail } from "./access";
+import { access, fail, optionalAccess } from "./access";
 import {
   developerData,
   findDeveloper,
@@ -43,6 +43,8 @@ import {
   ANALYSIS_VERSION,
   EMBEDDING_MODEL,
 } from "../backend/models";
+import { opportunityListing, requestListing } from "../backend/listings";
+import { CALGARY_BOUNDS, type CityJob } from "../lib/calgary-area";
 
 const secret = v.string();
 const pagination = { after: v.string(), limit: v.number() };
@@ -615,5 +617,155 @@ export const releaseRequest = mutation({
         claimantName: null,
       }),
     );
+  },
+});
+
+const MAP_LIMIT = 500;
+
+/**
+ * The public Calgary map feed. Guests and non-developers receive coarse request
+ * locations without requester names; see backend/listings.ts for the rules.
+ */
+export const mapListings = query({
+  args: { secret },
+  handler: async (ctx, args) => {
+    const actor = await optionalAccess(ctx, args.secret);
+    const viewer = actor ? { id: actor.user.id, role: actor.role } : null;
+    const jobs = await ctx.db
+      .query("opportunities")
+      .withIndex("by_status", (q) => q.eq("status", "open"))
+      .take(MAP_LIMIT + 1);
+    const open = await ctx.db
+      .query("requests")
+      .withIndex("by_status_latitude", (q) =>
+        q
+          .eq("status", "open")
+          .gte("details.latitude", CALGARY_BOUNDS[0][1])
+          .lte("details.latitude", CALGARY_BOUNDS[1][1]),
+      )
+      .take(MAP_LIMIT + 1);
+    // People involved in a claim keep seeing it after it leaves the open pool.
+    const involved =
+      viewer?.role === "developer"
+        ? await ctx.db
+            .query("requests")
+            .withIndex("by_claimant", (q) => q.eq("claimedBy", viewer.id))
+            .take(MAP_LIMIT)
+        : viewer?.role === "requester"
+          ? await ctx.db
+              .query("requests")
+              .withIndex("by_owner", (q) => q.eq("ownerId", viewer.id))
+              .filter((q) => q.eq(q.field("status"), "claimed"))
+              .take(MAP_LIMIT)
+          : [];
+    const listings = new Map<string, CityJob>();
+    for (const row of jobs.slice(0, MAP_LIMIT)) {
+      const listing = opportunityListing(row, viewer);
+      if (listing) listings.set(listing.id, listing);
+    }
+    for (const row of [...open.slice(0, MAP_LIMIT), ...involved]) {
+      const listing = requestListing(row, viewer);
+      if (listing) listings.set(listing.id, listing);
+    }
+    return {
+      viewer: actor ? { name: actor.user.name, role: actor.role } : null,
+      listings: [...listings.values()],
+      truncated: jobs.length > MAP_LIMIT || open.length > MAP_LIMIT,
+    };
+  },
+});
+
+export const ownedOpportunities = query({
+  args: { secret, ...pagination },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["company"]);
+    checkLimit(args.limit);
+    const rows = await ctx.db
+      .query("opportunities")
+      .withIndex("by_owner", (q) => q.eq("ownerId", user.id))
+      .collect();
+    return page(
+      rows.map((row) => publicOpportunity(opportunityData(row))),
+      args.after,
+      args.limit,
+    );
+  },
+});
+
+export const reviseOpportunity = mutation({
+  args: {
+    secret,
+    id: v.string(),
+    details: opportunity,
+    analysis,
+    embedding: v.array(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["company"]);
+    const row = await findOpportunity(ctx, args.id);
+    if (!row) fail(404, "Opportunity not found");
+    if (row.ownerId !== user.id)
+      fail(403, "Only the opportunity owner can edit this");
+    const details = opportunitySchema.parse(args.details);
+    const values = {
+      cityKey: details.city.trim().toLowerCase(),
+      details,
+      analysis: analysisSchema.parse(args.analysis),
+      embedding: vectorSchema.parse(args.embedding),
+      analysisModel: ANALYSIS_MODEL,
+      analysisVersion: ANALYSIS_VERSION,
+      embeddingModel: EMBEDDING_MODEL,
+    };
+    await ctx.db.patch(row._id, values);
+    return publicOpportunity(opportunityData({ ...row, ...values }));
+  },
+});
+
+export const claimedRequests = query({
+  args: { secret, ...pagination },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["developer"]);
+    checkLimit(args.limit);
+    const rows = await ctx.db
+      .query("requests")
+      .withIndex("by_claimant", (q) => q.eq("claimedBy", user.id))
+      .collect();
+    return page(
+      rows
+        .filter((row) => row.status === "claimed")
+        .map((row) => publicRequest(requestData(row))),
+      args.after,
+      args.limit,
+    );
+  },
+});
+
+export const reviseRequest = mutation({
+  args: {
+    secret,
+    id: v.string(),
+    details: request,
+    analysis,
+    embedding: v.array(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["requester"]);
+    const row = await findRequest(ctx, args.id);
+    if (!row) fail(404, "Request not found");
+    if (row.ownerId !== user.id) fail(403, "Only the requester can edit this");
+    // Editing a claimed request could move it outside the claimant's radius.
+    if (row.status === "claimed")
+      fail(409, "Release the claim before editing this request");
+    if (row.status === "closed") fail(409, "Closed requests cannot be edited");
+    const values = {
+      details: requestSchema.parse(args.details),
+      analysis: analysisSchema.parse(args.analysis),
+      embedding: vectorSchema.parse(args.embedding),
+      analysisModel: ANALYSIS_MODEL,
+      analysisVersion: ANALYSIS_VERSION,
+      embeddingModel: EMBEDDING_MODEL,
+    };
+    await ctx.db.patch(row._id, values);
+    return publicRequest(requestData({ ...row, ...values }));
   },
 });

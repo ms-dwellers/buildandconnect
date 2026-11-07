@@ -1,73 +1,15 @@
-/// <reference types="vite/client" />
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
-import { convexTest } from "convex-test";
-import { register } from "@convex-dev/better-auth/test";
-import schema from "../../convex/schema";
-import { api, components } from "../../convex/_generated/api";
 import {
-  developer,
-  opportunity,
+  actor,
   analysis,
+  api,
+  components,
   embedding,
-} from "../fixtures/matching";
-import type { Role } from "../../backend/schemas";
-
-const secret = "local-test-bridge-not-a-real-credential";
-const modules = import.meta.glob("../../convex/**/*.ts");
-const {
-  id: _id,
-  name: _name,
-  embedding: _embedding,
-  location: _location,
-  recentExposure: _exposure,
-  ...profile
-} = developer;
-const {
-  id: _jobId,
-  ownerId: _ownerId,
-  analysis: _analysis,
-  embedding: _jobEmbedding,
-  status: _status,
-  ...job
-} = opportunity;
-function setup() {
-  const t = convexTest(schema, modules);
-  register(t);
-  return t;
-}
-async function actor(t: ReturnType<typeof setup>, role: Role) {
-  const user = await t.run((ctx) =>
-    ctx.runMutation(components.betterAuth.adapter.create, {
-      input: {
-        model: "user",
-        data: {
-          name: role,
-          email: `${crypto.randomUUID()}@example.test`,
-          emailVerified: false,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        },
-      },
-    }),
-  );
-  const session = await t.run((ctx) =>
-    ctx.runMutation(components.betterAuth.adapter.create, {
-      input: {
-        model: "session",
-        data: {
-          userId: user._id,
-          token: crypto.randomUUID(),
-          expiresAt: Date.now() + 60000,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        },
-      },
-    }),
-  );
-  const client = t.withIdentity({ subject: user._id, sessionId: session._id });
-  await client.mutation(api.data.setRole, { secret, role });
-  return { client, id: user._id, sessionId: session._id };
-}
+  job,
+  profile,
+  secret,
+  setup,
+} from "./harness";
 
 beforeEach(() => vi.stubEnv("CONVEX_BRIDGE_SECRET", secret));
 afterEach(() => vi.unstubAllEnvs());

@@ -12,10 +12,7 @@ export function isConfigured(env: BackendEnv) {
   );
 }
 
-export async function createAuthenticatedClient(
-  env: BackendEnv,
-  request: Request,
-) {
+async function sessionToken(env: BackendEnv, request: Request) {
   const headers = new Headers(request.headers);
   headers.set("x-buildandconnect-bridge", env.CONVEX_BRIDGE_SECRET);
   headers.set(
@@ -31,9 +28,27 @@ export async function createAuthenticatedClient(
       isAuthError: () => false,
     },
   });
+  return token;
+}
+
+export async function createAuthenticatedClient(
+  env: BackendEnv,
+  request: Request,
+) {
+  const token = await sessionToken(env, request);
   if (!token) throw new HTTPException(401, { message: "Sign in to continue" });
   const client = new ConvexHttpClient(env.VITE_CONVEX_URL);
   client.setAuth(token);
+  return client;
+}
+
+/** For public reads: attach the session when there is one, otherwise none. */
+export async function createOptionalClient(env: BackendEnv, request: Request) {
+  const client = new ConvexHttpClient(env.VITE_CONVEX_URL);
+  if (request.headers.get("cookie")) {
+    const token = await sessionToken(env, request);
+    if (token) client.setAuth(token);
+  }
   return client;
 }
 

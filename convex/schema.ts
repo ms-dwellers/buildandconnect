@@ -62,6 +62,11 @@ export const opportunity = v.object({
   minimumWeeklyHours: v.number(),
   collaboration,
   interests: tags,
+  place: v.optional(v.string()),
+  latitude: v.optional(v.number()),
+  longitude: v.optional(v.number()),
+  compensation: v.optional(v.string()),
+  commitment: v.optional(v.string()),
 });
 export const request = v.object({
   title: v.string(),
@@ -101,7 +106,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_public_id", ["id"])
-    .index("by_owner", ["ownerId"]),
+    .index("by_owner", ["ownerId"])
+    .index("by_status", ["status"]),
   requests: defineTable({
     id: v.string(),
     ownerId: v.string(),
@@ -123,6 +129,7 @@ export default defineSchema({
   })
     .index("by_public_id", ["id"])
     .index("by_owner", ["ownerId"])
+    .index("by_claimant", ["claimedBy"])
     .index("by_status_latitude", ["status", "details.latitude"]),
   interests: defineTable({
     opportunityId: v.string(),

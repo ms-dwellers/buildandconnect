@@ -82,8 +82,27 @@ export const opportunitySchema = z
     minimumWeeklyHours: z.number().int().min(1).max(80),
     collaboration,
     interests: tags,
+    // Optional map pin and listing details. A pin is all-or-nothing.
+    place: text.optional(),
+    latitude: z.number().finite().min(-90).max(90).optional(),
+    longitude: z.number().finite().min(-180).max(180).optional(),
+    compensation: z.string().trim().min(1).max(80).optional(),
+    commitment: z.string().trim().min(1).max(80).optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (value) =>
+      [value.place, value.latitude, value.longitude].every(
+        (part) => part === undefined,
+      ) ||
+      [value.place, value.latitude, value.longitude].every(
+        (part) => part !== undefined,
+      ),
+    {
+      message: "Choose a map pin with a place, latitude, and longitude",
+      path: ["latitude"],
+    },
+  );
 
 export const coordinatesSchema = z
   .object({

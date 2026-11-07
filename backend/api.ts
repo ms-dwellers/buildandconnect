@@ -5,7 +5,12 @@ import { ConvexError } from "convex/values";
 import type { ConvexHttpClient } from "convex/browser";
 import { z, ZodError } from "zod";
 import { api as convex } from "../convex/_generated/api";
-import { createAuthenticatedClient, isConfigured, proxyAuth } from "./auth";
+import {
+  createAuthenticatedClient,
+  createOptionalClient,
+  isConfigured,
+  proxyAuth,
+} from "./auth";
 import {
   analyzeDeveloper,
   analyzeOpportunity,
@@ -80,6 +85,14 @@ export function createApi(
     }),
   );
   app.on(["GET", "POST"], "/auth/*", (c) => proxyAuth(c.env, c.req.raw));
+  // The map is public. Viewer-specific detail depends on the optional session.
+  app.get("/map", async (c) =>
+    c.json(
+      await (
+        await createOptionalClient(c.env, c.req.raw)
+      ).query(convex.data.mapListings, { secret: secret(c) }),
+    ),
+  );
   app.use("*", async (c, next) => {
     const connection = await createAuthenticatedClient(c.env, c.req.raw);
     c.set("client", connection);
@@ -186,6 +199,27 @@ export function createApi(
       }),
     );
   });
+  app.get("/opportunities/mine", async (c) =>
+    c.json(
+      await client(c).query(convex.data.ownedOpportunities, {
+        secret: secret(c),
+        ...pagination.parse(c.req.query()),
+      }),
+    ),
+  );
+  app.put("/opportunities/:id", async (c) => {
+    requireRole(c, "company");
+    const details = opportunitySchema.parse(await c.req.json());
+    const result = await services.analyzeOpportunity(c.env.AI, details);
+    return c.json(
+      await client(c).mutation(convex.data.reviseOpportunity, {
+        secret: secret(c),
+        id: c.req.param("id"),
+        details,
+        ...result,
+      }),
+    );
+  });
   app.get("/opportunities/:id", async (c) =>
     c.json(
       await client(c).query(convex.data.getOpportunity, {
@@ -279,6 +313,27 @@ export function createApi(
       }),
     ),
   );
+  app.get("/requests/claimed", async (c) =>
+    c.json(
+      await client(c).query(convex.data.claimedRequests, {
+        secret: secret(c),
+        ...pagination.parse(c.req.query()),
+      }),
+    ),
+  );
+  app.put("/requests/:id", async (c) => {
+    requireRole(c, "requester");
+    const details = requestSchema.parse(await c.req.json());
+    const result = await services.analyzeRequest(c.env.AI, details);
+    return c.json(
+      await client(c).mutation(convex.data.reviseRequest, {
+        secret: secret(c),
+        id: c.req.param("id"),
+        details,
+        ...result,
+      }),
+    );
+  });
   app.get("/requests/:id", async (c) =>
     c.json(
       await client(c).query(convex.data.getRequest, {

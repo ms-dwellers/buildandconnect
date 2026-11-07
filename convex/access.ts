@@ -7,17 +7,31 @@ export function fail(status: number, message: string): never {
   throw new ConvexError({ status, message });
 }
 
-export async function access(
-  ctx: QueryCtx | MutationCtx,
-  secret: string,
-  roles?: Role[],
-) {
+function requireBridge(secret: string) {
   if (
     !process.env.CONVEX_BRIDGE_SECRET ||
     secret !== process.env.CONVEX_BRIDGE_SECRET
   ) {
     fail(403, "Only the application API can access this function");
   }
+}
+
+/** Public reads still require the bridge; the signed-in user is optional. */
+export async function optionalAccess(
+  ctx: QueryCtx | MutationCtx,
+  secret: string,
+) {
+  requireBridge(secret);
+  if (!(await authComponent.safeGetAuthUser(ctx))) return null;
+  return access(ctx, secret);
+}
+
+export async function access(
+  ctx: QueryCtx | MutationCtx,
+  secret: string,
+  roles?: Role[],
+) {
+  requireBridge(secret);
   const user = await authComponent.safeGetAuthUser(ctx);
   if (!user) fail(401, "Sign in to continue");
   const member = await ctx.db
