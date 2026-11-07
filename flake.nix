@@ -29,6 +29,7 @@
                 "app"
                 "components"
                 "components.json"
+                "public"
                 "lib"
                 "backend"
                 "convex"

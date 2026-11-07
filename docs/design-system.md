@@ -37,11 +37,17 @@ darker derived red; error copy uses a darker foreground. Pale surfaces use dark
 text, and primary buttons pair emerald with cream. The current theme is
 intentionally light-only; OS dark-mode preference does not change its colors.
 
+Use the 60/30/10 rule as a visual balance: roughly 60% beige page and card
+backgrounds, 30% supporting wheat surfaces and emerald structure, and 10% accents.
+Keep apricot and coral concentrated in small illustration details and status
+indicators, not large background blocks. These are composition guidelines, not
+fixed percentages enforced on every component or the map.
+
 ## Components and typography
 
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
-- The landing page uses open spacing, editorial serif headings, light paper
+- The landing page uses open spacing, Space Mono headings, light paper
   texture, and an original code-native neighborhood garden illustration. Keep
   decorative artwork out of the accessibility tree; do not treat it as map data.
 
@@ -62,8 +68,11 @@ intentionally light-only; OS dark-mode preference does not change its colors.
 - Use `render` for element composition, not Radix's `asChild`.
 - Prefer coss variants and sizes. Use local classes for layout, not a replacement
   set of component styles.
-- Body and component headings use the system sans-serif stack. Editorial display
-  headings use the serif display token. No external font request is required.
+- Body text, navigation, buttons, and compact component headings use League Spartan.
+  Large headings (`h1`, `h2`, and `font-display`) use Space Mono. Form labels and
+  legends use DM Mono, also available through `font-mono` for metadata and code.
+  Fonts are self-hosted in `public/fonts/` with their SIL Open Font Licenses and
+  use `font-display: swap`; no Google request is made when visiting the app.
 - The isolated application root and relatively positioned body preserve Base UI
   portal layering and Safari backdrop behavior.
 - Keep focus visible, icons decorative unless they convey unique information,

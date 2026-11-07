@@ -49,6 +49,36 @@ test("theme preserves all five supplied reference colors", () => {
   assert.equal(tokens.get("--palette-coral"), "#eb5757");
 });
 
+test("theme keeps beige dominant with wheat supporting surfaces", () => {
+  assert.equal(tokens.get("--background"), "var(--palette-cream)");
+  assert.equal(tokens.get("--card"), "var(--palette-cream)");
+  assert.equal(tokens.get("--secondary"), "var(--palette-wheat)");
+  assert.equal(tokens.get("--sidebar"), "var(--palette-wheat)");
+});
+
+test("selected font families are self-hosted with swap and licenses", () => {
+  assert.match(tokens.get("--app-font-display") ?? "", /^"Space Mono"/);
+  assert.match(tokens.get("--app-font-sans") ?? "", /^"League Spartan"/);
+  assert.match(tokens.get("--app-font-mono") ?? "", /^"DM Mono"/);
+
+  const faces = [...stylesheet.matchAll(/@font-face\s*\{([^}]+)\}/g)];
+  assert.equal(faces.length, 8);
+  for (const [, face] of faces) {
+    assert.match(face, /font-display:\s*swap/);
+    const path = face.match(/url\("(\/fonts\/[^\"]+\.ttf)"\)/)?.[1];
+    assert.ok(path, "Font must use a local asset");
+    const font = readFileSync(new URL(`../public${path}`, import.meta.url));
+    assert.equal(font.readUInt32BE(0), 0x00010000, "Valid TrueType font");
+  }
+  for (const family of ["space-mono", "league-spartan", "dm-mono"]) {
+    const license = readFileSync(
+      new URL(`../public/fonts/${family}-OFL.txt`, import.meta.url),
+      "utf8",
+    );
+    assert.match(license, /SIL OPEN FONT LICENSE/);
+  }
+});
+
 test("theme text pairings meet WCAG AA normal-text contrast", () => {
   const pairs = [
     ["var(--foreground)", "var(--background)"],

@@ -47,7 +47,7 @@ export default function Home() {
           <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center text-center">
             <h1
               id="hero-heading"
-              className="font-display text-[clamp(3.4rem,7vw,6.1rem)] leading-[1.04] tracking-[-0.055em] text-balance"
+              className="font-display text-[clamp(1.75rem,5.1vw,4.375rem)] font-bold leading-[1.18] tracking-[-0.04em] text-balance"
             >
               Build experience.
               <br />
@@ -121,7 +121,7 @@ export default function Home() {
           aria-labelledby="join-heading"
           className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 sm:pb-24"
         >
-          <Card className="border-primary/15 bg-secondary/50">
+          <Card className="border-primary/15 bg-secondary">
             <CardPanel className="flex flex-col items-start justify-between gap-8 p-8 sm:p-12 md:flex-row md:items-center">
               <h2
                 id="join-heading"

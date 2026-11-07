@@ -97,11 +97,10 @@ export function Foundations() {
             Great company.
           </p>
           <p className="text-base leading-7">
-            A clear, friendly sans-serif for the details. An editorial serif for
-            the big ideas.
+            League Spartan for body text. Space Mono for large headings.
           </p>
           <p className="text-sm text-muted-foreground">
-            Secondary copy stays readable on warm surfaces.
+            <span className="font-mono">DM Mono for labels and metadata.</span>
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <code className="rounded-md bg-muted px-2 py-1 text-xs">
