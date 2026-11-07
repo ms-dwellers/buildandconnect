@@ -17,6 +17,7 @@ export function Label({
     ),
     "data-slot": "label",
   };
+
   return useRender({
     defaultTagName: "label",
     props: mergeProps<"label">(defaultProps, props),

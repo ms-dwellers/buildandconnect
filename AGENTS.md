@@ -14,6 +14,11 @@ companies through shared interests and social-impact projects.
   `#1E6348`, cream `#F8F7DE`, wheat `#F6DFB3`, apricot `#F0A345`, and coral
   `#EB5757`. Keep raw palette values out of components; use contrast-safe text
   pairings and keep the interface light unless dark mode is explicitly requested.
+- Avoid decorative pills. Use plain text for eyebrows and section labels; reserve
+  softly rectangular, comfortably padded badges for actual status or metadata.
+- Prefer restrained tactile styling: raised solid buttons with a visible lower
+  edge and real press travel, subtle card shadows, no heavy gloss. Keep navigation
+  links flat and preserve keyboard, disabled, and reduced-motion behavior.
 - Backend and data: Hono mounted in Vinext route handlers, Cloudflare D1, and
   Workers AI. `backend/` owns API logic; `migrations/` owns SQL schema changes.
 - Authentication: Better Auth with its built-in D1 support. Enforce ownership

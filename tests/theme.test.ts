@@ -56,6 +56,7 @@ test("theme text pairings meet WCAG AA normal-text contrast", () => {
     ["var(--muted-foreground)", "var(--card)"],
     ["var(--card-foreground)", "var(--card)"],
     ["var(--primary-foreground)", "var(--primary)"],
+    ["var(--primary-foreground)", "var(--button-primary-hover)"],
     ["var(--secondary-foreground)", "var(--secondary)"],
     ["var(--accent-foreground)", "var(--accent)"],
     ["var(--destructive-foreground)", "var(--background)"],
