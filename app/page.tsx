@@ -1,6 +1,6 @@
 import { ArrowRightIcon, ArrowUpRightIcon, SproutIcon } from "lucide-react";
 import { AccountLinks } from "@/components/app/account-links";
-import { CommunityGarden } from "@/components/landing/community-garden";
+import { HeroScene } from "@/components/landing/hero-scene";
 import { MapJourneyLink } from "@/components/map/map-journey";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,8 +34,9 @@ export default function Home() {
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           aria-labelledby="hero-heading"
-          className="relative mx-auto max-w-7xl overflow-hidden rounded-b-xl bg-secondary pt-10 sm:pt-14"
+          className="relative isolate mx-auto min-h-[820px] max-w-7xl overflow-hidden rounded-b-xl bg-secondary pt-10 sm:min-h-[800px] sm:pt-14"
         >
+          <HeroScene />
           <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-5 text-center sm:px-10">
             <h1
               id="hero-heading"
@@ -61,11 +62,6 @@ export default function Home() {
               >
                 Post a request
               </Button>
-            </div>
-          </div>
-          <div className="relative mt-8 overflow-hidden sm:mt-0">
-            <div className="-ml-[25%] w-[150%] sm:ml-0 sm:w-full">
-              <CommunityGarden />
             </div>
           </div>
         </section>

@@ -56,9 +56,20 @@ percentages enforced on every component or the map.
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
 - The landing page uses open spacing, bold League Spartan headings, light paper
-  texture, and a softly framed mint hero with an original code-native neighborhood
-  garden, layered trees, clouds, and a teal waterfront. Keep
+  texture, and a softly framed mint hero with a pixel-art landscape from the
+  supplied `public/sprites/` collection. Trees, roses, and grass sit on repeating
+  ground tiles above a teal waterfront. Keep
   decorative artwork out of the accessibility tree; do not treat it as map data.
+
+- `components/landing/hero-scene.tsx` owns the sprite composition and cloud reveal.
+  Background clouds stay behind the heading. Foreground cloud banks part after
+  window load and font readiness, with a four-second fail-safe. They never block
+  clicks or keyboard navigation. Reduced motion and JavaScript-disabled browsing
+  skip the reveal. Cloud sizes use whole-number multiples of their native SVG
+  dimensions; reflection does not change their aspect ratio.
+- All 22 supplied SVG files are copied unchanged with lowercase, hyphenated names.
+  macOS archive metadata is excluded. Unused variations and `tets.svg` are retained
+  in the asset folder but are not loaded by the homepage.
 
 - No decorative pills. Ordinary labels are plain text. Badges are
   softly rectangular with a small radius, explicit line height, and enough padding
