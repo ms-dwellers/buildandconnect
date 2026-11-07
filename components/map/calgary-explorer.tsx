@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
@@ -25,10 +25,8 @@ import {
 } from "@/lib/calgary";
 import { CalgaryCanvas } from "./calgary-canvas";
 import { DemoJobDialog } from "./demo-job-dialog";
-import { useMapJourney } from "./map-journey";
 
 export function CalgaryExplorer() {
-  const { ready } = useMapJourney();
   const [jobs, setJobs] = useState(CALGARY_JOBS);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<"all" | CityJob["kind"]>("all");
@@ -49,9 +47,6 @@ export function CalgaryExplorer() {
     () => filterCityJobs(jobs, query, kind),
     [jobs, query, kind],
   );
-  useEffect(() => {
-    ready();
-  }, [ready]);
   const pickLocation = useCallback(
     (point: CityPoint) => {
       if (placing) {

@@ -11,6 +11,19 @@ export const JOB_SOURCE = "calgary-jobs";
 export const CLUSTER_LAYER = "calgary-job-clusters";
 export const POINT_LAYER = "calgary-job-points";
 
+export function cityMapMode({
+  hasToken,
+  ready,
+  failed,
+}: {
+  hasToken: boolean;
+  ready: boolean;
+  failed: boolean;
+}): "loading" | "mapbox" | "preview" {
+  if (!hasToken || failed) return "preview";
+  return ready ? "mapbox" : "loading";
+}
+
 export type MapPalette = {
   primary: string;
   surface: string;

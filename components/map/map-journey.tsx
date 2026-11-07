@@ -22,6 +22,18 @@ const JourneyContext = createContext({
 });
 export const useMapJourney = () => useContext(JourneyContext);
 
+export function MapClouds() {
+  return (
+    <>
+      <div className="cloud-veil" aria-hidden="true" />
+      <div className="cloud-bank cloud-bank-nw" aria-hidden="true" />
+      <div className="cloud-bank cloud-bank-ne" aria-hidden="true" />
+      <div className="cloud-bank cloud-bank-sw" aria-hidden="true" />
+      <div className="cloud-bank cloud-bank-se" aria-hidden="true" />
+    </>
+  );
+}
+
 export function MapJourneyProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -54,6 +66,7 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (phase === "idle") return;
+    if (phase === "covering" && pathname === "/map") return;
     const timeout = setTimeout(
       () => {
         setPhase("idle");
@@ -67,7 +80,7 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
       phase === "revealing" ? 1900 : 5000,
     );
     return () => clearTimeout(timeout);
-  }, [phase]);
+  }, [phase, pathname]);
   useEffect(() => {
     if (
       (pathname !== "/" && pathname !== "/map") ||
@@ -116,11 +129,7 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
             if (event.key === "Escape") finish();
           }}
         >
-          <div className="cloud-veil" aria-hidden="true" />
-          <div className="cloud-bank cloud-bank-nw" aria-hidden="true" />
-          <div className="cloud-bank cloud-bank-ne" aria-hidden="true" />
-          <div className="cloud-bank cloud-bank-sw" aria-hidden="true" />
-          <div className="cloud-bank cloud-bank-se" aria-hidden="true" />
+          <MapClouds />
           <div className="journey-caption" aria-hidden="true">
             <p className="mt-3 font-display text-6xl sm:text-8xl">Calgary.</p>
           </div>

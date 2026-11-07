@@ -6,12 +6,26 @@ import {
   JOB_SOURCE,
   CLUSTER_LAYER,
   POINT_LAYER,
+  cityMapMode,
   cityBounds,
   cityOverviewPadding,
   jobCamera,
   jobFeatures,
   jobLayers,
 } from "../lib/calgary-map.ts";
+
+test("the illustrated map is a fallback, never the Mapbox loading screen", () => {
+  const pending = { hasToken: true, ready: false, failed: false };
+  assert.equal(cityMapMode(pending), "loading");
+  assert.equal(cityMapMode({ ...pending, ready: true }), "mapbox");
+  assert.equal(cityMapMode({ ...pending, failed: true }), "preview");
+  assert.equal(cityMapMode({ ...pending, hasToken: false }), "preview");
+  assert.equal(
+    cityMapMode({ ...pending, ready: true, failed: true }),
+    "preview",
+  );
+  assert.equal(cityMapMode(pending), "loading", "retry returns to clouds");
+});
 
 test("GeoJSON contains all postings, stable identifiers, and no private listing data", () => {
   const data = jobFeatures(CALGARY_JOBS);

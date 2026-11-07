@@ -16,7 +16,8 @@ import { CityIllustration } from "./city-illustration";
 import { JobMarker } from "./job-marker";
 import { LiveJobMarker } from "./live-job-marker";
 import { useCalgaryMap } from "./use-calgary-map";
-import { useMapJourney } from "./map-journey";
+import { MapClouds, useMapJourney } from "./map-journey";
+import { cityMapMode } from "@/lib/calgary-map";
 
 export function CalgaryCanvas({
   jobs,
@@ -31,7 +32,7 @@ export function CalgaryCanvas({
   placing: boolean;
   onPick: (point: CityPoint) => void;
 }) {
-  const journey = useMapJourney();
+  const { phase, ready } = useMapJourney();
   const container = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 1000, height: 700 });
   const selectedJob = jobs.find((job) => job.id === selectedId);
@@ -43,10 +44,19 @@ export function CalgaryCanvas({
     jobs,
     selectedJob,
     placing,
-    arriving: journey.phase === "revealing",
+    arriving: phase !== "idle",
     onPick,
     onSelect,
   });
+  const mode = cityMapMode({
+    hasToken: Boolean(token),
+    ready: Boolean(live),
+    failed,
+  });
+  const loading = mode === "loading";
+  useEffect(() => {
+    if (!loading) ready();
+  }, [loading, ready]);
   useEffect(() => {
     if (!container.current) return;
     const observer = new ResizeObserver(([entry]) =>
@@ -63,14 +73,15 @@ export function CalgaryCanvas({
     <div
       className={`relative isolate size-full overflow-hidden bg-map-land ${placing ? "cursor-crosshair" : ""}`}
       data-testid="calgary-canvas"
-      data-map-mode={live ? "mapbox" : "preview"}
+      data-map-mode={mode}
+      aria-busy={loading}
       data-map-zoom={camera.zoom.toFixed(2)}
       data-map-pitch={camera.pitch.toFixed(0)}
       data-map-moving={camera.moving}
     >
-      {!live && (
+      {mode === "preview" && (
         <div
-          className={`city-preview absolute inset-0 ${journey.phase === "revealing" ? "city-preview-arriving" : ""}`}
+          className={`city-preview absolute inset-0 ${phase === "revealing" ? "city-preview-arriving" : ""}`}
         >
           <div className="absolute" style={preview}>
             <CityIllustration className="size-full" />
@@ -82,7 +93,7 @@ export function CalgaryCanvas({
         className={`absolute inset-0 ${live ? "opacity-100" : "pointer-events-none opacity-0"}`}
         aria-label="Interactive Calgary city map"
       />
-      {!live && (
+      {mode === "preview" && (
         <>
           <div
             className="absolute inset-0"
@@ -134,6 +145,16 @@ export function CalgaryCanvas({
         <CompassIcon aria-hidden="true" className="size-5 text-primary" />
         <span className="text-sm font-semibold">Calgary, AB</span>
       </div>
+      {loading && (
+        <div
+          className="map-loading-clouds"
+          data-testid="map-loading-clouds"
+          role="status"
+        >
+          <MapClouds />
+          <span className="sr-only">Loading Calgary&apos;s city map.</span>
+        </div>
+      )}
       {live && (
         <Button
           variant="outline"
@@ -165,16 +186,14 @@ export function CalgaryCanvas({
             : `3D neighbourhood view of ${selectedJob.neighbourhood}.`
           : ""}
       </p>
-      {(!live || warning) && (
+      {!loading && (!live || warning) && (
         <div className="absolute start-3 bottom-3 max-w-[min(24rem,calc(100%-4rem))] rounded-lg border bg-card/95 px-3 py-2 text-xs leading-5 text-muted-foreground">
           <p>
             {failed
               ? "Map unavailable. Showing a 2D illustrated preview."
               : live
                 ? "Some map detail could not load."
-                : token
-                  ? "Loading Calgary's city map…"
-                  : "2D illustrated preview. Add a Mapbox public token for the full city and 3D buildings."}
+                : "2D illustrated preview. Add a Mapbox public token for the full city and 3D buildings."}
           </p>
           {(failed || warning) && (
             <Button variant="link" size="sm" className="px-0" onClick={retry}>
