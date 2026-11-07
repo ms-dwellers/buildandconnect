@@ -7,24 +7,31 @@ Push-Location -LiteralPath (Join-Path $PSScriptRoot '..')
 try {
     $Node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $Node) {
-        throw 'Install Node.js 26.13 or newer within version 26, including npm. See docs/development.md.'
+        throw 'Install Node.js 26.13 or newer within version 26. See docs/development.md.'
     }
 
-    & $Node.Source scripts/check-development.mjs $Task
+    $HelpRequested = $Task -in @('help', '--help', '-h')
+    $Bun = $null
+    $BunVersion = ''
+    if (-not $HelpRequested) {
+        $Bun = Get-Command bun -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $Bun) {
+            throw 'Bun was not found. Install the version in package.json. See docs/development.md.'
+        }
+        $BunVersion = & $Bun.Source --version
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to read the Bun version.'
+        }
+    }
+
+    & $Node.Source scripts/check-development.mjs $Task $BunVersion
     $ExitCode = $LASTEXITCODE
     if ($ExitCode -eq 0 -and $Task -notin @('help', '--help', '-h')) {
-        $NpmName = if ($env:OS -eq 'Windows_NT') { 'npm.cmd' } else { 'npm' }
-        $Npm = Get-Command $NpmName -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-        if (-not $Npm) {
-            $ExitCode = 1
-            throw 'npm was not found. Install npm alongside Node.js.'
-        }
-
         if ($Task -eq 'setup') {
-            & $Npm.Source ci @TaskArguments
+            & $Bun.Source install --frozen-lockfile @TaskArguments
         }
         else {
-            & $Npm.Source run $Task -- @TaskArguments
+            & $Bun.Source run $Task @TaskArguments
         }
         $ExitCode = $LASTEXITCODE
     }

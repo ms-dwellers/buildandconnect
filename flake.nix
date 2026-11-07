@@ -35,7 +35,7 @@
                 "tests"
                 "scripts"
                 "package.json"
-                "package-lock.json"
+                "bun.lock"
                 "tsconfig.json"
                 "vite.config.ts"
                 "cloudflare.config.ts"
@@ -45,35 +45,84 @@
                 ".prettierignore"
               ];
           };
-          web = pkgs.buildNpmPackage {
+          bunCache = pkgs.stdenvNoCC.mkDerivation {
+            pname = "buildandconnect-bun-cache";
+            version = "0.1.0";
+            src = pkgs.lib.fileset.toSource {
+              root = ./.;
+              fileset = pkgs.lib.fileset.unions [
+                ./package.json
+                ./bun.lock
+              ];
+            };
+            nativeBuildInputs = [ pkgs.bun ];
+            dontConfigure = true;
+            dontFixup = true;
+            buildPhase = ''
+              export HOME="$TMPDIR/home"
+              mkdir -p "$HOME" "$out"
+              export BUN_INSTALL_CACHE_DIR="$out"
+              # Cache every native variant; the offline install selects the host platform.
+              bun install --frozen-lockfile --ignore-scripts --no-progress --cpu='*' --os='*' --libc='*'
+              # Registry metadata varies with time and is not needed with a frozen lockfile.
+              find "$out" -type f -name '*.npm' -delete
+              # Bun's cache aliases must not embed the output's own Nix store path.
+              while IFS= read -r -d "" link; do
+                ln -sfnr "$(readlink "$link")" "$link"
+              done < <(find "$out" -type l -lname "$out/*" -print0)
+            '';
+            dontInstall = true;
+            outputHash = "sha256-AmaKZ+kNnldbi9C+vhnITkIAaCihPCADdR1vaIabZqE=";
+            outputHashAlgo = "sha256";
+            outputHashMode = "recursive";
+          };
+          web = pkgs.stdenv.mkDerivation {
             pname = "buildandconnect";
             version = "0.1.0";
             src = source;
-            nodejs = node;
-            npmDepsHash = "sha256-5df7l3v5zXIDZ3v59EoTfy1iqSMLzb1kJq8uyy6EHvY=";
             SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
             nativeBuildInputs = [
+              node
+              pkgs.bun
               pkgs.makeWrapper
             ]
             ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.autoPatchelfHook ];
             buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.stdenv.cc.cc.lib ];
-            postConfigure = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-              autoPatchelf node_modules
+            configurePhase = ''
+              runHook preConfigure
+              export HOME="$TMPDIR/home"
+              mkdir -p "$HOME"
+              cp -R ${bunCache} "$TMPDIR/bun-cache"
+              chmod -R u+w "$TMPDIR/bun-cache"
+              export BUN_INSTALL_CACHE_DIR="$TMPDIR/bun-cache"
+              bun install --offline --frozen-lockfile --ignore-scripts --no-progress ${pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux "--libc=glibc"}
+              ${pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+                # Some optional packages omit libc metadata; these targets use glibc.
+                rm -rf node_modules/lightningcss-linux-*-musl \
+                  node_modules/@img/sharp-linuxmusl-* \
+                  node_modules/@img/sharp-libvips-linuxmusl-* \
+                  node_modules/@rolldown/binding-linux-*-musl \
+                  node_modules/@tailwindcss/oxide-linux-*-musl
+              ''}
+              patchShebangs node_modules
+              ${pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux "autoPatchelf node_modules"}
+              runHook postConfigure
             '';
             postInstall = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
               autoPatchelf "$out"
             '';
-            preBuild = ''
-              export HOME="$TMPDIR/home"
-              mkdir -p "$HOME"
+            buildPhase = ''
+              runHook preBuild
               export CI=true
               export CLOUDFLARE_SEND_METRICS=false
+              bun run build
+              runHook postBuild
             '';
             doCheck = true;
             checkPhase = ''
               runHook preCheck
-              npm run typecheck
-              npm test
+              bun run typecheck
+              bun run test
               runHook postCheck
             '';
             installPhase = ''
@@ -105,6 +154,7 @@
                 name = "buildandconnect-${name}";
                 runtimeInputs = [
                   node
+                  pkgs.bun
                   pkgs.nixfmt
                   pkgs.shfmt
                 ];
@@ -131,30 +181,31 @@
               program = "${web}/bin/buildandconnect";
               meta.description = "Preview the packaged Build & Connect Worker locally";
             };
-            dev = task "dev" ''exec npm run dev -- "$@"'';
-            build = task "build" ''exec npm run build -- "$@"'';
-            test = task "test" ''exec npm test -- "$@"'';
-            typecheck = task "typecheck" ''exec npm run typecheck -- "$@"'';
+            dev = task "dev" ''exec bun run dev "$@"'';
+            build = task "build" ''exec bun run build "$@"'';
+            test = task "test" ''exec bun run test "$@"'';
+            typecheck = task "typecheck" ''exec bun run typecheck "$@"'';
             fmt = task "fmt" ''
               nixfmt flake.nix
               shfmt -w scripts/*.sh
-              exec npm run fmt -- "$@"
+              exec bun run fmt "$@"
             '';
             fmt-check = task "fmt-check" ''
               nixfmt --check flake.nix
               shfmt -d scripts/*.sh
-              exec npm run fmt:check -- "$@"
+              exec bun run fmt:check "$@"
             '';
             check = task "check" ''
               nixfmt --check flake.nix
               shfmt -d scripts/*.sh
-              exec npm run check -- "$@"
+              exec bun run check "$@"
             '';
-            smoke = task "smoke" ''exec npm run smoke -- "$@"'';
+            smoke = task "smoke" ''exec bun run smoke "$@"'';
           };
           devShells.default = pkgs.mkShell {
             packages = [
               node
+              pkgs.bun
               pkgs.nixfmt
               pkgs.shfmt
               pkgs.jujutsu

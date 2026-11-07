@@ -53,35 +53,39 @@ for (const launcher of launchers) {
           join(root, "scripts", script),
         );
       }
-      const mockNpm = join(
+      const mockBun = join(
         binaries,
-        process.platform === "win32" ? "npm.cmd" : "npm",
+        process.platform === "win32" ? "bun.cmd" : "bun",
       );
-      const mockSource = join(binaries, "npm-shim.cjs");
+      const mockSource = join(binaries, "bun-shim.cjs");
       writeFileSync(
         mockSource,
         `
-console.log(JSON.stringify({ arguments: process.argv.slice(2), cwd: process.cwd() }));
-process.exit(Number(process.env.TEST_NPM_EXIT_CODE ?? 0));
+if (process.argv[2] === "--version") {
+  console.log("1.4.2");
+} else {
+  console.log(JSON.stringify({ arguments: process.argv.slice(2), cwd: process.cwd() }));
+  process.exit(Number(process.env.TEST_BUN_EXIT_CODE ?? 0));
+}
 `,
       );
       if (process.platform === "win32") {
         writeFileSync(
-          mockNpm,
-          `@echo off\r\n"${process.execPath}" "%~dp0npm-shim.cjs" %*\r\nexit /b %errorlevel%\r\n`,
+          mockBun,
+          `@echo off\r\n"${process.execPath}" "%~dp0bun-shim.cjs" %*\r\nexit /b %errorlevel%\r\n`,
         );
       } else {
         writeFileSync(
-          mockNpm,
+          mockBun,
           `#!${process.execPath}\nrequire(${JSON.stringify(mockSource)});\n`,
         );
       }
-      chmodSync(mockNpm, 0o755);
+      chmodSync(mockBun, 0o755);
 
       function run(args: string[], exitCode = 0) {
         const environment: NodeJS.ProcessEnv = {
           ...process.env,
-          TEST_NPM_EXIT_CODE: String(exitCode),
+          TEST_BUN_EXIT_CODE: String(exitCode),
         };
         const pathKey =
           Object.keys(environment).find(
@@ -111,15 +115,16 @@ process.exit(Number(process.env.TEST_NPM_EXIT_CODE ?? 0));
         const setup = run(["setup", "--ignore-scripts"]);
         assert.equal(setup.status, 0, setup.stderr);
         assert.deepEqual(JSON.parse(setup.stdout), {
-          arguments: ["ci", "--ignore-scripts"],
+          arguments: ["install", "--frozen-lockfile", "--ignore-scripts"],
           cwd: root,
         });
 
-        writeFileSync(join(root, "node_modules", ".package-lock.json"), "{}");
+        mkdirSync(join(root, "node_modules", "vite"));
+        writeFileSync(join(root, "node_modules", "vite", "package.json"), "{}");
         const defaults = run([]);
         assert.equal(defaults.status, 0, defaults.stderr);
         assert.deepEqual(JSON.parse(defaults.stdout), {
-          arguments: ["run", "dev", "--"],
+          arguments: ["run", "dev"],
           cwd: root,
         });
 
@@ -132,7 +137,7 @@ process.exit(Number(process.env.TEST_NPM_EXIT_CODE ?? 0));
         const forwarded = run(["test", ...argumentsToForward]);
         assert.equal(forwarded.status, 0, forwarded.stderr);
         assert.deepEqual(JSON.parse(forwarded.stdout), {
-          arguments: ["run", "test", "--", ...argumentsToForward],
+          arguments: ["run", "test", ...argumentsToForward],
           cwd: root,
         });
         assert.equal(run(["check"], 7).status, 7);

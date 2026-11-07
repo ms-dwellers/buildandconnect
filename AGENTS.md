@@ -57,7 +57,9 @@ configuration. This permission does not make the chat itself a secret vault.
 
 - Use `jj` and the shared Hackr workspace/commit workflows. Commit locally;
   publish or deploy only when requested. Never add AI co-author attribution.
-- Run `npm run check`, `npm run build`, and `npm run smoke` for scaffold changes.
+- Use Bun for package installation and scripts; `bun.lock` is the only dependency
+  lockfile. Keep Node.js 26 for the existing toolchain and `node --test` runner.
+- Run `bun run check`, `bun run build`, and `bun run smoke` for scaffold changes.
   Nix and direnv commands are documented in `README.md`.
 - Formatter approval: use project-pinned Prettier for TypeScript, CSS, JSON, and
   Markdown, nixfmt for Nix, and Nix-pinned shfmt for shell scripts. These are
@@ -66,7 +68,7 @@ configuration. This permission does not make the chat itself a secret vault.
   `-Check` mode for PowerShell changes. Do not install modules globally.
 - Support NixOS x86-64, macOS ARM64, Fedora x86-64, and Windows ARM64 (using the
   pinned workerd's x64 compatibility path). Keep Bash and PowerShell entrypoints
-  aligned and keep npm scripts as the task owner. Never require Nix on teammates'
+  aligned and keep `package.json` scripts as the task owner. Never require Nix on teammates'
   machines or share native `node_modules` between operating systems.
 - Keep server secrets out of client components and public health responses.
 - Keep generated outputs, local credentials, and installed dependencies ignored.

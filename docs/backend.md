@@ -2,11 +2,11 @@
 
 ## Local setup
 
-Use the repository's Node.js 26 toolchain and run `npm ci`. Initialize the local
+Use the repository's Bun and Node.js 26 toolchain and run `bun install --frozen-lockfile`. Initialize the local
 database with:
 
 ```sh
-npm run db:migrate:local
+bun run db:migrate:local
 ```
 
 This command only touches `.wrangler/state/`. Dev and preview use the same path.
@@ -22,7 +22,7 @@ do. Both settings are Worker secrets in production.
 
 Workers AI has no local inference engine. To exercise real model calls locally,
 authenticate the Cloudflare CLI, set `WORKERS_AI_REMOTE=true` in the environment
-that launches Vite, and restart `npm run dev`. Calls may incur Workers AI charges.
+that launches Vite, and restart `bun run dev`. Calls may incur Workers AI charges.
 Without opt-in, analysis returns 503 rather than fabricated data. Only authorized
 company/profile requests can invoke models.
 
@@ -189,9 +189,9 @@ growth matcher. Local requests skip company essential-technology gates.
 ## Verification
 
 ```sh
-npm run check
-npm run build
-npm run smoke
+bun run check
+bun run build
+bun run smoke
 ```
 
 `tests/backend.test.ts` bundles the actual Hono API into workerd and drives HTTP

@@ -39,6 +39,10 @@
       },
     },
   },
+  "trustedDependencies": [
+    "esbuild",
+    "workerd",
+  ],
   "overrides": {
     "satori": {
       "fflate": "0.7.5",
