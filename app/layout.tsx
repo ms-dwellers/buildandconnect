@@ -5,6 +5,7 @@ import { MapJourneyProvider } from "@/components/map/map-journey";
 import { ToastProvider } from "@/components/ui/toast";
 import { SessionProvider } from "@/lib/session";
 import { MascotMotionProvider } from "@/lib/mascot-motion";
+import { DemoReset } from "@/components/demo-reset";
 
 export const metadata: Metadata = {
   title: "Build & Connect",
@@ -25,6 +26,7 @@ export default function RootLayout({
           <MascotMotionProvider>
             <SessionProvider>
               <ToastProvider>
+                <DemoReset />
                 <MapJourneyProvider>{children}</MapJourneyProvider>
               </ToastProvider>
             </SessionProvider>

@@ -128,6 +128,25 @@ export const request = v.object({
 });
 
 export default defineSchema({
+  demoSnapshots: defineTable({
+    key: v.literal("production-demo"),
+    users: v.array(v.object({ id: v.string(), name: v.string() })),
+    rows: v.array(
+      v.object({
+        table: v.union(
+          v.literal("members"),
+          v.literal("developers"),
+          v.literal("opportunities"),
+          v.literal("requests"),
+        ),
+        id: v.string(),
+        value: v.any(),
+      }),
+    ),
+    capturedAt: v.number(),
+    generation: v.number(),
+    lastResetAt: v.union(v.number(), v.null()),
+  }).index("by_key", ["key"]),
   conversations: defineTable({
     opportunityId: v.string(),
     requesterId: v.string(),

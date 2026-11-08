@@ -14,6 +14,7 @@ import type * as api_ from "../api.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as data from "../data.js";
+import type * as demoReset from "../demoReset.js";
 import type * as domain from "../domain.js";
 import type * as hiring_env from "../hiring/env.js";
 import type * as hiring_providers from "../hiring/providers.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   chat: typeof chat;
   data: typeof data;
+  demoReset: typeof demoReset;
   domain: typeof domain;
   "hiring/env": typeof hiring_env;
   "hiring/providers": typeof hiring_providers;

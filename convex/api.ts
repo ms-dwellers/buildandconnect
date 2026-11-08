@@ -123,6 +123,21 @@ export async function handleApi(
     // credentials for without the credentials ever leaving Convex.
     if (path === "/auth-providers" && method === "GET")
       return json(configuredProviders(process.env));
+    if (path === "/demo/reset-status" && method === "GET") {
+      const status = await ctx.runQuery(internal.demoReset.status, {});
+      return json({
+        enabled: process.env.PUBLIC_DEMO_RESET === "true" && status.ready,
+        generation: status.generation,
+      });
+    }
+    if (path === "/demo/reset" && method === "POST") {
+      if (!origin) fail(403, "An origin is required to reset the demo.");
+      const input = z
+        .object({ expectedGeneration: z.number().int().nonnegative() })
+        .strict()
+        .parse(await body(request));
+      return json(await ctx.runMutation(internal.demoReset.reset, input));
+    }
     const session = await createAuth(ctx).api.getSession({
       headers: request.headers,
     });
