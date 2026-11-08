@@ -10,7 +10,7 @@ import {
   revealTiming,
 } from "../lib/map-reveal.ts";
 
-test("mist uses a small deterministic texture with three spatial scales", () => {
+test("clouds use a small deterministic density and surface-lighting texture", () => {
   const pixels = createMistTexture();
   assert.equal(MIST_TEXTURE_SIZE, 128);
   assert.equal(pixels.byteLength, 64 * 1024);
@@ -21,7 +21,15 @@ test("mist uses a small deterministic texture with three spatial scales", () => 
       channels[channel].add(pixels[index + channel]);
     assert.equal(pixels[index + 3], 255);
   }
-  for (const channel of channels) assert.ok(channel.size > 128);
+  assert.ok(channels[0].size > 128);
+  assert.ok(channels[1].size > 32);
+  assert.ok(channels[2].size > 32);
+});
+
+test("round cloud lobes are lit without marbled domain warping", () => {
+  assert.match(revealFragmentSource, /vec3 cloudColor/);
+  assert.match(revealFragmentSource, /cloud\.gb \* 2\.0 - 1\.0/);
+  assert.doesNotMatch(revealFragmentSource, /vec2 curl|p \+ curl/);
 });
 
 test("mist separates in three drifting banks rather than a radial wipe", () => {

@@ -3,13 +3,15 @@
 Open `/`, select **Find a project**, or visit `/map` directly. The landing-page
 link draws in softly lit mist over 650 ms, navigates underneath it, then waits
 for Mapbox's first loaded render before the cloud banks drift apart over 1000 ms.
-Three translucent layers move at different speeds, with curled edges and wisps
+Three translucent layers move at different speeds, with rounded puffs and wisps
 trailing the opening. App-header map links use the same transition. Direct map visits
 show a static loading surface without starting the shader. Reduced-motion
 preferences skip it; **Skip animation** or Escape also finishes it immediately.
 
 The transition uses one WebGL canvas, one triangle, and one 128 × 128 procedural
-noise texture (64 KiB, generated once per transition). There are no sprite
+density-and-lighting texture (64 KiB, generated once per transition). Overlapping
+round lobes and surface-normal lighting make soft cloud clumps rather than
+stretched, marbled noise. There are no sprite
 elements, per-frame React updates, or third-party rendering library. Its drawing
 buffer stays within 768 × 512, independent of device pixel ratio. Rendering stops
 when the cover is complete and while the tab is hidden. GPU resources are released
