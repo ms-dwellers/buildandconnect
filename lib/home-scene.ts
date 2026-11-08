@@ -122,10 +122,33 @@ export function dollyPose(
 }
 
 /** Six-digit hex colour to linear 0..1 channels; anything else is rejected. */
-export function parseHexToken(value: string): [number, number, number] | null {
-  const match = /^#([0-9a-f]{6})$/i.exec(value.trim());
+/**
+ * Expand a CSS hex colour to its six-digit lowercase form, or return null for
+ * anything that is not a plain hex colour. Production CSS is minified, so a
+ * token authored as `#ffffff` reaches the browser as `#fff`; alpha digits are
+ * dropped because the scene materials are opaque.
+ */
+export function normalizeHex(value: string): string | null {
+  const match = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(
+    value.trim(),
+  );
   if (!match) return null;
-  const packed = Number.parseInt(match[1], 16);
+  const digits = match[1].toLowerCase();
+  const rgb =
+    digits.length <= 4
+      ? digits
+          .slice(0, 3)
+          .split("")
+          .map((digit) => digit + digit)
+          .join("")
+      : digits.slice(0, 6);
+  return `#${rgb}`;
+}
+
+export function parseHexToken(value: string): [number, number, number] | null {
+  const hex = normalizeHex(value);
+  if (!hex) return null;
+  const packed = Number.parseInt(hex.slice(1), 16);
   return [
     ((packed >> 16) & 255) / 255,
     ((packed >> 8) & 255) / 255,
@@ -183,8 +206,8 @@ export function readSceneTokens(
     keyof typeof SCENE_TOKENS,
     string,
   ][]) {
-    const value = getValue(name).trim().toLowerCase();
-    if (!parseHexToken(value)) return null;
+    const value = normalizeHex(getValue(name));
+    if (!value) return null;
     tokens[key] = value;
   }
   return tokens as SceneTokens;
