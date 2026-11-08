@@ -5,6 +5,25 @@ import { landingClouds } from "../lib/landing-clouds.ts";
 
 const spriteDirectory = new URL("../public/sprites/", import.meta.url);
 
+test("landing hero fills the viewport without an outer frame", () => {
+  const page = readFileSync(
+    new URL("../app/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const css = readFileSync(
+    new URL("../components/landing/hero-scene.css", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /className="landing-paper"/);
+  assert.match(page, /className="landing-hero relative isolate w-full/);
+  assert.doesNotMatch(page, /max-w-7xl|rounded-[tb]-xl|min-h-\[820px\]/);
+  assert.match(css, /min-height:\s*calc\(100svh - 6rem\)/);
+  assert.match(
+    css,
+    /font-size:\s*clamp\(2\.5rem, min\(7vw, 10svh\), 6\.5rem\)/,
+  );
+});
+
 test("the full supplied sprite collection is kept as local SVG assets", () => {
   const files = readdirSync(spriteDirectory).filter((file) =>
     file.endsWith(".svg"),

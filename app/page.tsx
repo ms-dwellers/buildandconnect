@@ -13,18 +13,18 @@ import { Card, CardPanel } from "@/components/ui/card";
 
 export default function Home() {
   return (
-    <div className="landing-paper px-3 pt-3 sm:px-8 sm:pt-8">
+    <div className="landing-paper">
       <a href="#main-content" className="landing-skip-link">
         Skip to content
       </a>
-      <header className="mx-auto flex min-h-24 max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-t-xl bg-secondary px-5 py-5 sm:px-10">
+      <header className="flex h-24 items-center justify-between gap-3 bg-secondary px-5 sm:px-10 lg:px-16">
         <a
           href="/"
           aria-label="Build & Connect home"
           className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
         >
           <BrandLogo />
-          Build &amp; Connect
+          <span className="hidden min-[420px]:inline">Build &amp; Connect</span>
         </a>
         <nav aria-label="Main" className="flex items-center gap-3 sm:gap-6">
           <MapJourneyLink variant="link" className="hidden px-0 sm:inline-flex">
@@ -36,13 +36,13 @@ export default function Home() {
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           aria-labelledby="hero-heading"
-          className="relative isolate mx-auto min-h-[820px] max-w-7xl overflow-hidden rounded-b-xl bg-secondary pt-10 sm:min-h-[800px] sm:pt-14"
+          className="landing-hero relative isolate w-full overflow-hidden bg-secondary"
         >
           <HeroScene />
           <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-5 text-center sm:px-10">
             <h1
               id="hero-heading"
-              className="font-display text-[clamp(3.25rem,8vw,6.5rem)] font-bold leading-[0.98] tracking-[-0.045em] text-balance"
+              className="landing-hero-heading font-display font-bold leading-[0.98] tracking-[-0.045em] text-balance"
             >
               Build experience.
               <br />

@@ -1,3 +1,12 @@
+.landing-hero {
+  min-height: calc(100svh - 6rem);
+  padding-block: clamp(2rem, 7svh, 6rem) clamp(12rem, 28svh, 22rem);
+}
+
+.landing-hero-heading {
+  font-size: clamp(2.5rem, min(7vw, 10svh), 6.5rem);
+}
+
 .hero-scene {
   --tree-scale: 2;
   position: absolute;

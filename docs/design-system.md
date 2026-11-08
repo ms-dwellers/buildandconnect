@@ -42,7 +42,7 @@ primary buttons pair pine with cream. The current theme is
 intentionally light-only; OS dark-mode preference does not change its colors.
 
 Use the 60/30/10 rule as a visual balance: beige is the main page canvas,
-mint and teal form the framed landscape and supporting surfaces, and warm accents
+mint and teal form the full-screen landscape and supporting surfaces, and warm accents
 remain sparse. The reference informs the composition rather than a full-page
 color swap: a mint hero, cream clouds, layered trees, and a teal waterfront sit
 inside the beige page. Keep the original cream, wheat, apricot, and coral values.
@@ -61,10 +61,14 @@ percentages enforced on every component or the map.
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
 - The landing page uses open spacing, bold League Spartan headings, light paper
-  texture, and a softly framed mint hero with a pixel-art landscape from the
+  texture, and an edge-to-edge mint hero with a pixel-art landscape from the
   supplied `public/sprites/` collection. Trees, roses, and grass sit on repeating
   ground tiles above a teal waterfront. Keep
   decorative artwork out of the accessibility tree; do not treat it as map data.
+  The header and hero fill at least the first viewport, without outer gutters or
+  rounded framing. The remaining sections stay scrollable below. Typography
+  adapts to viewport width and height; short screens can scroll rather than clip
+  the heading or actions.
 
 - `components/landing/hero-scene.tsx` owns the sprite composition. There is no
   loading reveal or foreground curtain; the heading is available immediately.
