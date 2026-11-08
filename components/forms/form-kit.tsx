@@ -120,7 +120,7 @@ export function ChoiceGroup<T extends string>({
       <RadioGroup
         value={value}
         onValueChange={(next) => onChange(next as T)}
-        className="flex flex-wrap gap-x-6 gap-y-3"
+        className="flex flex-row flex-wrap gap-x-6 gap-y-3"
       >
         {choices.map((choice) => (
           <Label key={choice.value} className="font-normal">

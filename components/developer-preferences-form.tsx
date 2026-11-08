@@ -91,7 +91,7 @@ export function DeveloperPreferencesForm({
 
   return (
     <Card>
-      <CardPanel className="space-y-5 p-6">
+      <CardPanel className="space-y-5 p-5 sm:p-8">
         <h2 className="text-lg font-semibold">Matching preferences</h2>
         <p className="text-sm text-muted-foreground">
           Leave unknown details blank. Zero years is valid; personal and
@@ -106,6 +106,7 @@ export function DeveloperPreferencesForm({
           <fieldset disabled={!initial || pending} className="space-y-6">
             <TextField
               name="professionalExperienceYears"
+              className="w-full sm:max-w-sm"
               label="Years of professional experience"
               type="number"
               min={0}
@@ -113,7 +114,7 @@ export function DeveloperPreferencesForm({
               step="any"
               defaultValue={preferences.professionalExperienceYears ?? ""}
             />
-            <div className="grid gap-5 sm:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <TextField
                 name="minimumHourlyRate"
                 label="Minimum hourly rate"

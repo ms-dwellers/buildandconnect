@@ -120,11 +120,26 @@ function LoadProfile({ next }: { next: string | null }) {
         <TabsList
           variant="underline"
           aria-label="Profile workspace"
-          className="max-w-full flex-wrap"
+          className="grid w-full grid-cols-3 items-stretch sm:flex sm:w-fit"
         >
-          <TabsTab value="preview">Profile preview</TabsTab>
-          <TabsTab value="edit">Edit profile</TabsTab>
-          <TabsTab value="preferences">Matching & area</TabsTab>
+          <TabsTab
+            value="preview"
+            className="h-auto min-h-11 min-w-0 whitespace-normal px-2 text-sm"
+          >
+            Profile preview
+          </TabsTab>
+          <TabsTab
+            value="edit"
+            className="h-auto min-h-11 min-w-0 whitespace-normal px-2 text-sm"
+          >
+            Edit profile
+          </TabsTab>
+          <TabsTab
+            value="preferences"
+            className="h-auto min-h-11 min-w-0 whitespace-normal px-2 text-sm"
+          >
+            Matching & area
+          </TabsTab>
         </TabsList>
         <TabsPanel value="preview" keepMounted>
           {profile.data && <DeveloperProfileView profile={profile.data} />}
@@ -244,12 +259,8 @@ function ProfileForm({
 
   return (
     <Card>
-      <CardPanel className="p-6">
-        <Form
-          onSubmit={submit}
-          errors={errors}
-          className="mx-auto max-w-3xl space-y-10"
-        >
+      <CardPanel className="p-5 sm:p-8">
+        <Form onSubmit={submit} errors={errors} className="space-y-10">
           <FormSection title="About you">
             <TextAreaField
               name="bio"
@@ -261,7 +272,7 @@ function ProfileForm({
               rows={4}
               defaultValue={initial?.bio}
             />
-            <div className="grid w-full gap-5 sm:grid-cols-2">
+            <div className="grid w-full items-end gap-5 md:grid-cols-3">
               <TextField
                 name="city"
                 label="City"
@@ -278,33 +289,36 @@ function ProfileForm({
                 max={80}
                 defaultValue={initial?.weeklyHours ?? 8}
               />
-            </div>
-            <div className="w-full space-y-2">
-              <Label htmlFor="experience-level">Overall experience</Label>
-              <Select
-                items={LEVELS}
-                value={experience}
-                onValueChange={(value) => value && setExperience(value)}
-              >
-                <SelectTrigger id="experience-level" className="sm:max-w-64">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectPopup>
-                  {LEVELS.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
-                    </SelectItem>
-                  ))}
-                </SelectPopup>
-              </Select>
+              <div className="grid min-w-0 gap-2">
+                <Label htmlFor="experience-level">Overall experience</Label>
+                <Select
+                  items={LEVELS}
+                  value={experience}
+                  onValueChange={(value) => value && setExperience(value)}
+                >
+                  <SelectTrigger id="experience-level" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectPopup>
+                    {LEVELS.map((level) => (
+                      <SelectItem key={level.value} value={level.value}>
+                        {level.label}
+                      </SelectItem>
+                    ))}
+                  </SelectPopup>
+                </Select>
+              </div>
             </div>
           </FormSection>
 
           <FormSection title="Skills">
-            <ul className="w-full space-y-3">
+            <ul className="grid w-full gap-x-8 gap-y-5 lg:grid-cols-2">
               {skills.map((skill, index) => (
-                <li key={index} className="flex flex-wrap items-end gap-3">
-                  <div className="min-w-48 flex-1 space-y-2">
+                <li
+                  key={index}
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto]"
+                >
+                  <div className="col-span-2 grid min-w-0 gap-2 sm:col-span-1">
                     <Label htmlFor={`skill-${index}`}>Skill</Label>
                     <Input
                       id={`skill-${index}`}
@@ -323,7 +337,7 @@ function ProfileForm({
                       }
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label htmlFor={`skill-level-${index}`}>Level</Label>
                     <Select
                       items={LEVELS}
@@ -341,7 +355,7 @@ function ProfileForm({
                     >
                       <SelectTrigger
                         id={`skill-level-${index}`}
-                        className="w-44"
+                        className="w-full"
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -390,7 +404,7 @@ function ProfileForm({
               Personal, school and volunteer work all count. Requesters can see
               these self-reported examples when your profile is visible.
             </p>
-            <ul className="w-full space-y-4">
+            <ul className="grid w-full gap-5 lg:grid-cols-2">
               {projects.map((project, index) => {
                 const update = (patch: Partial<Project>) =>
                   setProjects((current) =>
@@ -401,7 +415,7 @@ function ProfileForm({
                 return (
                   <li key={index} className="space-y-3 rounded-xl border p-4">
                     <div className="flex items-end gap-3">
-                      <div className="flex-1 space-y-2">
+                      <div className="min-w-0 flex-1 space-y-2">
                         <Label htmlFor={`project-title-${index}`}>Title</Label>
                         <Input
                           id={`project-title-${index}`}
@@ -498,24 +512,26 @@ function ProfileForm({
           </FormSection>
 
           <FormSection title="Availability">
-            {(
-              [
-                ["available", "Available for new work"],
-                ["discoverable", "Visible to requesters"],
-                ["acceptsVolunteer", "Open to volunteer projects"],
-              ] as const
-            ).map(([key, label]) => (
-              <div key={key} className="flex items-center gap-3">
-                <Switch
-                  id={`profile-${key}`}
-                  checked={flags[key]}
-                  onCheckedChange={(value) =>
-                    setFlags((current) => ({ ...current, [key]: value }))
-                  }
-                />
-                <Label htmlFor={`profile-${key}`}>{label}</Label>
-              </div>
-            ))}
+            <div className="flex flex-wrap gap-x-8 gap-y-4">
+              {(
+                [
+                  ["available", "Available for new work"],
+                  ["discoverable", "Visible to requesters"],
+                  ["acceptsVolunteer", "Open to volunteer projects"],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key} className="flex items-center gap-3">
+                  <Switch
+                    id={`profile-${key}`}
+                    checked={flags[key]}
+                    onCheckedChange={(value) =>
+                      setFlags((current) => ({ ...current, [key]: value }))
+                    }
+                  />
+                  <Label htmlFor={`profile-${key}`}>{label}</Label>
+                </div>
+              ))}
+            </div>
           </FormSection>
 
           {failure && (
@@ -580,7 +596,7 @@ function AreaForm({
 
   return (
     <Card id="area" className="scroll-mt-6">
-      <CardPanel className="space-y-5 p-6">
+      <CardPanel className="space-y-5 p-5 sm:p-8">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold tracking-tight">Your area</h2>
           <p className="text-sm text-muted-foreground">
