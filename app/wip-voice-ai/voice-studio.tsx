@@ -21,7 +21,7 @@ import { EmployerIntake } from "@/components/hiring/employer-intake";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Aurora } from "./aurora";
+import { Aurora } from "@/components/hiring/voice/aurora";
 import { isSessionActive } from "./session";
 import { useVoiceConversation } from "./use-voice-conversation";
 import { RollingText } from "./rolling-text";

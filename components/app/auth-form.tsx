@@ -45,6 +45,7 @@ export function AuthForm({
   const busy = pending || redirecting !== null;
   const available = PROVIDERS.filter(({ id }) => providers?.[id]);
   const otherPage = signUp ? "/sign-in" : "/sign-up";
+  const roleHref = next ? `/role?next=${encodeURIComponent(next)}` : "/role";
   const otherHref = next
     ? `${otherPage}?next=${encodeURIComponent(next)}`
     : otherPage;
@@ -81,7 +82,7 @@ export function AuthForm({
     router.push(
       session.status === "member" && session.role
         ? (next ?? homeFor(session.role))
-        : "/role",
+        : roleHref,
     );
   }
 
@@ -96,7 +97,7 @@ export function AuthForm({
       body: JSON.stringify({
         provider,
         callbackURL: next ?? "/dashboard",
-        newUserCallbackURL: "/role",
+        newUserCallbackURL: roleHref,
         errorCallbackURL: signUp ? "/sign-up" : "/sign-in",
       }),
     });

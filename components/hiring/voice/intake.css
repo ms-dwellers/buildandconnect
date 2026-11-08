@@ -1,0 +1,91 @@
+/* The hire flow renders on the main tokens. The voice pieces it shares with
+   the /wip-voice-ai prototype read --voice-* names, so those names are mapped
+   to the palette here and nothing else from the prototype's stylesheet loads. */
+.hiring-stage {
+  --voice-sand: var(--palette-cream);
+  --voice-moss: var(--palette-teal);
+  --voice-rust: var(--palette-apricot);
+  --voice-plum: var(--palette-mint);
+  --voice-ink: var(--foreground);
+  --voice-accent-ink: var(--primary);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--card);
+}
+
+.hiring-stage .voice-aurora {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: none;
+}
+
+.hiring-stage .voice-aurora canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 600ms ease-out;
+}
+
+/* Kept quiet so the status text and buttons stay readable over it. */
+.hiring-stage .voice-aurora canvas.is-ready {
+  opacity: 0.55;
+}
+
+.hiring-stage .voice-presence {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 200px;
+  padding-top: 1rem;
+}
+
+.hiring-stage .voice-waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 110px;
+}
+
+.hiring-stage .voice-waveform span {
+  display: block;
+  width: 2px;
+  height: var(--height);
+  border-radius: 2px;
+  background: var(--primary);
+  opacity: 0.65;
+  transform: scaleY(0.35);
+  transition: transform 500ms ease;
+}
+
+.hiring-stage .voice-waveform[data-reactive="true"] span {
+  animation: none;
+  transform: scaleY(var(--mic-scale));
+  transition: none;
+}
+
+.hiring-stage .voice-mic-meter {
+  max-width: 110px;
+  margin: 0.6rem auto -0.6rem;
+}
+
+.hiring-stage .voice-mic-meter [data-slot="meter-track"] {
+  height: 3px;
+  background: color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.hiring-stage .voice-mic-meter [data-slot="meter-indicator"] {
+  transition: none;
+}

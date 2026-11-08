@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -212,7 +213,7 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                     : "Projects appear here as requesters post them."}
                 </p>
                 {session.status === "guest" && (
-                  <Button render={<a href="/sign-up" />} variant="outline">
+                  <Button render={<Link href="/sign-up" />} variant="outline">
                     Get started
                   </Button>
                 )}
@@ -245,14 +246,13 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                     <Button
                       variant="ghost"
                       className={`h-auto w-full items-start justify-start gap-3 rounded-none px-6 py-5 text-start whitespace-normal ${selectedId === job.id ? "bg-accent" : ""}`}
-                      aria-label={`View ${job.title}`}
                       aria-pressed={selectedId === job.id}
                       onClick={() =>
                         selectJob(selectedId === job.id ? null : job.id)
                       }
                     >
                       <span
-                        className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${job.kind === "paid" ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"}`}
+                        className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${job.kind === "paid" ? "bg-primary/10 text-primary" : job.source === "request" ? "bg-muted text-foreground" : "bg-secondary text-secondary-foreground"}`}
                       >
                         <Icon aria-hidden="true" className="size-4" />
                       </span>
