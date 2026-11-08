@@ -28,11 +28,25 @@ import { CalgaryCanvas } from "./calgary-canvas";
 import { listingLabel, markerIcon } from "./job-marker";
 import { ListingActions } from "./listing-actions";
 
-const FILTERS: { value: MapFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "paid", label: "Paid" },
-  { value: "volunteer", label: "Volunteer" },
-  { value: "request", label: "Community" },
+const FILTERS: {
+  value: Exclude<MapFilter, "all">;
+  label: string;
+  marker: string;
+  markerClass: string;
+}[] = [
+  { value: "paid", label: "Paid", marker: "P", markerClass: "map-key-paid" },
+  {
+    value: "volunteer",
+    label: "Volunteer",
+    marker: "V",
+    markerClass: "map-key-volunteer",
+  },
+  {
+    value: "request",
+    label: "Community",
+    marker: "R",
+    markerClass: "map-key-community",
+  },
 ];
 
 const POST_TARGET: Partial<Record<Role, { path: string; label: string }>> = {
@@ -152,27 +166,6 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                   className="bg-card ps-9"
                 />
               </div>
-            </div>
-            <div
-              role="group"
-              aria-label="Filter projects by type"
-              className="flex flex-wrap gap-2"
-            >
-              {FILTERS.map(({ value, label }) => (
-                <Button
-                  key={value}
-                  size="sm"
-                  variant="ghost"
-                  className="aria-pressed:bg-secondary aria-pressed:text-secondary-foreground"
-                  aria-pressed={filter === value}
-                  onClick={() => {
-                    setFilter(value);
-                    setSelectedId(null);
-                  }}
-                >
-                  {label}
-                </Button>
-              ))}
             </div>
           </div>
           <div className="flex items-center justify-between gap-3 px-5 pb-3 text-xs text-muted-foreground sm:px-6">
@@ -326,6 +319,37 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
             onSelect={selectJob}
             placing={placing}
             onPick={pickLocation}
+            filters={
+              <div
+                role="group"
+                aria-label="Filter projects by type"
+                className="flex flex-wrap gap-2"
+              >
+                {FILTERS.map(({ value, label, marker, markerClass }) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    variant="outline"
+                    className="min-h-11 bg-card aria-pressed:border-primary aria-pressed:bg-secondary"
+                    aria-pressed={filter === value}
+                    onClick={() => {
+                      setFilter((current) =>
+                        current === value ? "all" : value,
+                      );
+                      setSelectedId(null);
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`map-key ${markerClass}`}
+                    >
+                      {marker}
+                    </span>
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            }
             renderActions={(job) => (
               <ListingActions
                 job={job}
