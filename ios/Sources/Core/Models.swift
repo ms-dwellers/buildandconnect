@@ -1,23 +1,19 @@
 import Foundation
 
 enum Role: String, Codable, CaseIterable, Identifiable {
-  case developer, requester, company, recruiter
+  case developer, requester
   var id: String { rawValue }
   var title: String { rawValue.capitalized }
   var symbol: String {
     switch self {
     case .developer: "chevron.left.forwardslash.chevron.right"
     case .requester: "hands.sparkles"
-    case .company: "briefcase"
-    case .recruiter: "person.text.rectangle"
     }
   }
   var purpose: String {
     switch self {
     case .developer: "Build skills through projects that matter."
     case .requester: "Find help with a community project."
-    case .company: "Post opportunities and find developers."
-    case .recruiter: "Browse developers who chose to be visible."
     }
   }
 }
@@ -248,15 +244,23 @@ struct Interest: Decodable, Identifiable {
   let developerId: String
   let title: String
   let developerName: String
-  let companyName: String
-  let companyInterested: Bool
+  let requesterName: String
+  let requesterInterested: Bool
   let developerInterested: Bool
   let connected: Bool
   func mine(_ role: Role?) -> Bool {
-    role == .company ? companyInterested : developerInterested
+    switch role {
+    case .requester: requesterInterested
+    case .developer: developerInterested
+    case nil: false
+    }
   }
   func theirs(_ role: Role?) -> Bool {
-    role == .company ? developerInterested : companyInterested
+    switch role {
+    case .requester: developerInterested
+    case .developer: requesterInterested
+    case nil: false
+    }
   }
 }
 

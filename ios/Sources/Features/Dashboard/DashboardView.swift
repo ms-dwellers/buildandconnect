@@ -7,8 +7,6 @@ struct DashboardView: View {
       switch app.role {
       case .developer: DeveloperHomeView()
       case .requester: RequesterHomeView()
-      case .company: CompanyHomeView()
-      case .recruiter: DiscoveryView()
       case nil: WelcomeView()
       }
     }
@@ -142,6 +140,8 @@ struct RequesterHomeView: View {
         FeatureBanner(title: "Small ideas.\nReal possibilities.", symbol: "lightbulb.fill")
         NavigationLink("Post a request", value: Route.newRequest).buttonStyle(
           AppButtonStyle.primary)
+        NavigationLink("Manage opportunities", value: Route.myOpportunities)
+          .buttonStyle(AppButtonStyle(variant: .outline, fullWidth: true))
         AppSegmentedControl(
           title: "Status", selection: $status,
           options: [
@@ -162,7 +162,7 @@ struct RequesterHomeView: View {
   private func load(_ reset: Bool) async { await requests.load(api, "/requests", reset: reset) }
 }
 
-struct CompanyHomeView: View {
+struct RequesterOpportunitiesView: View {
   @Environment(AppModel.self) private var app
   @Environment(APIClient.self) private var api
   @State private var opportunities = PageStore<Opportunity>()

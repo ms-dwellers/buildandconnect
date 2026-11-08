@@ -7,12 +7,32 @@
   struct DesignPreviewRoot: View {
     @State private var app = makeModel()
     @State private var path: [Route] = []
+    @State private var showRequesterShell = false
 
     var body: some View {
+      Group {
+        if showRequesterShell {
+          RootView(restoresSession: false)
+        } else {
+          menu
+        }
+      }.environment(app).environment(app.api)
+    }
+
+    private var menu: some View {
       AppNavigation(path: $path) {
         List {
           Text("Fictional data. No live backend requests or account changes.")
             .font(Theme.caption)
+          Button("Requester tabs") {
+            app = Self.makeModel(role: .requester)
+            app.selectedTab = .home
+            showRequesterShell = true
+          }
+          destination("Requester dashboard", route: .dashboard, role: .requester)
+          destination("Requester connections", route: .connections, role: .requester)
+          destination(
+            "Opportunity owner", route: .opportunity("preview-opportunity"), role: .requester)
           destination("Dashboard", route: .dashboard)
           destination("Connections", route: .connections)
           destination("Opportunity detail", route: .opportunity("preview-opportunity"))
@@ -28,32 +48,33 @@
           destination("Developer discovery", route: .discovery)
           destination("Explore map", route: .map(""), role: .requester)
         }.pageBackground().appNavigationTitle("Design preview")
-      }.environment(app).environment(app.api)
+      }
     }
 
     private func destination(_ title: String, route: Route, role: Role = .developer) -> some View {
       Button(title) {
-        app = Self.makeModel(newProfile: route == .setupProfile)
-        app.member = Member(
-          user: .init(
-            id: role == .requester ? "preview-requester" : app.identity, name: "Preview Developer"),
-          role: role)
+        app = Self.makeModel(newProfile: route == .setupProfile, role: role)
         path.append(route)
       }
     }
 
-    private static func makeModel(newProfile: Bool = false) -> AppModel {
+    private static func makeModel(newProfile: Bool = false, role: Role = .developer) -> AppModel {
       let configuration = URLSessionConfiguration.ephemeral
       configuration.protocolClasses = [DesignPreviewProtocol.self]
       let api = APIClient(
         baseURL: URL(
           string: newProfile
-            ? "https://new-profile.design-preview.invalid" : "https://design-preview.invalid")!,
+            ? "https://new-profile.design-preview.invalid"
+            : role == .requester
+              ? "https://requester.design-preview.invalid" : "https://design-preview.invalid")!,
         session: URLSession(configuration: configuration), restoreSession: false)
       let model = AppModel(api: api)
       model.member = Member(
-        user: .init(id: newProfile ? "preview-onboarding" : "preview", name: "Preview Developer"),
-        role: .developer)
+        user: .init(
+          id: newProfile
+            ? "preview-onboarding" : role == .requester ? "preview-requester" : "preview",
+          name: role == .requester ? "Preview Requester" : "Preview Developer"),
+        role: role)
       model.hasCheckedSession = true
       model.checkingSession = false
       return model
@@ -66,7 +87,11 @@
     override func startLoading() {
       let newProfile = request.url?.host == "new-profile.design-preview.invalid"
       let readOnly = request.httpMethod == "GET"
-      let payload = readOnly && !newProfile ? Self.payload(path: request.url?.path ?? "") : nil
+      let payload =
+        readOnly && !newProfile
+        ? Self.payload(
+          path: request.url?.path ?? "",
+          requester: request.url?.host == "requester.design-preview.invalid") : nil
       let success = payload != nil
       let status = readOnly ? (success ? 200 : 404) : 405
       let body = payload ?? #"{"error":"Read-only design preview"}"#
@@ -79,7 +104,7 @@
     }
     override func stopLoading() {}
 
-    private static func payload(path: String) -> String? {
+    private static func payload(path: String, requester: Bool) -> String? {
       switch path {
       case "/api/map": return mapFeed
       case "/api/developers": return page(profile)
@@ -93,8 +118,15 @@
       case "/api/opportunities/preview-opportunity/match":
         return "{\"data\":\(match),\"ineligibleReasons\":[],\"status\":\"eligible\"}"
       case "/api/opportunities/preview-opportunity/matches":
-        return "{\"data\":[\(match)],\"total\":1}"
-      case "/api/interests": return page(interest)
+        let received = match.replacingOccurrences(of: "\"preview\"", with: "\"preview-received\"")
+          .replacingOccurrences(of: "Preview Developer", with: "Alex Chen")
+        let sent = match.replacingOccurrences(of: "\"preview\"", with: "\"preview-sent\"")
+          .replacingOccurrences(of: "Preview Developer", with: "Sam Rivera")
+        return "{\"data\":[\(received),\(sent),\(match)],\"total\":3}"
+      case "/api/interests":
+        return requester
+          ? "{\"data\":[\(receivedInterest),\(sentInterest),\(interest)],\"nextCursor\":null}"
+          : page(interest)
       default: return path.hasPrefix("/api/developers/") ? profile : nil
       }
     }
@@ -122,7 +154,15 @@
       """#
 
     private static let interest = #"""
-      {"id":"preview-interest","opportunityId":"preview-opportunity","developerId":"preview","title":"Build an accessible events calendar","developerName":"Preview Developer","companyName":"Calgary Community Collective","companyInterested":true,"developerInterested":true,"connected":true}
+      {"id":"preview-interest","opportunityId":"preview-opportunity","developerId":"preview","title":"Build an accessible events calendar","developerName":"Preview Developer","requesterName":"Calgary Community Collective","requesterInterested":true,"developerInterested":true,"connected":true}
+      """#
+
+    private static let receivedInterest = #"""
+      {"id":"preview-received","opportunityId":"preview-opportunity","developerId":"preview-received","title":"Build an accessible events calendar","developerName":"Alex Chen","requesterName":"Calgary Community Collective","requesterInterested":false,"developerInterested":true,"connected":false}
+      """#
+
+    private static let sentInterest = #"""
+      {"id":"preview-sent","opportunityId":"preview-opportunity","developerId":"preview-sent","title":"Build an accessible events calendar","developerName":"Sam Rivera","requesterName":"Calgary Community Collective","requesterInterested":true,"developerInterested":false,"connected":false}
       """#
 
     private static let profile = #"""

@@ -193,7 +193,7 @@ struct DeveloperOnboardingView: View {
       VStack(alignment: .leading, spacing: 16) {
         Text("You're in control").font(Theme.body(21).weight(.semibold))
         Toggle("Available for new work", isOn: $draft.available)
-        Toggle("Let companies and recruiters discover me", isOn: $draft.discoverable)
+        Toggle("Let requesters discover me", isOn: $draft.discoverable)
         Text(
           "Discovery shares your skills and project evidence, never your private pin or contact details."
         ).font(Theme.body(14)).foregroundStyle(Theme.muted)

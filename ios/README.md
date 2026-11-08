@@ -114,9 +114,9 @@ normal app. This is a manual visual preview, not a test runner.
   score breakdowns, eligibility recovery, and mutual interest.
 - Requester creation, map placement, open-only editing, claimant management,
   release, closing, and closed owner history.
-- Company creation/editing, optional pins, ranked candidates, close/reopen, and
+- Requester opportunity creation/editing, optional pins, ranked candidates, close/reopen, and
   opportunity-specific interest/withdrawal.
-- Recruiter read-only discovery and consent-revalidated developer profiles.
+- Read-only discovery and consent-revalidated developer profiles.
 - Shared interest/connection lists, pagination, map/list selection, filters,
   3D selection flights, and reduced-motion cloud arrival.
 - Debug-only local voice studio: scripted replies, device speech preview, and

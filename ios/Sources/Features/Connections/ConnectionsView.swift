@@ -65,14 +65,15 @@ struct InterestCard: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 14) {
       Text(interest.title).font(Theme.title(24))
-      Text(app.role == .company ? interest.developerName : interest.companyName).foregroundStyle(
-        Theme.muted)
+      Text(app.role == .requester ? interest.developerName : interest.requesterName)
+        .foregroundStyle(
+          Theme.muted)
       StatusBadge(
         text: interest.connected
           ? "Connected" : interest.theirs(app.role) ? "Interest received" : "Waiting for a reply")
       NavigationLink("Open opportunity", value: Route.opportunity(interest.opportunityId))
         .buttonStyle(AppButtonStyle())
-      if app.role == .company {
+      if app.role == .requester {
         NavigationLink("View consenting profile", value: Route.developer(interest.developerId))
           .buttonStyle(AppButtonStyle())
       }
@@ -85,14 +86,18 @@ struct InterestCard: View {
           await action.run {
             try await setInterest(
               api, opportunityId: interest.opportunityId,
-              developerId: app.role == .company ? interest.developerId : nil,
+              developerId: app.role == .requester ? interest.developerId : nil,
               interested: false)
             await reload()
           }
         }
       } else {
-        Text("Open the opportunity to review your current eligibility before expressing interest.")
-          .font(Theme.caption).foregroundStyle(Theme.muted)
+        Text(
+          app.role == .requester
+            ? "Open the opportunity to review eligible developers before expressing interest."
+            : "Open the opportunity to review your current eligibility before expressing interest."
+        )
+        .font(Theme.caption).foregroundStyle(Theme.muted)
       }
       if let error = action.error { FailureView(error: error) }
     }.paperCard()

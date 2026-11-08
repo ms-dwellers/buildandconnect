@@ -138,7 +138,7 @@ struct ExploreView: View {
           }.buttonStyle(AppButtonStyle(size: .icon)).accessibilityLabel("All Calgary")
             .accessibilityValue(
               is3D ? "3D view" : "City overview")
-          if app.role == .requester || app.role == .company {
+          if app.role == .requester {
             Button {
               present(.post)
             } label: {

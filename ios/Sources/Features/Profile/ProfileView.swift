@@ -154,7 +154,7 @@ struct ProfileView: View {
       Section {
         Toggle("Available for new work", isOn: flagBinding(\.available, "available"))
         Toggle(
-          "Visible to companies and recruiters", isOn: flagBinding(\.discoverable, "discoverable"))
+          "Visible to requesters", isOn: flagBinding(\.discoverable, "discoverable"))
       } header: {
         Text("Visibility").font(Theme.metadata).textCase(nil)
       } footer: {
@@ -298,7 +298,7 @@ struct AreaEditorView: View {
         LabeledContent("Radius", value: "\(Int(area.radiusKm)) km")
         AppSlider(
           value: $area.radiusKm, bounds: 1...100, step: 1, label: "Search radius in kilometers")
-        Text("Your area is private. Companies and recruiters cannot see your saved pin.").font(
+        Text("Your area is private. Requesters cannot see your saved pin.").font(
           Theme.caption
         ).foregroundStyle(Theme.muted)
       }

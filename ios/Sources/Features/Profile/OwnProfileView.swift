@@ -16,7 +16,7 @@ struct OwnProfileView: View {
             profileFact("Experience", value: "\(developer.experienceLevel) / 5")
           }
           Label(
-            developer.discoverable ? "Discoverable to companies and recruiters" : "Private profile",
+            developer.discoverable ? "Discoverable to requesters" : "Private profile",
             systemImage: developer.discoverable ? "eye" : "lock"
           )
           .font(Theme.body(15)).foregroundStyle(Theme.muted)

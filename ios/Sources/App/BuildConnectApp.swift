@@ -47,7 +47,7 @@ enum Route: Hashable {
   case request(String)
   case developer(String)
   case profile, setupProfile, area, newRequest, newOpportunity, voice, discovery, dashboard,
-    connections
+    connections, myOpportunities
   case editRequest(String)
   case editOpportunity(String)
   case map(String)
@@ -209,6 +209,7 @@ enum AuthMode: String, Identifiable {
 }
 
 struct RootView: View {
+  var restoresSession = true
   @Environment(AppModel.self) private var app
   @Environment(\.scenePhase) private var scenePhase
   var body: some View {
@@ -232,9 +233,9 @@ struct RootView: View {
         tabs
       }
     }
-    .task { await app.refreshSession() }
+    .task { if restoresSession { await app.refreshSession() } }
     .onChange(of: scenePhase) { _, phase in
-      if phase == .active && app.hasCheckedSession && !app.checkingSession {
+      if restoresSession && phase == .active && app.hasCheckedSession && !app.checkingSession {
         Task {
           await app.refreshSession()
           app.changed()
@@ -284,7 +285,7 @@ struct RootView: View {
               systemImage: app.role == .developer ? "square.stack.3d.up" : "square.grid.2x2")
           }.tag(AppTab.home)
       }
-      if app.role == .developer || app.role == .company {
+      if app.role == .developer || app.role == .requester {
         AppNavigation(path: $app.connectionsPath) { ConnectionsView() }
           .tabItem { Label("Connections", systemImage: "person.2") }.tag(AppTab.connections)
       }
@@ -308,7 +309,7 @@ struct RootView: View {
       HStack(spacing: 4) {
         tabButton("Explore", symbol: "map", tab: .explore)
         if app.signedIn { tabButton(homeTitle, symbol: "square.stack.3d.up", tab: .home) }
-        if app.role == .developer || app.role == .company {
+        if app.role == .developer || app.role == .requester {
           tabButton("Connections", symbol: "person.2", tab: .connections)
         }
         if app.role == .developer {
@@ -340,8 +341,6 @@ struct RootView: View {
   private var homeTitle: String {
     switch app.role {
     case .requester: "Requests"
-    case .company: "Opportunities"
-    case .recruiter: "Developers"
     default: "My work"
     }
   }
@@ -372,6 +371,7 @@ struct AppNavigation<Content: View>: View {
             case .discovery: DiscoveryView()
             case .dashboard: DashboardView()
             case .connections: ConnectionsView()
+            case .myOpportunities: RequesterOpportunitiesView()
             }
           }
           .navigationBarBackButtonHidden()

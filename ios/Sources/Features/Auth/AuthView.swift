@@ -334,7 +334,7 @@ struct AccountView: View {
           "Profiles and postings are processed by server-side AI for analysis and matching. Mapbox supplies the map."
         )
         Text(
-          "Your saved developer area is not shared with companies or recruiters. Open community-request pins are visible to developers."
+          "Your saved developer area is not shared with requesters. Open community-request pins are visible to developers."
         )
         Text("No payment or messaging service is included.")
       }
