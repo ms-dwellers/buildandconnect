@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import type { ActionCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { internal } from "../_generated/api.js";
 import type { PublicDeveloper } from "../../lib/types";
 import type { Role } from "../../backend/schemas";
 import type { HiringEnv } from "./env";
