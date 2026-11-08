@@ -44,7 +44,7 @@ export function JoinGardenBorder() {
       <div className="hero-water" />
       <div className="hero-ground" />
       <div className="absolute inset-x-0 bottom-[94px] h-16 overflow-hidden">
-        {[0, 12, 23, 37, 49, 61, 74, 87, 97].map((left, index) => (
+        {[4, 39, 88].map((left, index) => (
           <img
             key={`grass-${left}`}
             src={`/sprites/grass-${(index % 3) + 1}.svg`}
@@ -55,7 +55,7 @@ export function JoinGardenBorder() {
             style={{ left: `${left}%` }}
           />
         ))}
-        {[6, 21, 43, 67, 82, 94].map((left, index) => (
+        {[23, 54].map((left, index) => (
           <img
             key={`rose-${left}`}
             src={`/sprites/flower-${(index % 3) + 2}.svg`}
