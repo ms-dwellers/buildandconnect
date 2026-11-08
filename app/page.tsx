@@ -4,7 +4,6 @@ import { BrandLogo } from "@/components/brand-logo";
 import { AccountLinks } from "@/components/app/account-links";
 import { HomeScene } from "@/components/landing/home-scene";
 import { MapJourneyLink } from "@/components/map/map-journey";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
 import { homeCopy } from "@/lib/home-copy";
@@ -126,7 +125,6 @@ export default function Home() {
           >
             Design system
           </Button>
-          <Badge variant="secondary">In development</Badge>
         </div>
       </footer>
     </div>
