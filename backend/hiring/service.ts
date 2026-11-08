@@ -1,6 +1,7 @@
 import type { BackendEnv } from "../env";
 import type { PublicDeveloper } from "../../lib/types";
 import { geminiJson, HiringProviderError } from "./providers.ts";
+import { hiringEligibility } from "./eligibility.ts";
 import {
   intakeResponseSchema,
   matchingCriteriaSchema,
@@ -26,6 +27,9 @@ export async function recommendDevelopers(
   brief: HiringBrief,
   developers: PublicDeveloper[],
 ) {
+  developers = developers.filter(
+    (developer) => hiringEligibility(brief, developer).length === 0,
+  );
   const criteria = await geminiJson(env, {
     name: "matching_preferences",
     schema: matchingCriteriaSchema,
@@ -52,15 +56,15 @@ export async function recommendDevelopers(
     collaboration: profile.collaboration,
     weeklyHours: profile.weeklyHours,
     acceptsVolunteer: profile.acceptsVolunteer,
-    professionalExperienceYears: null,
-    compensationPreference: null,
-    workArrangementPreference: null,
+    professionalExperienceYears: profile.professionalExperienceYears ?? null,
+    compensationPreference: profile.compensationPreference ?? null,
+    workArrangementPreference: profile.workArrangementPreference ?? null,
   }));
   const result = await geminiJson(env, {
     name: "developer_recommendations",
     schema: recommendationsSchema,
     maxTokens: 5000,
-    system: `${safety} Suggest up to 10 distinct developers from the supplied candidate list. Use only supplied developerId values. Balance technology interests, learning potential, relevant project evidence, causes, communities and practical fit. Do not sort solely by experience level or demand previous paid employment. ExperienceLevel is a self-reported 1–5 level, NOT years. Exact years, rates and remote-work preferences are unknown unless supplied; mention missing practical details in needsDiscussion, never claim they agree. When budget is absent or paid, do not exclude candidates who decline volunteering. Do not fabricate a match percentage. Explain concrete evidence and tradeoffs. Return fewer than 10 when fewer are suitable.`,
+    system: `${safety} Suggest up to 10 distinct developers from the supplied candidate list. Use only supplied developerId values. Balance technology interests, learning potential, relevant project evidence, causes, communities and practical fit. Do not sort solely by experience level or demand previous paid employment. ExperienceLevel is a self-reported 1–5 level, NOT years. professionalExperienceYears is the developer's actual stated professional experience; zero is valid and must not be treated as missing or an exclusion, even when the preferred range starts above zero. Use compensationPreference and workArrangementPreference when present. Preferred rates and non-required work arrangements are soft preferences, not rejection gates. A minimum hourly rate is a boundary only for comparable hourly budgets in the same currency; do not invent conversions or infer an hourly rate from a project budget. Null values mean unknown; mention missing or incompatible practical details in needsDiscussion, never claim agreement. When budget is absent or paid, do not exclude candidates who decline volunteering. Do not fabricate a match percentage. Explain concrete evidence and tradeoffs. Return fewer than 10 when fewer are suitable.`,
     input: { brief, criteria, candidates },
   });
   const byId = new Map(

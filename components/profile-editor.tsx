@@ -35,6 +35,7 @@ import {
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { DeveloperProfile, OwnProfile } from "@/lib/types";
+import { DeveloperPreferencesForm } from "@/components/developer-preferences-form";
 
 const LEVELS = [
   { value: "1", label: "1 · Beginner" },
@@ -67,6 +68,10 @@ function LoadProfile() {
   return (
     <div className="space-y-10">
       <ProfileForm initial={profile.data} onSaved={profile.reload} />
+      <DeveloperPreferencesForm
+        initial={profile.data}
+        onSaved={profile.reload}
+      />
       <AreaForm profile={profile.data} onSaved={profile.reload} />
     </div>
   );
@@ -511,7 +516,7 @@ function AreaForm({
                 onValueChange={(value) =>
                   setRadius(Array.isArray(value) ? value[0] : value)
                 }
-                aria-label="Search radius in kilometres"
+                getAriaLabel={() => "Search radius in kilometres"}
               />
             </div>
             {failure && <ErrorAlert title="Area not saved" message={failure} />}

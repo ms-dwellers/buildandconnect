@@ -13,6 +13,7 @@ import {
 } from "./providers.ts";
 import { confirmedBriefSchema, conversationSchema } from "./schemas.ts";
 import { draftBrief, recommendDevelopers } from "./service.ts";
+import { hiringEligibility } from "./eligibility.ts";
 
 export async function listHiringDevelopers(
   client: ConvexHttpClient,
@@ -117,8 +118,7 @@ export function createHiringRoutes(
       c.env.CONVEX_BRIDGE_SECRET,
     );
     const candidates = pool.filter(
-      (developer) =>
-        brief.compensation.kind !== "volunteer" || developer.acceptsVolunteer,
+      (developer) => hiringEligibility(brief, developer).length === 0,
     );
     const result = await services.recommendDevelopers(c.env, brief, candidates);
     // Discovery consent can change while the model request is in flight.
@@ -135,10 +135,7 @@ export function createHiringRoutes(
       considered: candidates.length,
       developers: result.developers.flatMap((recommendation) => {
         const profile = current.get(recommendation.developerId);
-        return profile &&
-          profile.available &&
-          profile.discoverable &&
-          (brief.compensation.kind !== "volunteer" || profile.acceptsVolunteer)
+        return profile && hiringEligibility(brief, profile).length === 0
           ? [{ ...recommendation, profile }]
           : [];
       }),

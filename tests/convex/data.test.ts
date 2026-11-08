@@ -86,6 +86,122 @@ test("profile privacy, location, and availability remain independent of AI", asy
   ).rejects.toThrow(/role/);
 });
 
+test("matching preferences persist for zero-experience developers without regenerating embeddings", async () => {
+  const t = setup();
+  const dev = await actor(t, "developer");
+  const other = await actor(t, "developer");
+  const company = await actor(t, "company");
+  await dev.client.mutation(api.data.putDeveloper, {
+    secret,
+    profile,
+    embedding,
+  });
+  const preferences = {
+    professionalExperienceYears: 0,
+    compensationPreference: {
+      currency: "CAD",
+      minimumHourlyRate: 20,
+      preferredHourlyRate: 30,
+    },
+    workArrangementPreference: {
+      preferred: "remote" as const,
+      required: false,
+    },
+  };
+  await dev.client.mutation(api.data.updateDeveloperPreferences, {
+    secret,
+    preferences,
+  });
+  expect(await dev.client.query(api.data.ownProfile, { secret })).toMatchObject(
+    preferences,
+  );
+  const browse = await company.client.query(api.data.developers, {
+    secret,
+    after: "",
+    limit: 20,
+  });
+  expect(browse.data[0]).toMatchObject(preferences);
+  expect(browse.data[0]).not.toHaveProperty("embedding");
+  expect(browse.data[0]).not.toHaveProperty("location");
+  const stored = await t.run((ctx) => ctx.db.query("developers").collect());
+  expect(stored[0].embedding).toEqual(embedding);
+  expect(stored[0].profile.bio).toBe(profile.bio);
+  await expect(
+    company.client.mutation(api.data.updateDeveloperPreferences, {
+      secret,
+      preferences,
+    }),
+  ).rejects.toThrow(/role/);
+  await expect(
+    other.client.mutation(api.data.updateDeveloperPreferences, {
+      secret,
+      preferences,
+    }),
+  ).rejects.toThrow(/profile first/);
+  await expect(
+    dev.client.mutation(api.data.updateDeveloperPreferences, {
+      secret: "wrong",
+      preferences,
+    }),
+  ).rejects.toThrow(/application API/);
+
+  // Older clients omit the optional fields when replacing the core profile.
+  await dev.client.mutation(api.data.putDeveloper, {
+    secret,
+    profile: { ...profile, bio: "Updated community websites profile." },
+    embedding,
+  });
+  expect(await dev.client.query(api.data.ownProfile, { secret })).toMatchObject(
+    preferences,
+  );
+  await dev.client.mutation(api.data.patchDeveloper, {
+    secret,
+    available: false,
+  });
+  expect(await dev.client.query(api.data.ownProfile, { secret })).toMatchObject(
+    preferences,
+  );
+  await dev.client.mutation(api.data.updateDeveloperPreferences, {
+    secret,
+    preferences: {
+      professionalExperienceYears: null,
+      compensationPreference: null,
+      workArrangementPreference: null,
+    },
+  });
+  expect(await dev.client.query(api.data.ownProfile, { secret })).toMatchObject(
+    {
+      professionalExperienceYears: null,
+      compensationPreference: null,
+      workArrangementPreference: null,
+    },
+  );
+});
+
+test("invalid developer preferences do not change stored profiles", async () => {
+  const t = setup();
+  const dev = await actor(t, "developer");
+  await dev.client.mutation(api.data.putDeveloper, {
+    secret,
+    profile,
+    embedding,
+  });
+  await expect(
+    dev.client.mutation(api.data.updateDeveloperPreferences, {
+      secret,
+      preferences: {
+        professionalExperienceYears: -1,
+        compensationPreference: null,
+        workArrangementPreference: null,
+      },
+    }),
+  ).rejects.toThrow();
+  expect(
+    (await dev.client.query(api.data.ownProfile, { secret }))
+      .professionalExperienceYears,
+  ).toBeUndefined();
+});
+
 test("opportunity ownership, matching, and mutual interest are enforced atomically", async () => {
   const t = setup();
   const dev = await actor(t, "developer");

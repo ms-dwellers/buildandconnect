@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import {
   geminiJson,
   transcribeAudio,
@@ -19,6 +20,17 @@ const env = {
   OPENROUTER_API_KEY: "test-openrouter",
   ELEVENLABS_API_KEY: "test-elevenlabs",
 } as BackendEnv;
+
+test("Worker model settings have public defaults while API keys remain secrets", () => {
+  const config = readFileSync(
+    new URL("../cloudflare.config.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(config, /OPENROUTER_MODEL:\s*bindings\.text\(/);
+  assert.match(config, /ELEVENLABS_STT_MODEL:\s*bindings\.text\(/);
+  assert.match(config, /OPENROUTER_API_KEY:\s*bindings\.secret\(/);
+  assert.match(config, /ELEVENLABS_API_KEY:\s*bindings\.secret\(/);
+});
 const brief = {
   ...emptyHiringBrief(),
   title: "Community calendar",
@@ -239,6 +251,81 @@ test("Gemini cannot invent or duplicate developer IDs", async (t) => {
     );
     t.mock.restoreAll();
   }
+});
+
+test("Gemini receives saved preferences and can recommend zero years outside the preferred experience range", async (t) => {
+  const preferences = {
+    professionalExperienceYears: 0,
+    compensationPreference: {
+      currency: "CAD",
+      minimumHourlyRate: 20,
+      preferredHourlyRate: 30,
+    },
+    workArrangementPreference: {
+      preferred: "remote" as const,
+      required: false,
+    },
+  };
+  let candidateInput: { candidates: PublicDeveloper[] } | undefined;
+  let calls = 0;
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async (_url: unknown, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      if (calls++ === 0)
+        return completion({
+          ...criteria,
+          experienceYears: { preferredMin: 1, preferredMax: 3 },
+        });
+      candidateInput = JSON.parse(body.messages[1].content);
+      assert.match(body.messages[0].content, /zero is valid/);
+      assert.match(body.messages[0].content, /soft preferences/);
+      return completion({
+        developers: [
+          {
+            developerId: developer.id,
+            reason:
+              "Relevant React work, social interests and compatible remote preference.",
+            needsDiscussion: [],
+          },
+        ],
+      });
+    },
+  );
+  const experienced = {
+    ...developer,
+    id: "dev-three",
+    professionalExperienceYears: 3,
+  };
+  const result = await recommendDevelopers(
+    env,
+    {
+      ...brief,
+      workArrangement: "remote",
+      compensation: {
+        kind: "paid",
+        currency: "CAD",
+        period: "hour",
+        minimum: 20,
+        maximum: 25,
+      },
+    },
+    [{ ...developer, ...preferences }, experienced],
+  );
+  assert.ok(candidateInput);
+  assert.equal(candidateInput.candidates.length, 2);
+  assert.equal(candidateInput.candidates[0].professionalExperienceYears, 0);
+  assert.deepEqual(
+    candidateInput.candidates[0].compensationPreference,
+    preferences.compensationPreference,
+  );
+  assert.deepEqual(
+    candidateInput.candidates[0].workArrangementPreference,
+    preferences.workArrangementPreference,
+  );
+  assert.equal(candidateInput.candidates[1].professionalExperienceYears, 3);
+  assert.equal(result.developers[0].profile.professionalExperienceYears, 0);
 });
 
 test("confirmed briefs require reviewable content and valid compensation bounds", () => {

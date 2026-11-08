@@ -37,6 +37,8 @@ const brief = {
 function harness(
   role: ApiEnv["Variables"]["role"] = "company",
   visibleAfter = true,
+  initial: PublicDeveloper = candidate,
+  changed: PublicDeveloper = initial,
 ) {
   const calls = {
     transcription: 0,
@@ -85,7 +87,7 @@ function harness(
       },
       listDevelopers: async () => {
         calls.listing++;
-        return calls.listing > 1 && !visibleAfter ? [] : [candidate];
+        return calls.listing > 1 ? (visibleAfter ? [changed] : []) : [initial];
       },
     }),
   );
@@ -210,4 +212,44 @@ test("paid-only developers are never sent for confirmed volunteer work", async (
   });
   assert.equal(response.status, 200);
   assert.deepEqual(calls.candidates, []);
+});
+
+test("matching uses saved zero-year preferences and rechecks changed boundaries after inference", async () => {
+  const initial: PublicDeveloper = {
+    ...candidate,
+    professionalExperienceYears: 0,
+    compensationPreference: {
+      currency: "CAD",
+      minimumHourlyRate: 20,
+      preferredHourlyRate: 30,
+    },
+    workArrangementPreference: { preferred: "remote", required: true },
+  };
+  const changed: PublicDeveloper = {
+    ...initial,
+    workArrangementPreference: { preferred: "onsite", required: true },
+  };
+  const { app, calls } = harness("company", true, initial, changed);
+  const response = await app.request("/api/hiring/matches", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      brief: {
+        ...brief,
+        workArrangement: "remote",
+        compensation: {
+          kind: "paid",
+          currency: "CAD",
+          period: "hour",
+          minimum: 20,
+          maximum: 25,
+        },
+      },
+    }),
+  });
+  assert.equal(response.status, 200);
+  assert.equal(calls.candidates.length, 1);
+  assert.equal(calls.candidates[0].professionalExperienceYears, 0);
+  const result = (await response.json()) as { developers: unknown[] };
+  assert.deepEqual(result.developers, []);
 });

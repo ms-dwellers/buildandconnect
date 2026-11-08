@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { BackendEnv } from "../env";
 
-export const DEFAULT_GEMINI_MODEL = "google/gemini-3.8-flash";
-export const DEFAULT_SCRIBE_MODEL = "scribe_v2";
+import { DEFAULT_GEMINI_MODEL, DEFAULT_SCRIBE_MODEL } from "./models.ts";
+export { DEFAULT_GEMINI_MODEL, DEFAULT_SCRIBE_MODEL } from "./models.ts";
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const AUDIO_TYPES = [
   "audio/webm",

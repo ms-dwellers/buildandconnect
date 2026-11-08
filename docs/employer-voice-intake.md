@@ -19,6 +19,9 @@ development, or in the Worker's secret store for production:
 Restart the server after changing local configuration. No provider keys are sent
 to the browser. Neither service is provisioned by installing dependencies, and
 neither key is needed to build or run the automated tests. Live calls are billable.
+Model IDs are non-secret Worker variables with defaults, not required secrets.
+To override those defaults, set the model environment variables when starting
+the development server or building the Worker.
 Verify separately that the submission track accepts Gemini accessed through
 OpenRouter; this integration does not establish sponsor eligibility.
 
@@ -61,17 +64,28 @@ routing requires structured output support and excludes data-collection routes.
 - `/matches` accepts a reviewed brief. It loads up to 200 discoverable profiles
   through existing authorized Convex queries, filters availability and explicit
   volunteer consent, and rejects oversized pools rather than silently selecting
-  the first profiles. There is no new database or Convex schema migration.
+  the first profiles. The additive profile schema needs no data migration or
+  new database.
 - Profile names, emails, coordinates, authentication data and embeddings are not
   included as candidate fields in Gemini requests. Free-form profile content
   may contain personal information supplied by the developer.
 - Responses may contain at most ten distinct IDs from the supplied pool.
   Discovery and availability are checked again after inference, so a profile
   that opted out during the request is not returned.
-- Zero professional experience is valid; experience ranges are soft preferences.
+- Developer profiles save optional professional experience years, minimum and
+  preferred hourly rates (with currency), and a preferred work arrangement that
+  can be marked required. The profile editor's **Matching preferences** section
+  saves these without an AI call. Existing profiles remain compatible; blank
+  values stay unknown rather than being inferred from the 1–5 experience level.
+- Gemini receives the saved preferences. Zero years is valid and never an
+  experience-based exclusion, even when the suggested range starts above zero.
+  Preferred rates and ordinary work preferences affect ranking, not eligibility.
+  A confirmed incompatible required arrangement, or an hourly budget below the
+  developer's minimum in the same currency, excludes the candidate. Unknown
+  arrangements, different currencies and project budgets need discussion, not
+  invented conversions. These boundaries are rechecked after inference.
   Causes and communities refer to project beneficiaries, not protected traits
-  of the developer. Unknown candidate rates, years and remote-work preferences
-  stay unknown: existing developer profiles do not yet capture those fields.
+  of the developer.
 - Existing Workers AI analysis/embeddings and deterministic opportunity matching
   are unchanged. Gemini intake matching is a separate explicit action, not a
   silent replacement for those routes.

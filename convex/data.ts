@@ -21,6 +21,7 @@ import {
   request,
   location,
   analysis,
+  developerPreferences,
 } from "./schema";
 import {
   developerSchema,
@@ -29,6 +30,7 @@ import {
   developerLocationSchema,
   analysisSchema,
   vectorSchema,
+  developerPreferencesSchema,
 } from "../backend/schemas";
 import {
   boundingBox,
@@ -78,8 +80,9 @@ export const putDeveloper = mutation({
   args: { secret, profile, embedding: v.array(v.number()) },
   handler: async (ctx, args) => {
     const { user } = await access(ctx, args.secret, ["developer"]);
-    const profile = developerSchema.parse(args.profile);
+    const input = developerSchema.parse(args.profile);
     const old = await findDeveloper(ctx, user.id);
+    const profile = { ...old?.profile, ...input };
     const values = {
       userId: user.id,
       name: user.name,
@@ -102,6 +105,21 @@ export const ownProfile = query({
     const row = await findDeveloper(ctx, user.id);
     if (!row) fail(404, "Create a developer profile first");
     return ownDeveloper(await developerData(ctx, row));
+  },
+});
+
+export const updateDeveloperPreferences = mutation({
+  args: { secret, preferences: v.object(developerPreferences) },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["developer"]);
+    const row = await findDeveloper(ctx, user.id);
+    if (!row) fail(404, "Create a developer profile first");
+    const preferences = developerPreferencesSchema.parse(args.preferences);
+    await ctx.db.patch(row._id, {
+      profile: { ...row.profile, ...preferences },
+      updatedAt: Date.now(),
+    });
+    return { id: user.id, ...preferences };
   },
 });
 

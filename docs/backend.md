@@ -74,39 +74,40 @@ the same origin with `credentials: "include"`. JSON bodies use `Content-Type:
 application/json`. Errors return `{ "error": "..." }`; validation errors also
 include field paths under `issues`. Better Auth routes use its native error shape.
 
-| Method | Path                              | Caller and response                                                             |
-| ------ | --------------------------------- | ------------------------------------------------------------------------------- |
-| POST   | `/api/auth/sign-up/email`         | `{name,email,password}`; minimum 12-character password, sets session cookie     |
-| POST   | `/api/auth/sign-in/email`         | `{email,password}`, sets session cookie                                         |
-| POST   | `/api/auth/sign-out`              | Ends current session                                                            |
-| GET    | `/api/auth/get-session`           | Better Auth session                                                             |
-| GET    | `/api/me`                         | Own ID, name and selected role                                                  |
-| PUT    | `/api/me/role`                    | `{role:"developer"\|"company"\|"recruiter"\|"requester"}`; one-time, retry-safe |
-| PUT    | `/api/developers/me`              | Developer: save the complete profile and embed its experience                   |
-| GET    | `/api/developers/me`              | Developer: own profile and location, including when undiscoverable              |
-| PATCH  | `/api/developers/me`              | Developer: `{available?:boolean,discoverable?:boolean}` without AI calls        |
-| PATCH  | `/api/developers/me/location`     | Developer: `{latitude,longitude,radiusKm?}` without AI calls                    |
-| GET    | `/api/developers`                 | Company/recruiter: consented profiles and project evidence                      |
-| POST   | `/api/opportunities`              | Company: analyze, embed, and persist a new opportunity; returns 201             |
-| GET    | `/api/map`                        | Public: Calgary map listings, precision depending on viewer (see map guide)     |
-| GET    | `/api/opportunities`              | Open opportunities and structured analyses                                      |
-| GET    | `/api/opportunities/mine`         | Company: own opportunities, open and closed, paginated                          |
-| PUT    | `/api/opportunities/:id`          | Owner: replace details; re-analyses and re-embeds; status unchanged             |
-| GET    | `/api/opportunities/:id`          | Opportunity detail                                                              |
-| PATCH  | `/api/opportunities/:id`          | Owner: `{status:"open"\|"closed"}`                                              |
-| GET    | `/api/opportunities/:id/matches`  | Owner: ranked developers, score breakdowns, explanations, weights and version   |
-| GET    | `/api/opportunities/:id/match`    | Developer: own match or null, eligibility reasons and opportunity status        |
-| PUT    | `/api/opportunities/:id/interest` | Developer: `{interested:boolean}`; owner: additionally supply `developerId`     |
-| GET    | `/api/connections`                | Participant's mutual-interest connections, scoped to opportunities              |
-| POST   | `/api/requests`                   | Requester: analyze, embed, and post a local request with a pin; returns 201     |
-| GET    | `/api/requests`                   | Requester: own requests, including claimant name when claimed                   |
-| GET    | `/api/requests/claimed`           | Developer: requests they have accepted, paginated                               |
-| PUT    | `/api/requests/:id`               | Requester owner: replace details while open (409 when claimed or closed)        |
-| GET    | `/api/requests/nearby`            | Developer: ranked open requests inside the saved radius                         |
-| GET    | `/api/requests/:id`               | Requester owner, or developer for open/own claimed request                      |
-| PATCH  | `/api/requests/:id`               | Requester: `{status:"closed"}`                                                  |
-| POST   | `/api/requests/:id/accept`        | Developer: exclusive claim while status is open; retry-safe for same claimant   |
-| POST   | `/api/requests/:id/release`       | Claimant or requester: return a claimed request to open                         |
+| Method | Path                              | Caller and response                                                                  |
+| ------ | --------------------------------- | ------------------------------------------------------------------------------------ |
+| POST   | `/api/auth/sign-up/email`         | `{name,email,password}`; minimum 12-character password, sets session cookie          |
+| POST   | `/api/auth/sign-in/email`         | `{email,password}`, sets session cookie                                              |
+| POST   | `/api/auth/sign-out`              | Ends current session                                                                 |
+| GET    | `/api/auth/get-session`           | Better Auth session                                                                  |
+| GET    | `/api/me`                         | Own ID, name and selected role                                                       |
+| PUT    | `/api/me/role`                    | `{role:"developer"\|"company"\|"recruiter"\|"requester"}`; one-time, retry-safe      |
+| PUT    | `/api/developers/me`              | Developer: save the complete profile and embed its experience                        |
+| GET    | `/api/developers/me`              | Developer: own profile and location, including when undiscoverable                   |
+| PATCH  | `/api/developers/me`              | Developer: `{available?:boolean,discoverable?:boolean}` without AI calls             |
+| PATCH  | `/api/developers/me/location`     | Developer: `{latitude,longitude,radiusKm?}` without AI calls                         |
+| PATCH  | `/api/developers/me/preferences`  | Developer: replace experience, pay and work-arrangement preferences without AI calls |
+| GET    | `/api/developers`                 | Company/recruiter: consented profiles and project evidence                           |
+| POST   | `/api/opportunities`              | Company: analyze, embed, and persist a new opportunity; returns 201                  |
+| GET    | `/api/map`                        | Public: Calgary map listings, precision depending on viewer (see map guide)          |
+| GET    | `/api/opportunities`              | Open opportunities and structured analyses                                           |
+| GET    | `/api/opportunities/mine`         | Company: own opportunities, open and closed, paginated                               |
+| PUT    | `/api/opportunities/:id`          | Owner: replace details; re-analyses and re-embeds; status unchanged                  |
+| GET    | `/api/opportunities/:id`          | Opportunity detail                                                                   |
+| PATCH  | `/api/opportunities/:id`          | Owner: `{status:"open"\|"closed"}`                                                   |
+| GET    | `/api/opportunities/:id/matches`  | Owner: ranked developers, score breakdowns, explanations, weights and version        |
+| GET    | `/api/opportunities/:id/match`    | Developer: own match or null, eligibility reasons and opportunity status             |
+| PUT    | `/api/opportunities/:id/interest` | Developer: `{interested:boolean}`; owner: additionally supply `developerId`          |
+| GET    | `/api/connections`                | Participant's mutual-interest connections, scoped to opportunities                   |
+| POST   | `/api/requests`                   | Requester: analyze, embed, and post a local request with a pin; returns 201          |
+| GET    | `/api/requests`                   | Requester: own requests, including claimant name when claimed                        |
+| GET    | `/api/requests/claimed`           | Developer: requests they have accepted, paginated                                    |
+| PUT    | `/api/requests/:id`               | Requester owner: replace details while open (409 when claimed or closed)             |
+| GET    | `/api/requests/nearby`            | Developer: ranked open requests inside the saved radius                              |
+| GET    | `/api/requests/:id`               | Requester owner, or developer for open/own claimed request                           |
+| PATCH  | `/api/requests/:id`               | Requester: `{status:"closed"}`                                                       |
+| POST   | `/api/requests/:id/accept`        | Developer: exclusive claim while status is open; retry-safe for same claimant        |
+| POST   | `/api/requests/:id/release`       | Claimant or requester: return a claimed request to open                              |
 
 `GET /api/interests` lists a participant's pending and mutual interests, including
 both consent flags and `connected`. It uses the same pagination as connections.
@@ -121,11 +122,39 @@ and `kind=paid` or `kind=volunteer`.
 
 ### Developer profile
 
-`PUT /api/developers/me` replaces the entire profile; omitted fields are errors.
+`PUT /api/developers/me` replaces the core profile; omitted required fields are errors.
+The optional matching-preference fields are preserved when older clients omit
+them, and can be explicitly cleared with `null`.
 Skill proficiency and experience levels run from 1 to 5. `discoverable` is explicit
 consent to recruiter/company discovery; `available` controls new matching.
 Use `PATCH /api/developers/me` to change these flags without invoking AI, even
 when the model service is unavailable.
+
+Use `PATCH /api/developers/me/preferences` to save all three preference fields
+without regenerating embeddings. `null` means unknown or cleared, not zero:
+
+```json
+{
+  "professionalExperienceYears": 0,
+  "compensationPreference": {
+    "currency": "CAD",
+    "minimumHourlyRate": 20,
+    "preferredHourlyRate": 30
+  },
+  "workArrangementPreference": {
+    "preferred": "remote",
+    "required": false
+  }
+}
+```
+
+Years accept zero and fractional values. Rates are nonnegative; when both are
+provided, the preferred rate must be at least the minimum. Work arrangements are
+`remote`, `hybrid`, `onsite`, or `flexible`; a flexible preference cannot also be
+required. Preferences are visible to companies/recruiters only through the
+existing discovery-consent rules. The additive Convex schema supports existing
+records without a data migration; sync it to the development deployment before
+using the new mutation.
 
 ```json
 {

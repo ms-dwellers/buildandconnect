@@ -19,6 +19,7 @@ import {
 } from "./ai";
 import {
   developerLocationSchema,
+  developerPreferencesSchema,
   developerSchema,
   opportunitySchema,
   requestSchema,
@@ -163,6 +164,16 @@ export function createApi(
       await client(c).mutation(convex.data.setLocation, {
         secret: secret(c),
         location,
+      }),
+    );
+  });
+  app.patch("/developers/me/preferences", async (c) => {
+    requireRole(c, "developer");
+    const preferences = developerPreferencesSchema.parse(await c.req.json());
+    return c.json(
+      await client(c).mutation(convex.data.updateDeveloperPreferences, {
+        secret: secret(c),
+        preferences,
       }),
     );
   });

@@ -8,6 +8,58 @@ const tags = z
 const level = z.number().int().min(1).max(5);
 export const collaboration = z.enum(["async", "sync", "flexible"]);
 
+const hourlyRate = z.number().finite().min(0).max(10000).nullable();
+export const compensationPreferenceSchema = z
+  .object({
+    currency: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z]{3}$/),
+    minimumHourlyRate: hourlyRate,
+    preferredHourlyRate: hourlyRate,
+  })
+  .strict()
+  .refine(
+    (value) =>
+      value.minimumHourlyRate === null ||
+      value.preferredHourlyRate === null ||
+      value.minimumHourlyRate <= value.preferredHourlyRate,
+    {
+      message: "Preferred rate must be at least your minimum rate",
+      path: ["preferredHourlyRate"],
+    },
+  );
+export const workArrangementPreferenceSchema = z
+  .object({
+    preferred: z.enum(["remote", "hybrid", "onsite", "flexible"]),
+    required: z.boolean(),
+  })
+  .strict()
+  .refine((value) => value.preferred !== "flexible" || !value.required, {
+    message:
+      "Choose a specific work arrangement before making it a requirement",
+    path: ["required"],
+  });
+export const developerPreferencesSchema = z
+  .object({
+    professionalExperienceYears: z.number().finite().min(0).max(80).nullable(),
+    compensationPreference: compensationPreferenceSchema.nullable(),
+    workArrangementPreference: workArrangementPreferenceSchema.nullable(),
+  })
+  .strict();
+export type DeveloperPreferences = z.infer<typeof developerPreferencesSchema>;
+
+export function developerPreferencesOf(
+  profile: Partial<DeveloperPreferences> = {},
+): DeveloperPreferences {
+  return {
+    professionalExperienceYears: profile.professionalExperienceYears ?? null,
+    compensationPreference: profile.compensationPreference ?? null,
+    workArrangementPreference: profile.workArrangementPreference ?? null,
+  };
+}
+
 export function normalizeSkill(value: string): string {
   const normalized = value.trim().toLowerCase().replace(/\s+/g, " ");
   const aliases: Record<string, string> = {
@@ -68,6 +120,7 @@ export const developerSchema = z
     acceptsVolunteer: z.boolean(),
     available: z.boolean(),
     discoverable: z.boolean(),
+    ...developerPreferencesSchema.partial().shape,
   })
   .strict();
 

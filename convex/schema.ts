@@ -18,6 +18,29 @@ export const location = v.object({
   longitude: v.number(),
   radiusKm: v.number(),
 });
+export const developerPreferences = {
+  professionalExperienceYears: v.union(v.number(), v.null()),
+  compensationPreference: v.union(
+    v.object({
+      currency: v.string(),
+      minimumHourlyRate: v.union(v.number(), v.null()),
+      preferredHourlyRate: v.union(v.number(), v.null()),
+    }),
+    v.null(),
+  ),
+  workArrangementPreference: v.union(
+    v.object({
+      preferred: v.union(
+        v.literal("remote"),
+        v.literal("hybrid"),
+        v.literal("onsite"),
+        v.literal("flexible"),
+      ),
+      required: v.boolean(),
+    }),
+    v.null(),
+  ),
+};
 export const profile = v.object({
   bio: v.string(),
   city: v.string(),
@@ -37,6 +60,15 @@ export const profile = v.object({
   acceptsVolunteer: v.boolean(),
   available: v.boolean(),
   discoverable: v.boolean(),
+  professionalExperienceYears: v.optional(
+    developerPreferences.professionalExperienceYears,
+  ),
+  compensationPreference: v.optional(
+    developerPreferences.compensationPreference,
+  ),
+  workArrangementPreference: v.optional(
+    developerPreferences.workArrangementPreference,
+  ),
 });
 export const analysis = v.object({
   requiredTechnologies: tags,
