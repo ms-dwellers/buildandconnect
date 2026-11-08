@@ -144,6 +144,8 @@ try {
     [401, 503].includes(hiringApi.status),
     "Provider status requires authentication",
   );
+  // A configured Convex deployment trusts only its own SITE_URL, so the
+  // preview origin is refused before authentication runs.
   for (const path of ["voice-session", "extract"]) {
     const response = await fetch(`${origin}/api/hiring/${path}`, {
       method: "POST",
@@ -151,7 +153,7 @@ try {
       body: "{}",
     });
     assert.ok(
-      [401, 503].includes(response.status),
+      [401, 403, 503].includes(response.status),
       `${path} requires authentication`,
     );
     assert.equal(response.headers.get("Cache-Control"), "no-store");
