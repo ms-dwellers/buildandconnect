@@ -10,6 +10,7 @@ import { useSession } from "@/lib/session";
 import type { Me, Role } from "@/lib/types";
 import { ROLE_LABELS } from "./app-shell";
 import { withNext } from "@/lib/navigation";
+import { FeedbackMascot, MascotStatus } from "@/components/mascot";
 
 type Member = { user: Me["user"]; role: Role };
 
@@ -82,10 +83,14 @@ export function ErrorAlert({
   onRetry?: () => void;
 }) {
   return (
-    <Alert variant="error">
-      <CircleAlertIcon aria-hidden="true" />
-      <AlertTitle>{title}</AlertTitle>
-      <AlertDescription>
+    <Alert variant="error" className="grid-cols-[auto_minmax(0,1fr)] gap-x-3">
+      <FeedbackMascot
+        state="error"
+        className="row-span-2 size-11"
+        replayKey={`${title}:${message}`}
+      />
+      <AlertTitle className="col-start-2">{title}</AlertTitle>
+      <AlertDescription className="col-start-2">
         <p>{message}</p>
         {onRetry && (
           <Button
@@ -104,10 +109,13 @@ export function ErrorAlert({
 
 export function LoadingBlock({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-3" aria-busy="true" aria-label="Loading">
-      {Array.from({ length: rows }, (_, index) => (
-        <Skeleton key={index} className="h-24 w-full rounded-xl" />
-      ))}
+    <div className="space-y-3">
+      <MascotStatus state="loading">Loading…</MascotStatus>
+      <div className="space-y-3" aria-busy="true" aria-label="Loading">
+        {Array.from({ length: rows }, (_, index) => (
+          <Skeleton key={index} className="h-24 w-full rounded-xl" />
+        ))}
+      </div>
     </div>
   );
 }

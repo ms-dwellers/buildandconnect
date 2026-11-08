@@ -4,6 +4,7 @@ import "../components/map/map.css";
 import { MapJourneyProvider } from "@/components/map/map-journey";
 import { ToastProvider } from "@/components/ui/toast";
 import { SessionProvider } from "@/lib/session";
+import { MascotMotionProvider } from "@/lib/mascot-motion";
 
 export const metadata: Metadata = {
   title: "Build & Connect",
@@ -21,11 +22,13 @@ export default function RootLayout({
     <html lang="en">
       <body className="relative">
         <div className="relative isolate flex min-h-svh flex-col">
-          <SessionProvider>
-            <ToastProvider>
-              <MapJourneyProvider>{children}</MapJourneyProvider>
-            </ToastProvider>
-          </SessionProvider>
+          <MascotMotionProvider>
+            <SessionProvider>
+              <ToastProvider>
+                <MapJourneyProvider>{children}</MapJourneyProvider>
+              </ToastProvider>
+            </SessionProvider>
+          </MascotMotionProvider>
         </div>
       </body>
     </html>

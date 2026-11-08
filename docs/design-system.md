@@ -2,7 +2,8 @@
 
 The web app's [mascot fieldbook](mascot-fieldbook.md) uses the supplied pixel
 mascot, dotted mint boards, cream cards, pine rules, and flat underlined
-navigation. Decorative motion is brief and has a static reduced-motion fallback.
+navigation. Mascot feedback has a global pause control and a static reduced-motion
+fallback; success and error reactions are brief.
 
 Open `/design-system` for the live component gallery. It covers foundations,
 actions, forms, choices, feedback, overlays, navigation, and content with more

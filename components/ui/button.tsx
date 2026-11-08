@@ -6,7 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Spinner } from "@/components/ui/spinner";
+import { FeedbackMascot } from "@/components/mascot";
 
 export const buttonVariants = cva(
   [
@@ -98,15 +98,19 @@ export function Button({
       <>
         {children}
         {loading && (
-          <Spinner
+          <span
             className="pointer-events-none absolute"
             data-slot="button-loading-indicator"
-          />
+            aria-hidden="true"
+          >
+            <FeedbackMascot state="loading" className="size-7" />
+          </span>
         )}
       </>
     ),
     className: cn(buttonVariants({ className, size, variant })),
     "aria-disabled": loading || undefined,
+    "aria-busy": loading || undefined,
     "data-loading": loading ? "" : undefined,
     "data-keyboard-pressed": keyboardPressed ? "" : undefined,
     "data-slot": "button",

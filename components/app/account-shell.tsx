@@ -63,8 +63,8 @@ export function AccountShell({
               </Card>
             </div>
             <Mascot
-              pose="happy"
-              animate
+              pose="base"
+              motion="loop"
               className="-me-6 -mb-3 size-32 xl:size-40"
             />
           </div>
