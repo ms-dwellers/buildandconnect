@@ -59,6 +59,9 @@ the backend requires a Convex development deployment and settings from the backe
 
 ### Connect the backend
 
+For a populated development environment and a judging walkthrough, see
+[the hackathon demo guide](docs/hackathon-demo.md).
+
 ```sh
 bunx convex login
 bunx convex deployment select TEAM:PROJECT:dev

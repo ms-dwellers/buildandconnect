@@ -14,7 +14,9 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
-      AI: bindings.ai(),
+      AI: bindings.ai({
+        dev: { remote: process.env.WORKERS_AI_REMOTE === "true" },
+      }),
       VITE_CONVEX_URL: bindings.secret(),
       VITE_CONVEX_SITE_URL: bindings.secret(),
       CONVEX_BRIDGE_SECRET: bindings.secret(),
