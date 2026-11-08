@@ -21,6 +21,7 @@
           destination("Voice controls", route: .voice)
           destination("New profile onboarding", route: .setupProfile)
           destination("Developer discovery", route: .discovery)
+          destination("Explore map", route: .map(""), role: .requester)
         }.pageBackground().appNavigationTitle("Design preview")
       }.environment(app).environment(app.api)
     }
@@ -57,13 +58,16 @@
     override func startLoading() {
       let isProfile = request.url?.path.hasPrefix("/api/developers/") == true
       let isDiscovery = request.url?.path == "/api/developers"
+      let isMap = request.url?.path == "/api/map"
       let newProfile = request.url?.host == "new-profile.design-preview.invalid"
       let readOnly = request.httpMethod == "GET"
-      let success = readOnly && !newProfile && (isProfile || isDiscovery)
+      let success = readOnly && !newProfile && (isProfile || isDiscovery || isMap)
       let status = readOnly ? (success ? 200 : 404) : 405
       let body =
         success
-        ? (isDiscovery ? "{\"data\":[\(Self.profile)],\"nextCursor\":null}" : Self.profile)
+        ? (isMap
+          ? Self.mapFeed
+          : isDiscovery ? "{\"data\":[\(Self.profile)],\"nextCursor\":null}" : Self.profile)
         : #"{"error":"Read-only design preview"}"#
       let response = HTTPURLResponse(
         url: request.url!, statusCode: status,
@@ -85,6 +89,14 @@
         "acceptsVolunteer":true,"available":true,"discoverable":false,
         "location":{"latitude":51.0447,"longitude":-114.0719,"radiusKm":25}
       }
+      """#
+
+    private static let mapFeed = #"""
+      {"truncated":false,"listings":[
+        {"id":"preview-garden","source":"request","title":"Map our community garden","organization":"Neighbourhood Garden Group","neighbourhood":"Beltline, Calgary","kind":"community","compensation":"Community","commitment":"A small weekend project","skills":["Maps","Web design"],"description":"Help neighbours discover shared garden plots and learn how to get involved. This fictional project is used only for local design previews.","status":"open","precise":true,"viewerIsOwner":true,"viewerHasClaimed":false,"latitude":51.037,"longitude":-114.071},
+        {"id":"preview-volunteer","source":"opportunity","title":"Build an accessible events calendar","organization":"Calgary Community Collective","neighbourhood":"Downtown, Calgary","kind":"volunteer","compensation":"Volunteer","commitment":"4 hours per week","skills":["React","Accessibility"],"description":"Create a welcoming calendar that makes local events easier to find. Fictional preview content; no applications are submitted.","status":"open","precise":true,"viewerIsOwner":false,"viewerHasClaimed":false,"latitude":51.047,"longitude":-114.061},
+        {"id":"preview-paid","source":"opportunity","title":"Improve a local nonprofit website","organization":"Community Learning Centre","neighbourhood":"Kensington, Calgary","kind":"paid","compensation":"Paid project","commitment":"6 hours per week","skills":["TypeScript","Design systems"],"description":"Help improve the clarity and accessibility of a small nonprofit website. Fictional local preview content.","status":"open","precise":true,"viewerIsOwner":false,"viewerHasClaimed":false,"latitude":51.054,"longitude":-114.087}
+      ]}
       """#
   }
 #endif

@@ -258,28 +258,12 @@ struct ExploreView: View {
             VStack(alignment: .leading, spacing: 18) {
               if let selected {
                 ListingPreview(listing: selected)
-                Button("Back to results") { self.selected = nil }
+                Button("Back to results", systemImage: "arrow.left") { self.selected = nil }
+                  .buttonStyle(AppButtonStyle(variant: .ghost))
               } else {
-                HStack(spacing: 10) {
-                  Image(systemName: "magnifyingglass").font(.system(size: 18)).accessibilityHidden(
-                    true)
-                  TextField(
-                    "Search city ideas", text: $query,
-                    prompt: Text("Search ideas, skills, places").foregroundStyle(Theme.muted)
-                  ).textFieldStyle(.plain).submitLabel(.search)
-                    .accessibilityLabel("Search city ideas").accessibilityIdentifier(
-                      "explore.search")
-                  if !query.isEmpty {
-                    Button {
-                      query = ""
-                    } label: {
-                      Image(systemName: "xmark.circle.fill").frame(width: 44, height: 44)
-                    }
-                    .accessibilityLabel("Clear search")
-                  }
-                }.padding(.horizontal, 12).frame(minHeight: 44)
-                  .background(Theme.card, in: RoundedRectangle(cornerRadius: 12))
-                  .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.inputBorder))
+                AppSearchField(
+                  title: "Search city ideas", prompt: "Search ideas, skills, places",
+                  text: $query, identifier: "explore.search")
                 categoryFilters
                 Text("\(listings.count) \(listings.count == 1 ? "idea" : "ideas")").font(
                   Theme.metadata

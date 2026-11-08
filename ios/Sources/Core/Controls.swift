@@ -105,6 +105,36 @@ struct AppTextFieldStyle: TextFieldStyle {
   }
 }
 
+struct AppSearchField: View {
+  let title: String
+  let prompt: String
+  @Binding var text: String
+  let identifier: String
+  @FocusState private var focused: Bool
+  @Environment(\.appPalette) private var palette
+
+  var body: some View {
+    HStack(spacing: 10) {
+      Image(systemName: "magnifyingglass").font(.system(size: 18)).accessibilityHidden(true)
+      TextField(title, text: $text, prompt: Text(prompt).foregroundStyle(palette.muted))
+        .textFieldStyle(.plain).focused($focused).submitLabel(.search)
+        .onSubmit { focused = false }
+        .accessibilityLabel(title).accessibilityIdentifier(identifier)
+      if !text.isEmpty {
+        Button {
+          text = ""
+          focused = true
+        } label: {
+          Image(systemName: "xmark.circle.fill")
+        }.buttonStyle(AppButtonStyle(variant: .ghost, size: .icon))
+          .accessibilityLabel("Clear search")
+      }
+    }.font(Theme.body(16)).foregroundStyle(palette.ink)
+      .padding(.horizontal, 12).frame(minHeight: 44)
+      .modifier(AppInputSurface(focused: focused))
+  }
+}
+
 struct AppField<Content: View>: View {
   @Environment(\.appPalette) private var palette
   let title: String

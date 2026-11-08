@@ -71,9 +71,9 @@ struct PinPicker: View {
             }
             MapViewAnnotation(coordinate: pin.coordinate) {
               Image(systemName: "mappin.circle.fill").font(.system(size: 42)).foregroundStyle(
-                Theme.accent
+                Theme.accentStrong
               )
-              .background(Theme.mapLand, in: Circle()).accessibilityLabel("Selected pin")
+              .background(Theme.card, in: Circle()).accessibilityLabel("Selected pin")
             }
             if let radiusKm {
               PolygonAnnotation(
