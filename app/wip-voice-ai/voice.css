@@ -22,11 +22,6 @@
   letter-spacing: -0.025em;
 }
 
-.voice-brand svg {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: var(--primary);
-}
 .voice-nav-divider {
   width: 1px;
   height: 20px;

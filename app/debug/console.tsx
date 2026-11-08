@@ -8,9 +8,9 @@ import {
   PlayIcon,
   RefreshCwIcon,
   SearchIcon,
-  SproutIcon,
   Trash2Icon,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
@@ -155,9 +155,7 @@ export function DebugConsole() {
       <div className="mx-auto max-w-[96rem] px-4 pb-12 sm:px-8">
         <header className="flex min-h-20 flex-wrap items-center justify-between gap-3 border-b py-4">
           <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <SproutIcon aria-hidden="true" className="size-6" />
-            </span>
+            <BrandLogo />
             <span className="font-semibold tracking-tight">
               Build &amp; Connect
             </span>

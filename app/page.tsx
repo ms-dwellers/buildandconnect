@@ -1,4 +1,5 @@
-import { ArrowRightIcon, ArrowUpRightIcon, SproutIcon } from "lucide-react";
+import { ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { AccountLinks } from "@/components/app/account-links";
 import { HeroScene } from "@/components/landing/hero-scene";
 import {
@@ -22,10 +23,7 @@ export default function Home() {
           aria-label="Build & Connect home"
           className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
         >
-          <SproutIcon
-            aria-hidden="true"
-            className="size-7 stroke-[1.5] text-primary"
-          />
+          <BrandLogo />
           Build &amp; Connect
         </a>
         <nav aria-label="Main" className="flex items-center gap-3 sm:gap-6">

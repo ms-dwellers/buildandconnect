@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeftIcon, ArrowUpRightIcon, SproutIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowUpRightIcon } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { AnchoredToastProvider, ToastProvider } from "@/components/ui/toast";
@@ -38,7 +39,7 @@ export function DesignSystem() {
                 variant="ghost"
                 className="gap-3 px-0 font-semibold"
               >
-                <SproutIcon aria-hidden="true" />
+                <BrandLogo className="size-10" />
                 <span>Build &amp; Connect</span>
                 <span className="hidden text-muted-foreground sm:inline">
                   / Design system

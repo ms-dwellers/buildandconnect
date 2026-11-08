@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  ArrowUpRightIcon,
-  CheckIcon,
-  CopyIcon,
-  PlusIcon,
-  SproutIcon,
-} from "lucide-react";
+import { ArrowUpRightIcon, CheckIcon, CopyIcon, PlusIcon } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
@@ -144,7 +139,7 @@ export function Foundations() {
           </div>
           <div className="flex items-center gap-4 rounded-xl border p-4">
             <span className="flex size-11 items-center justify-center rounded-xl bg-secondary">
-              <SproutIcon aria-hidden="true" className="size-6" />
+              <BrandLogo className="size-10" />
             </span>
             <div>
               <p className="text-sm font-medium">Soft edges. Clear purpose.</p>

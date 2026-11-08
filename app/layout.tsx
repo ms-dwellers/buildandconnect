@@ -7,6 +7,9 @@ import { SessionProvider } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Build & Connect",
+  icons: {
+    icon: { url: "/brand/campfire-clasped-hands.svg", type: "image/svg+xml" },
+  },
   description:
     "Connect early-career developers with people and companies building social-impact projects.",
 };

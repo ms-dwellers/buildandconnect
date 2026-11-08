@@ -53,6 +53,11 @@ percentages enforced on every component or the map.
 
 ## Components and typography
 
+- The shared `components/brand-logo.tsx` renders the supplied campfire and clasped
+  hands logo from `public/brand/campfire-clasped-hands.svg`. The SVG is copied
+  unchanged from the original artwork and is also the site icon. Keep the visible
+  wordmark or an accessible home-link name alongside the decorative image.
+
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
 - The landing page uses open spacing, bold League Spartan headings, light paper

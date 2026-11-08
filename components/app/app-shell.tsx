@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOutIcon, SproutIcon } from "lucide-react";
+import { LogOutIcon } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { MapJourneyLink } from "@/components/map/map-journey";
 import { cn } from "@/lib/utils";
@@ -66,10 +67,7 @@ export function AppHeader({ className }: { className?: string }) {
         aria-label="Build & Connect home"
         className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
       >
-        <SproutIcon
-          aria-hidden="true"
-          className="size-7 stroke-[1.5] text-primary"
-        />
+        <BrandLogo />
         Build &amp; Connect
       </a>
       <nav

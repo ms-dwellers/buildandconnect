@@ -20,11 +20,11 @@ import {
   PauseIcon,
   PlayIcon,
   RotateCcwIcon,
-  SproutIcon,
   SquareIcon,
   Volume2Icon,
   VolumeXIcon,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -247,7 +247,7 @@ export function VoiceStudio() {
       </a>
       <header className="voice-nav">
         <a href="/" className="voice-brand">
-          <SproutIcon aria-hidden="true" />
+          <BrandLogo />
           <span>Build &amp; Connect</span>
         </a>
         <span className="voice-nav-divider" aria-hidden="true" />

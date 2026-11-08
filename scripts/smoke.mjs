@@ -94,6 +94,9 @@ try {
   assert.match(mapHtml, /Good work\./);
   assert.doesNotMatch(mapHtml, /Frontend demo|Add demo job/);
   for (const route of [
+    "/sign-in",
+    "/sign-up",
+    "/role",
     "/dashboard",
     "/profile",
     "/requests/new",
@@ -101,6 +104,11 @@ try {
   ]) {
     const page = await fetch(`${origin}${route}`);
     assert.equal(page.status, 200, `${route} must render`);
+    assert.match(
+      await page.text(),
+      /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/,
+      `${route} must use the shared logo`,
+    );
   }
   const mapFeed = await fetch(`${origin}/api/map`);
   assert.ok([200, 503].includes(mapFeed.status), "Map feed must be public");
@@ -120,6 +128,15 @@ try {
   assert.match(voiceHtml, /Begin conversation/);
   assert.match(voiceHtml, /Simulated conversation/);
   assert.match(voiceHtml, /noindex/);
+
+  for (const page of [html, designHtml, mapHtml, debugHtml, voiceHtml]) {
+    assert.match(page, /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/);
+  }
+  const logo = await fetch(`${origin}/brand/campfire-clasped-hands.svg`);
+  assert.equal(logo.status, 200);
+  const logoSvg = await logo.text();
+  assert.match(logoSvg, /id="clasped-hands-vector"/);
+  assert.doesNotMatch(logoSvg, /<script\b|<foreignObject\b|\bonload\s*=/i);
 
   const health = await fetch(`${origin}/api/health`);
   assert.equal(health.headers.get("Cache-Control"), "no-store");
