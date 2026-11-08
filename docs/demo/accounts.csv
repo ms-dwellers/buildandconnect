@@ -1,0 +1,51 @@
+username,email,role,name,city,skills
+maya.bennett,maya.bennett@buildandconnect.work,requester,Maya Bennett (Demo),Calgary,
+owen.shah,owen.shah@buildandconnect.work,requester,Owen Shah (Demo),Calgary,
+leila.morgan,leila.morgan@buildandconnect.work,requester,Leila Morgan (Demo),Calgary,
+mateo.rivers,mateo.rivers@buildandconnect.work,requester,Mateo Rivers (Demo),Calgary,
+priya.dawson,priya.dawson@buildandconnect.work,requester,Priya Dawson (Demo),Calgary,
+jonah.ellis,jonah.ellis@buildandconnect.work,requester,Jonah Ellis (Demo),Calgary,
+nora.kim,nora.kim@buildandconnect.work,requester,Nora Kim (Demo),Calgary,
+samir.wallace,samir.wallace@buildandconnect.work,requester,Samir Wallace (Demo),Calgary,
+grace.okafor,grace.okafor@buildandconnect.work,requester,Grace Okafor (Demo),Calgary,
+theo.alvarez,theo.alvarez@buildandconnect.work,requester,Theo Alvarez (Demo),Calgary,
+iris.chen,iris.chen@buildandconnect.work,requester,Iris Chen (Demo),Calgary,
+daniel.foster,daniel.foster@buildandconnect.work,requester,Daniel Foster (Demo),Calgary,
+amara.singh,amara.singh@buildandconnect.work,requester,Amara Singh (Demo),Calgary,
+felix.brooks,felix.brooks@buildandconnect.work,requester,Felix Brooks (Demo),Calgary,
+hana.patel,hana.patel@buildandconnect.work,requester,Hana Patel (Demo),Calgary,
+elias.grant,elias.grant@buildandconnect.work,requester,Elias Grant (Demo),Calgary,
+zoe.campbell,zoe.campbell@buildandconnect.work,requester,Zoe Campbell (Demo),Calgary,
+marcus.lee,marcus.lee@buildandconnect.work,requester,Marcus Lee (Demo),Calgary,
+sofia.ahmed,sofia.ahmed@buildandconnect.work,requester,Sofia Ahmed (Demo),Calgary,
+callum.wright,callum.wright@buildandconnect.work,requester,Callum Wright (Demo),Calgary,
+aisha.turner,aisha.turner@buildandconnect.work,requester,Aisha Turner (Demo),Calgary,
+ben.ito,ben.ito@buildandconnect.work,requester,Ben Ito (Demo),Calgary,
+lucia.park,lucia.park@buildandconnect.work,requester,Lucia Park (Demo),Calgary,
+arjun.blake,arjun.blake@buildandconnect.work,requester,Arjun Blake (Demo),Calgary,
+tessa.nguyen,tessa.nguyen@buildandconnect.work,requester,Tessa Nguyen (Demo),Calgary,
+avery.chen,avery.chen@buildandconnect.work,developer,Avery Chen (Demo),Calgary,react; typescript; html; css
+nia.brooks,nia.brooks@buildandconnect.work,developer,Nia Brooks (Demo),Calgary,nodejs; typescript; postgres; react
+samira.patel,samira.patel@buildandconnect.work,developer,Samira Patel (Demo),Calgary,react; css; accessibility; figma
+theo.martin,theo.martin@buildandconnect.work,developer,Theo Martin (Demo),Calgary,python; sql; pandas; data visualization
+elena.ruiz,elena.ruiz@buildandconnect.work,developer,Elena Ruiz (Demo),Calgary,react; javascript; nodejs; sql
+isaac.mensah,isaac.mensah@buildandconnect.work,developer,Isaac Mensah (Demo),Calgary,html; css; javascript; accessibility
+chloe.nguyen,chloe.nguyen@buildandconnect.work,developer,Chloe Nguyen (Demo),Calgary,python; pandas; sql; data visualization
+yusuf.ali,yusuf.ali@buildandconnect.work,developer,Yusuf Ali (Demo),Calgary,react; typescript; internationalization; css
+ruby.thompson,ruby.thompson@buildandconnect.work,developer,Ruby Thompson (Demo),Calgary,html; css; accessibility; javascript
+leo.fernandez,leo.fernandez@buildandconnect.work,developer,Leo Fernandez (Demo),Calgary,nodejs; postgres; typescript; react
+mina.hassan,mina.hassan@buildandconnect.work,developer,Mina Hassan (Demo),Calgary,react; css; figma; javascript
+ethan.park,ethan.park@buildandconnect.work,developer,Ethan Park (Demo),Calgary,react; typescript; sql; nodejs
+fatima.bello,fatima.bello@buildandconnect.work,developer,Fatima Bello (Demo),Calgary,python; sql; javascript; html
+oscar.davies,oscar.davies@buildandconnect.work,developer,Oscar Davies (Demo),Calgary,python; pandas; data visualization; sql
+anika.shah,anika.shah@buildandconnect.work,developer,Anika Shah (Demo),Calgary,javascript; typescript; react; css
+noah.wilson,noah.wilson@buildandconnect.work,developer,Noah Wilson (Demo),Calgary,react; mapbox; typescript; accessibility
+sana.rahman,sana.rahman@buildandconnect.work,developer,Sana Rahman (Demo),Calgary,react; javascript; html; css
+finn.osei,finn.osei@buildandconnect.work,developer,Finn Osei (Demo),Calgary,nodejs; typescript; react; sql
+layla.scott,layla.scott@buildandconnect.work,developer,Layla Scott (Demo),Calgary,react; css; javascript; accessibility
+hugo.tan,hugo.tan@buildandconnect.work,developer,Hugo Tan (Demo),Calgary,python; mapbox; sql; javascript
+zara.mitchell,zara.mitchell@buildandconnect.work,developer,Zara Mitchell (Demo),Calgary,react; typescript; nodejs; postgres
+caleb.ross,caleb.ross@buildandconnect.work,developer,Caleb Ross (Demo),Calgary,python; sql; html; javascript
+mei.laurent,mei.laurent@buildandconnect.work,developer,Mei Laurent (Demo),Calgary,react; mapbox; typescript; css
+devon.clarke,devon.clarke@buildandconnect.work,developer,Devon Clarke (Demo),Calgary,typescript; nodejs; postgres; react
+imani.stewart,imani.stewart@buildandconnect.work,developer,Imani Stewart (Demo),Calgary,python; pandas; sql; data visualization
