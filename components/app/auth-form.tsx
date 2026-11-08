@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -30,7 +29,6 @@ export function AuthForm({
   next: string | null;
   initialError?: string | null;
 }) {
-  const router = useRouter();
   const { refresh, session, signingOut } = useSession();
   const [error, setError] = useState<string | null>(initialError);
   const [pending, setPending] = useState(false);
@@ -53,9 +51,11 @@ export function AuthForm({
     };
   }, []);
   useEffect(() => {
+    // Hard navigation avoids Safari cancelling soft RSC fetches mid-redirect
+    // (WebKit logs those as misleading "access control checks" failures).
     if (session.status === "member" && !busy.current && !signingOut)
-      router.replace(afterAuthentication(session.role, next));
-  }, [session, router, next, signingOut]);
+      window.location.replace(afterAuthentication(session.role, next));
+  }, [session, next, signingOut]);
 
   async function continueSession() {
     const current = await refresh();
@@ -67,7 +67,7 @@ export function AuthForm({
       );
       return;
     }
-    router.replace(afterAuthentication(current.role, next));
+    window.location.assign(afterAuthentication(current.role, next));
   }
 
   async function retryAccount() {
@@ -269,8 +269,7 @@ export function AuthForm({
               authenticated ||
               redirecting !== null ||
               session.status === "loading" ||
-              session.status === "resuming" ||
-              session.status === "unavailable"
+              session.status === "resuming"
             }
             className="w-full"
           >

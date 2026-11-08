@@ -24,16 +24,16 @@ Semantic HTML is still the right choice for page structure and content.
 
 ## Palette
 
-| Reference color | Value     | Role                                        |
-| --------------- | --------- | ------------------------------------------- |
-| Soft mint       | `#CCE0D9` | Supporting surfaces and scenery             |
-| Muted teal      | `#8FB3AC` | Water and scenery                           |
-| Pine            | `#174C43` | Primary actions, illustration, focus rings  |
-| Emerald depths  | `#1E6348` | Original supporting green                   |
+| Reference color | Value     | Role                                         |
+| --------------- | --------- | -------------------------------------------- |
+| Soft mint       | `#CCE0D9` | Supporting surfaces and scenery              |
+| Muted teal      | `#8FB3AC` | Water and scenery                            |
+| Pine            | `#174C43` | Primary actions, illustration, focus rings   |
+| Emerald depths  | `#1E6348` | Original supporting green                    |
 | Cream           | `#F8F7DE` | Text on pine; developer canvas and map roads |
-| Wheat           | `#F6DFB3` | Warm supporting accent; developer secondary |
-| Golden apricot  | `#F0A345` | Developer primary; illustration and warning |
-| Coral           | `#EB5757` | Highlight CTA; landing and developer accent |
+| Wheat           | `#F6DFB3` | Warm supporting accent; developer secondary  |
+| Golden apricot  | `#F0A345` | Developer primary; illustration and warning  |
+| Coral           | `#EB5757` | Highlight CTA; landing and developer accent  |
 
 The page canvas and cards are white (`--palette-white`); the reference colours
 sit on it as structure, scenery, and accents rather than as a page tint. Status
@@ -142,7 +142,7 @@ map.
   short hard drop on badges). Avatars stay round as stepped voxel circles
   (`clip-path` + a few hard drop-shadows for outline). Alerts, progress/meter
   tracks, skeletons, and sliders use square slabs / chunky bars; slider thumbs
-  are square with a hard outline.   Lucide icons in buttons and alerts use square
+  are square with a hard outline. Lucide icons in buttons and alerts use square
   caps / miter joins. The Spinner swaps to an 8-cell pixel ring (stepped
   opacity comet) under Developer. No mass clip-path or filter stacks on
   panels.

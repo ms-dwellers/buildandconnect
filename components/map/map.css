@@ -6,7 +6,8 @@
     0 7px 16px --alpha(var(--primary) / 18%);
 }
 
-:is([data-theme="developer"], [data-theme-preview="developer"]) .map-job-marker {
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .map-job-marker {
   box-shadow:
     0 3px 0 var(--button-edge),
     0 0 14px --alpha(var(--palette-apricot) / 50%),
