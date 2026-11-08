@@ -40,6 +40,8 @@ the only account roles; do not reintroduce Company or Recruiter account types.
 - iPhone: native SwiftUI in `ios/`; build, test, and formatting commands are in
   `ios/README.md` and `package.json`. Xcode is required only for iOS tasks, never web
   development. Edit `ios/project.yml`, not generated Xcode projects or Info.plist.
+- `ios/Sources/Core/Design.swift` owns native colors and shared surface/button
+  styles. The web's green palette does not apply to iOS.
 - Current scope includes growth-oriented matching and opportunity-specific mutual
   interest. Do not invent payment or messaging flows without product direction.
 
@@ -68,8 +70,10 @@ configuration. This permission does not make the chat itself a secret vault.
 
 ## Development
 
-- Use `jj` and the shared Hackr workspace/commit workflows. Commit locally;
+- Use Git and preserve existing worktree changes. Commit locally;
   publish or deploy only when requested. Never add AI co-author attribution.
+- Do not run tests unless the user explicitly requests testing. Building,
+  formatting, installing, and capturing app previews remain allowed.
 - Use Bun for package installation and scripts; `bun.lock` is the only dependency
   lockfile. Keep Node.js 26 for the existing toolchain and `node --test` runner.
 - Run `bun run check`, `bun run build`, and `bun run smoke` for scaffold changes.
