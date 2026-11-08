@@ -148,10 +148,11 @@ ElevenLabs transcribes recorded answers, and Fireworks drafts a
 reviewable brief and suggests up to ten developers. Both integrations require
 server-only provider keys; no opportunity is posted automatically.
 
-The [voice studio](docs/voice-prototype.md) at `/wip-voice-ai` connects a private
-ElevenLabs interviewer to the microphone and displays its words over the aurora.
-A separate Fireworks call fills the project brief in the background. Requesters
-review the brief before requesting developer suggestions.
+The [voice studio](docs/voice-studio.md) at `/voice` records one answer at a time.
+Requesters stop, preview, and send each recording. ElevenLabs transcribes it,
+Fireworks returns a follow-up question and updated brief, and ElevenLabs can
+speak the reply. No live voice connection or automatic listening is used.
+Requesters review and explicitly publish the resulting private draft.
 
 The component foundation is [coss ui](https://coss.com/ui/docs), with the supplied
 emerald, cream, wheat, apricot, and coral palette. See

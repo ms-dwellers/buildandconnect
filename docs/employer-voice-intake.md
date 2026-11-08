@@ -1,8 +1,8 @@
 # Requester project intake
 
 Open `/hire` from a requester account for record-and-review intake. Use
-**Describe a project with voice** on the requester dashboard for the live
-[`/voice`](voice-studio.md) interviewer and background brief extraction.
+**Describe a project with voice** on the requester dashboard for the
+[`/voice`](voice-studio.md) recorded-turn interviewer and incremental brief.
 
 ## Provider setup
 
@@ -11,9 +11,10 @@ or production. They do not belong in the web Worker's environment:
 
 | Setting                | Purpose                                                         |
 | ---------------------- | --------------------------------------------------------------- |
-| `ELEVENLABS_API_KEY`   | ElevenLabs key with speech-to-text and Agents access            |
+| `ELEVENLABS_API_KEY`   | ElevenLabs key with speech-to-text and text-to-speech access    |
 | `ELEVENLABS_STT_MODEL` | Optional; defaults to `scribe_v2`                               |
-| `ELEVENLABS_AGENT_ID`  | Private interview agent used by `/voice`                        |
+| `ELEVENLABS_VOICE_ID`  | Optional spoken-reply voice for `/voice`                        |
+| `ELEVENLABS_AGENT_ID`  | Private live agent for native/older clients, not needed by web  |
 | `FIREWORKS_API_KEY`    | Fireworks key for structured text analysis                      |
 | `FIREWORKS_MODEL`      | Optional; defaults to `accounts/fireworks/models/glm-5p3-flash` |
 
@@ -69,6 +70,10 @@ conversation text and relevant profile data. Each provider's retention policy ap
 - `/transcribe` accepts only supported audio MIME types, caps request size,
   disables speaker diarization, and returns only transcript text.
 - `/brief` validates the bounded conversation and Fireworks' strict JSON output.
+- `/turn` accepts recent messages and the prior brief, then returns the next reply,
+  updated brief, and a readiness flag together for the recorded `/voice` flow.
+- `/speech` returns a bounded MP3 for an explicit reply; voice selection and
+  provider credentials remain server-owned. Speech failure does not undo a turn.
 - `/matches` accepts a reviewed brief. It loads up to 200 discoverable profiles
   through existing authorized Convex queries, filters availability and explicit
   volunteer consent, and rejects oversized pools rather than silently selecting

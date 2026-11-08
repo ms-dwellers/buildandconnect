@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { VoiceStudio } from "./voice-studio";
 import "./voice.css";
+import { pageTitle } from "@/lib/page-title";
 
 export const metadata: Metadata = {
-  title: "Voice studio — Build & Connect",
+  title: pageTitle("Voice studio"),
   description:
-    "Describe your project with a voice conversation or fill out a project brief manually.",
+    "Record and send project answers one at a time, then review your brief before publishing.",
   robots: { index: false, follow: false },
 };
 

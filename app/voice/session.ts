@@ -1,11 +1,13 @@
 export type VoicePhase =
   | "ready"
-  | "connecting"
+  | "requesting"
+  | "recording"
+  | "stopping"
+  | "recorded"
+  | "transcribing"
   | "speaking"
-  | "listening"
   | "thinking"
-  | "paused"
-  | "ended";
+  | "complete";
 export function formatDuration(seconds: number) {
   return `${Math.floor(seconds / 60)
     .toString()
@@ -14,25 +16,25 @@ export function formatDuration(seconds: number) {
     .padStart(2, "0")}`;
 }
 
-export function isSessionActive(phase: VoicePhase) {
-  return phase !== "ready" && phase !== "ended";
-}
-
 export function phaseLabel(phase: VoicePhase) {
   switch (phase) {
     case "ready":
       return "Ready";
-    case "connecting":
-      return "Starting…";
+    case "requesting":
+      return "Waiting for microphone permission…";
+    case "recording":
+      return "Recording your answer";
+    case "stopping":
+      return "Finishing recording…";
+    case "recorded":
+      return "Recording ready to send";
+    case "transcribing":
+      return "Transcribing your answer…";
     case "speaking":
-      return "Speaking";
-    case "listening":
-      return "Your turn";
+      return "Playing reply";
     case "thinking":
-      return "Thinking…";
-    case "paused":
-      return "Paused";
-    case "ended":
-      return "Session ended";
+      return "Updating your brief and preparing a reply…";
+    case "complete":
+      return "Your brief is ready to review";
   }
 }

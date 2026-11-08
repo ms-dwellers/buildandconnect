@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import {
-  formatDuration,
-  isSessionActive,
-  phaseLabel,
-} from "../app/voice/session.ts";
+import { formatDuration, phaseLabel } from "../app/voice/session.ts";
 
 test("voice studio uses its permanent route and redirects the old WIP page", () => {
   const page = readFileSync(
@@ -26,20 +22,22 @@ test("voice studio uses its permanent route and redirects the old WIP page", () 
   assert.doesNotMatch(dashboard, /wip-voice-ai/);
 });
 
-test("voice conversation exposes session states and readable durations", () => {
-  assert.equal(isSessionActive("ready"), false);
-  assert.equal(isSessionActive("ended"), false);
+test("recorded voice turns expose explicit states and readable durations", () => {
   for (const phase of [
-    "connecting",
+    "ready",
+    "requesting",
+    "recording",
+    "stopping",
+    "recorded",
+    "transcribing",
     "speaking",
-    "listening",
     "thinking",
-    "paused",
+    "complete",
   ] as const) {
-    assert.equal(isSessionActive(phase), true);
     assert.ok(phaseLabel(phase));
   }
-  assert.equal(phaseLabel("speaking"), "Speaking");
+  assert.equal(phaseLabel("recorded"), "Recording ready to send");
+  assert.equal(phaseLabel("complete"), "Your brief is ready to review");
   assert.equal(formatDuration(0), "00:00");
   assert.equal(formatDuration(75), "01:15");
 });
@@ -77,7 +75,7 @@ test("navigation stays above the unframed voice panel, with the transcript below
   );
   assert.doesNotMatch(
     source,
-    /Enable microphone|Simulated conversation|speechSynthesis|replyFor|Local demo|voice-stage-top|Waveform|voice-timer/,
+    /Simulated conversation|speechSynthesis|replyFor|Local demo|Waveform/,
   );
   assert.match(source, /useVoiceConversation/);
   assert.match(source, /projectDraftFromBrief\(brief\)/);
@@ -88,22 +86,29 @@ test("navigation stays above the unframed voice panel, with the transcript below
     /@media \(prefers-reduced-motion: no-preference\)\s*\{\s*\.voice-reply/,
   );
   assert.match(css, /animation-delay: var\(--word-delay\)/);
-  assert.match(source, /phase === "speaking" &&/);
-  assert.match(source, /conversation\.interrupt\(\)/);
+  assert.match(source, /Send recording/);
+  assert.match(source, /Stop recording/);
+  assert.match(source, /speech\.stop/);
+  assert.match(source, /readyForReview/);
   assert.match(source, /Fill out manually/);
   assert.match(source, /conversation\.prepareReview\(\)/);
 });
 
-test("manual review stops extraction before allowing edits", () => {
+test("manual review cancels pending turns and audio before allowing edits", () => {
   const hook = readFileSync(
     new URL("../app/voice/use-voice-conversation.ts", import.meta.url),
     "utf8",
   );
   const review = hook.match(/function prepareReview\(\) \{([^}]+)\}/)?.[1];
   assert.ok(review);
-  assert.match(review, /disconnect\(\)/);
-  assert.match(review, /clearDraftWork\(\)/);
-  assert.match(review, /setExtracting\(false\)/);
+  assert.match(review, /cancelProcessing\(\)/);
+  assert.match(review, /recorder\.cancel\(\)/);
+  assert.match(review, /speech\.stop\(\)/);
+  assert.doesNotMatch(
+    hook,
+    /@elevenlabs\/client|startSession|voice-session|\/hiring\/extract/,
+  );
+  assert.match(hook, /\/hiring\/turn/);
   const intake = readFileSync(
     new URL("../components/hiring/employer-intake.tsx", import.meta.url),
     "utf8",

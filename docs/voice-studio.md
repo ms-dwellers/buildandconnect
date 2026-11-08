@@ -1,98 +1,100 @@
 # Voice studio
 
-Open `/voice` with a requester account for a spoken project conversation.
-The voice agent and background form-filling agent have separate responsibilities.
-The former `/wip-voice-ai` URL redirects permanently to `/voice`.
+Open `/voice` as a requester to turn recorded answers into a project brief.
+The old `/wip-voice-ai` URL redirects to `/voice`.
 
-## Two agents
+## Recorded turns
 
-- **ElevenLabs interviews.** Its private conversational agent handles live audio,
-  transcription, turn detection, questions, and spoken replies.
-  The central text begins with “Hey — ready whenever you are.” and then shows the
-  agent’s current words. It does not fill fields or invoke application tools.
-  Replies roll in word by word with a short upward fade; reduced-motion users
-  receive the text immediately. The full sentence is one screen-reader update.
-- **Fireworks extracts.** Final transcript events go to `/api/hiring/extract` through
-  the existing authenticated API. Fireworks reads recent conversation and the prior
-  brief, then returns only structured fields. It never supplies the spoken reply.
-  Only user statements establish requirements; agent questions are not evidence.
+1. **Record your project** asks for microphone permission and starts a local
+   recording. The microphone is never opened automatically for a new turn.
+2. **Stop recording** releases the microphone and keeps the audio in memory.
+   Listen to the preview, **Record again**, or **Discard recording**. Nothing
+   is uploaded until **Send recording**. Each answer is limited to 60 seconds
+   and 2 MB; reaching the time limit stops locally, without sending.
+3. **Send recording** uploads the audio through the same-origin
+   `/api/hiring/transcribe` endpoint. ElevenLabs Scribe returns text. The UI
+   then sends that text, recent conversation, and the prior brief to
+   `/api/hiring/turn` for Fireworks to return one follow-up question and an
+   updated structured brief in the same response. There is no parallel
+   extraction request, voice WebSocket, live transcription, or turn detector.
+4. The reply appears over the aurora and in the conversation. When spoken
+   replies are enabled, `/api/hiring/speech` generates an ElevenLabs MP3.
+   **Stop reply** stops it; **Play reply** replays the cached audio or retries
+   generation if it failed. Browser autoplay restrictions leave the text
+   usable and offer explicit playback. Recording another answer stops playback
+   before requesting the microphone.
+5. Record and send the next answer, or use **Or type an answer**. Only one
+   transcription/brief turn runs at a time. Each successful turn commits both
+   user/assistant text and the brief locally. The model asks one useful question
+   at a time and accepts details that are unknown or deferred. Once enough is
+   known, the primary action becomes **Review project brief**. The requester
+   can still add another answer or review the brief sooner.
+6. Review saves only project fields as an account-owned private draft and opens
+   the existing editable publishing form. Nothing is published or assigned
+   automatically. **Fill out manually** skips voice and inference entirely.
 
-Updates are debounced and serialized, so slow extraction does not interrupt the
-interview and newer conversation is picked up after an in-flight update. Existing
-fields remain visible if extraction fails; **Retry brief update** retries it.
-Recent transcript context is bounded to 24 messages and the API’s body limit.
-Earlier extracted facts are retained in the previous brief.
+## Recovery and privacy
 
-## User flow
+- Upload failure keeps the recording for another explicit send. Brief-generation
+  failure keeps the transcription in the editable answer field and leaves the
+  previous brief unchanged. Oversized transcripts must be edited, not silently
+  truncated. Unsent typed notes are preserved alongside a transcribed recording.
+- **Cancel processing** aborts the current turn without starting another one.
+  It preserves an untranscribed recording or the transcription already obtained.
+  Reset, manual review, and unmount invalidate late responses and stop media.
+- Hiding the page discards an unfinished capture and stops reply/preview
+  playback. Completed recordings and in-progress submitted turns can remain in
+  page memory, but the microphone is off. Returning never starts recording.
+- Recent context is bounded to 24 messages and 28,000 UTF-8 bytes with the prior
+  brief. Earlier facts stay in the prior brief. A context that cannot fit fails
+  explicitly and offers manual review rather than dropping known fields.
+- Recordings, transcripts, and generated reply audio are not stored in Convex,
+  R2, browser storage, or application logs. They stay in page memory until
+  replaced, cleared, sent/transcribed, or navigated away from. Reviewing saves
+  project details only. Reloading before review discards the conversation.
+- ElevenLabs receives submitted audio for transcription and reply text for
+  speech. Fireworks receives transcript and brief context. Provider retention
+  policies apply; the original live-agent retention settings do not govern
+  these REST requests. Calls are billable. Configure provider spending limits
+  and durable per-account quotas before public rollout.
 
-1. **Begin conversation** requests microphone permission and connects to ElevenLabs.
-   The agent waits for the user to speak. Only a short-lived signed connection URL
-   reaches the browser; the API key stays on the server.
-2. Talk normally or type an answer below the panel. Text can start a text-only
-   session when microphone access is unavailable. The background brief updates
-   independently while the interview continues.
-3. **Pause conversation**, **End conversation**, hiding the page, or navigation
-   disconnects the voice session and releases the microphone. Resume establishes
-   a fresh connection with recent transcript context. Muting spoken replies
-   changes playback volume without stopping transcription.
-   During spoken replies, the microphone is muted so incidental speech does not
-   interrupt or enter the brief. **Interrupt** appears only while the AI is
-   speaking; it stops the reply and reconnects with the conversation and brief
-   preserved. There may be a short connection delay before listening resumes.
-   The SDK does not expose a stop-current-reply operation, so no fake user
-   utterance is sent to force an interruption.
-4. **Review project brief** ends the interview, saves the extracted project fields
-   as a private draft, and opens the single editable review/publishing form.
-   Nothing is published and no invitations are sent automatically.
+## Server contract and setup
 
-**Fill out manually** skips the interview and opens the editable form immediately,
-even with an empty brief. You can also switch to manual entry during a conversation.
-Existing extracted fields are kept; pending AI updates are canceled so they cannot
-overwrite manual edits. Editing does not require microphone access or configured
-voice services. The saved review form requires an authenticated, configured
-Convex backend, but no voice or inference service until explicit publishing.
+All hiring endpoints require a live requester session and retain the existing
+origin checks. Browser requests stay on `/api`; provider keys remain in Convex.
 
-The saved form is prefilled using the latest extracted brief. Title, description, location, pay, hours, causes,
-and timeline carry over. Technology preferences and communities served are kept
-in the description; preferences never become mandatory technology filters.
-You can edit everything before explicitly posting. Drafts are scoped to the
-signed-in requester, use only a random ID in the URL, and survive reloads.
-The dashboard lists unfinished drafts. The legacy `/hire` matching flow keeps
-its explicit Fireworks consent and now hands its results into the same saved form.
+| Endpoint                      | Input                                                        | Output                               |
+| ----------------------------- | ------------------------------------------------------------ | ------------------------------------ |
+| `POST /api/hiring/transcribe` | Supported audio body, at most 2 MB                           | `{text}`                             |
+| `POST /api/hiring/turn`       | `{messages,brief}`; latest message must be the user's answer | `{reply,brief,readyForReview}`       |
+| `POST /api/hiring/speech`     | `{text}`; 1-1000 characters                                  | `audio/mpeg`, at most 2 MB, no-store |
 
-Navigation remains above the full-screen voice panel. There is no preview label,
-timer, atmosphere control, waveform, voice-style bar, or separate microphone row.
-The transcript and project brief sit below the first viewport. Reduced-motion
-preferences stop the aurora; WebGL has a CSS fallback.
+The forwarder retains the 32 KB limit for JSON and all other endpoints. Only
+the exact transcription POST gets the larger audio allowance, including streamed
+bodies without a trusted Content-Length. Provider calls have explicit timeouts
+and receive cancellation signals. Audio and object URLs are released when no
+longer needed. Reduced-motion preferences disable aurora/text motion; WebGL has
+a CSS fallback.
 
-Before review, conversation and extracted fields stay in page memory; reload
-or clear discards them. Reviewing saves only project fields to Convex. Recordings
-and transcripts are never saved with the project draft. ElevenLabs
-receives live audio and conversation; Fireworks receives transcript and
-brief data. Provider retention policies apply. The supplied agent configuration
-disables audio recording and limits transcript retention to one day.
+Configure `ELEVENLABS_API_KEY` with speech-to-text and text-to-speech access and
+`FIREWORKS_API_KEY` in the selected Convex deployment. Optional
+`ELEVENLABS_STT_MODEL` defaults to `scribe_v2`; optional `ELEVENLABS_VOICE_ID`
+selects the reply voice. Without an override, replies use the original
+interviewer's default voice and `eleven_flash_v2_5`. No new agent or credential
+is needed. Sync the changed Convex HTTP actions and update the web host together.
 
-## Configuration
+`ELEVENLABS_AGENT_ID`, `/hiring/voice-session`, `/hiring/native-voice-session`,
+and `/hiring/extract` remain for native or older clients; the web studio no
+longer calls them. The legacy `/hire` flow still transcribes on stop and lets
+the requester edit before its explicit **Draft the brief** action. Both web
+flows share the same bounded local recorder and audio forwarding path.
 
-The existing `ELEVENLABS_API_KEY` needs Agents read/write access for setup and
-conversation authorization. `ELEVENLABS_AGENT_ID` identifies the private agent.
-With the key in ignored `.env.local`, run `bun run setup:voice` once to create the
-agent using `backend/hiring/interview-agent.ts`. The script refuses to replace
-an existing configured agent and writes the ID only to the ignored, private local
-environment file. Agent creation is a remote configuration change; it does not
-deploy the application. Restart local development after changing configuration.
+## Verification boundaries
 
-`/api/hiring/voice-session` authorizes only requester accounts and returns an uncached
-signed WebSocket URL. Browser audio then goes directly to ElevenLabs. The existing
-`/hire` recorder and explicit transcription workflow are unchanged. The new agent
-has no application tools, uses a 15-minute session limit, allows two concurrent
-sessions and 100 starts per day, and disables burst billing. Live calls are billable.
-These agent limits do not replace a per-account application quota before rollout.
-
-## Verification
-
-Run `bun run check`, `bun run build`, and `bun run smoke`. Check microphone access,
-live transcription and replies, central agent text, independent background field
-updates/corrections, permission and provider failures, stale update cancellation,
-review/consent, and media cleanup. Check mobile widths, keyboard access, reduced
-motion, and WebGL fallback. Fixture success does not prove live provider access.
+Formatting, type checks, production builds, and synthetic UI previews do not
+establish microphone compatibility or live provider behavior. With explicit
+testing authorization, cover permission denial, local stop/preview/send,
+successive turns, cancellation/stale replies, short/empty/oversized recordings,
+upload and model failures, unavailable playback/autoplay, completion, manual
+review, mobile layouts, reduced motion, and media cleanup. Real transcription
+accuracy and provider access require separately authorized live calls.
