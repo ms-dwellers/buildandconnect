@@ -1,18 +1,35 @@
 import SwiftUI
 
 enum Theme {
-  static let canvas = Color(red: 0.973, green: 0.969, blue: 0.871)
-  static let card = Color(red: 0.997, green: 0.992, blue: 0.950)
-  static let mint = Color(red: 0.800, green: 0.878, blue: 0.851)
-  static let pine = Color(red: 0.090, green: 0.298, blue: 0.263)
-  static let muted = Color(red: 0.275, green: 0.373, blue: 0.329)
-  static let wheat = Color(red: 0.965, green: 0.875, blue: 0.702)
-  static let coral = Color(red: 0.922, green: 0.341, blue: 0.341)
-  static let teal = Color(red: 0.561, green: 0.702, blue: 0.675)
-  static let apricot = Color(red: 0.941, green: 0.639, blue: 0.271)
-  static let emerald = Color(red: 0.118, green: 0.388, blue: 0.282)
-  static let error = Color(red: 0.620, green: 0.118, blue: 0.118)
-  static let edge = Color(red: 0.047, green: 0.192, blue: 0.165)
+  static let canvas = Color("LaunchCanvas")
+  static let card = color(0xFCFCF8)
+  static let ink = color(0x1B352C)
+  static let muted = color(0x637069)
+  static let accent = color(0xC7DEC6)
+  static let accentStrong = color(0x315E48)
+  static let softAccent = color(0xE4EBDD)
+  static let highlight = color(0xDDE7D5)
+  static let border = color(0xD7DDD2)
+  static let shadow = color(0x1A342A)
+  static let success = color(0x31604E)
+  static let successSurface = color(0xE0EBDD)
+  static let error = color(0xA33D3D)
+  static let errorSurface = color(0xF4E4DF)
+  static let mapLand = color(0x72D6A0)
+  static let mapSurface = color(0xFFFFFF)
+  static let mapBuildings = color(0xE5EBEE)
+  static let mapGreenspace = color(0xF7FAFC)
+  static let mapWater = color(0x75C8F2)
+  static let mapRoads = color(0xFFFFFF)
+  static let mapHighways = color(0x97ACBA)
+  static let mapText = ink
+  static let mapMuted = muted
+
+  private static func color(_ hex: UInt32) -> Color {
+    Color(
+      .sRGB, red: Double((hex >> 16) & 0xFF) / 255,
+      green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255, opacity: 1)
+  }
   static func title(_ size: CGFloat = 32) -> Font {
     .custom("LeagueSpartan-Bold", size: size, relativeTo: .largeTitle)
   }
@@ -30,10 +47,10 @@ struct RaisedButtonStyle: ButtonStyle {
       .font(Theme.body().weight(.semibold))
       .frame(maxWidth: .infinity, minHeight: 54)
       .padding(.horizontal, 20)
-      .foregroundStyle(Theme.canvas)
-      .background(Theme.pine, in: RoundedRectangle(cornerRadius: 18))
-      .shadow(color: Theme.edge, radius: 0, y: configuration.isPressed && enabled ? 0 : 2)
-      .offset(y: configuration.isPressed && enabled ? 2 : 0)
+      .foregroundStyle(Theme.card)
+      .background(Theme.accentStrong, in: RoundedRectangle(cornerRadius: 18))
+      .shadow(color: Theme.ink, radius: 0, y: configuration.isPressed && enabled ? 0 : 3)
+      .offset(y: configuration.isPressed && enabled ? 3 : 0)
       .opacity(enabled ? 1 : 0.5)
       .animation(reduceMotion ? nil : .easeOut(duration: 0.1), value: configuration.isPressed)
   }
@@ -41,29 +58,39 @@ struct RaisedButtonStyle: ButtonStyle {
 
 extension View {
   func paperCard() -> some View {
-    self.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+    self.padding(22).frame(maxWidth: .infinity, alignment: .leading)
       .background(Theme.card, in: RoundedRectangle(cornerRadius: 24))
-      .overlay(RoundedRectangle(cornerRadius: 24).stroke(Theme.pine.opacity(0.08)))
-      .shadow(color: Theme.pine.opacity(0.045), radius: 8, y: 4)
+      .overlay(RoundedRectangle(cornerRadius: 24).stroke(Theme.border.opacity(0.8)))
+      .shadow(color: Theme.shadow.opacity(0.06), radius: 12, y: 6)
   }
   func pageBackground() -> some View {
     self.scrollContentBackground(.hidden).scrollDismissesKeyboard(.interactively)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .background(Theme.canvas)
+      .listRowSeparatorTint(Theme.border)
   }
-  func mapControlSurface(cornerRadius: CGFloat = 24) -> some View {
-    modifier(LiquidSurface(cornerRadius: cornerRadius))
+  func mapControlSurface(cornerRadius: CGFloat = 24, mapOverlay: Bool = false) -> some View {
+    modifier(LiquidSurface(cornerRadius: cornerRadius, mapOverlay: mapOverlay))
   }
 }
 
 private struct LiquidSurface: ViewModifier {
   let cornerRadius: CGFloat
+  let mapOverlay: Bool
   @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
   @ViewBuilder func body(content: Content) -> some View {
-    if reduceTransparency {
+    if mapOverlay {
+      content.foregroundStyle(Theme.mapText)
+        .background(Theme.mapSurface, in: RoundedRectangle(cornerRadius: cornerRadius))
+        .overlay(
+          RoundedRectangle(cornerRadius: cornerRadius).stroke(Theme.border)
+        )
+        .shadow(color: Theme.shadow.opacity(0.10), radius: 16, y: 8)
+    } else if reduceTransparency {
       content.background(Theme.card, in: RoundedRectangle(cornerRadius: cornerRadius))
     } else if #available(iOS 26, *) {
-      content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
+      content.glassEffect(
+        .regular.tint(Theme.card.opacity(0.75)), in: RoundedRectangle(cornerRadius: cornerRadius))
     } else {
       content.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
     }
@@ -72,11 +99,16 @@ private struct LiquidSurface: ViewModifier {
 
 struct StatusBadge: View {
   let text: String
+  private var positive: Bool {
+    ["open", "available", "connected"].contains(text.lowercased())
+  }
   var body: some View {
     Text(text.capitalized).font(Theme.metadata).padding(.horizontal, 10).padding(.vertical, 7)
-      .foregroundStyle(Theme.pine)
+      .foregroundStyle(positive ? Theme.success : Theme.ink)
       .background(
-        text.lowercased() == "claimed" ? Theme.wheat : Theme.mint.opacity(0.65),
+        positive
+          ? Theme.successSurface
+          : text.lowercased() == "claimed" ? Theme.highlight : Theme.softAccent,
         in: RoundedRectangle(cornerRadius: 8))
   }
 }
@@ -96,6 +128,8 @@ struct FailureView: View {
       if let retry { Button("Try again") { Task { await retry() } }.buttonStyle(.bordered) }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(16)
+    .background(Theme.errorSurface, in: RoundedRectangle(cornerRadius: 16))
     .accessibilityElement(children: .contain)
   }
 }
@@ -106,7 +140,10 @@ struct EmptyState: View {
   var message: String?
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-      Image(systemName: symbol).font(.title).foregroundStyle(Theme.pine).accessibilityHidden(true)
+      Image(systemName: symbol).font(.system(size: 25, weight: .medium))
+        .foregroundStyle(Theme.accentStrong).frame(width: 52, height: 52)
+        .background(Theme.softAccent, in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityHidden(true)
       Text(title).font(Theme.title(24))
       if let message { Text(message).foregroundStyle(Theme.muted) }
     }.paperCard()
@@ -153,8 +190,7 @@ struct ConfirmAction: View {
 
 struct GardenScene: View {
   var body: some View {
-    Image("CommunityGarden").resizable().scaledToFit().padding(.top, 28)
-      .background(Theme.mint, in: RoundedRectangle(cornerRadius: 24))
+    HeroLandscape(compact: true).frame(height: 220)
       .clipShape(RoundedRectangle(cornerRadius: 24)).accessibilityHidden(true)
   }
 }

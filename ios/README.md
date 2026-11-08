@@ -18,10 +18,10 @@ The generated Xcode project and Info.plist are ignored. Edit `project.yml` rathe
 than generated project files. Swift Package Manager resolves the pinned Mapbox
 SDK and its dependencies.
 
-The garden artwork is rendered from the actual web `CommunityGarden` component
-using the web semantic colors. To update the bundled PNG and app icon after an
-artwork change, run `bun run ios:artwork` with `resvg` installed. Do not hand-edit
-the generated images. Fonts and their licenses are reused from `public/fonts/`.
+The welcome landscape recomposes the website's actual `public/sprites/` artwork
+for portrait. `bun run ios:artwork` renders these sprites, the supplied brand mark,
+and the legacy garden/app icon with `resvg`. Do not hand-edit generated assets.
+Fonts and their licenses are reused from `public/fonts/`.
 
 Create an ignored `ios/Local.xcconfig` for this machine, with private file
 permissions. `Configuration.xcconfig` includes it optionally:
@@ -44,6 +44,14 @@ Worker, or a Mac-side terminal. A physical iPhone needs signing and provisioning
 Release requests reject HTTP. Simulator builds use local ad-hoc signing so
 Keychain is exercised normally. No server is published by the build scripts.
 
+To run on a physical iPhone, connect and trust it, open the generated project,
+choose the BuildConnect scheme and your phone, then select your team under the
+app target's Signing & Capabilities and press Command-R. Enable Developer Mode
+on the phone if prompted. To retain signing across project regeneration, set
+`DEVELOPMENT_TEAM` to your Apple team ID in ignored `Local.xcconfig`; do not edit
+`project.yml` for a machine-specific team. The build/test scripts below target
+the simulator, not a physical phone.
+
 ```sh
 bun run ios:fmt
 bun run ios:fmt:check
@@ -56,11 +64,20 @@ Set `IOS_SIMULATOR_ID` to choose another. Xcode results are under
 `ios/.build/Logs/Test/`. Role walkthroughs attach screenshots without capturing
 authentication forms.
 
+For registration walkthroughs on a simulator without iCloud Keychain, turn off
+Settings > General > AutoFill & Passwords > AutoFill Passwords and Passkeys.
+Otherwise iOS may intercept manual password input while attempting unsupported
+strong-password generation. Production password-manager support stays enabled.
+
 ## Connected pathways
 
 - Guest welcome and Calgary browsing; authentication returns to a pending posting.
 - Email/password sign-up and sign-in, one-time role choice, session restoration,
   and server sign-out. Native credentials are signed bearer sessions in Keychain.
+- Single-button illustrated welcome, inline expanding authentication, and staged
+  developer setup with protected drafts and optional private-area setup.
+- Map-first city ideas browsing, category markers, floating glass search tray,
+  and expandable result/detail sheets. Pins represent postings, never people.
 - Developer profile, skills, project evidence, learning preferences, independent
   availability/discovery flags, and a private pin/radius editor.
 - Developer nearby requests, exclusive acceptance, release, opportunity fit,

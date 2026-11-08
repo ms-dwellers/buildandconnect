@@ -6,7 +6,7 @@ struct BuildConnectApp: App {
   var body: some Scene {
     WindowGroup {
       RootView().environment(app).environment(app.api)
-        .font(Theme.body()).foregroundStyle(Theme.pine).tint(Theme.pine)
+        .font(Theme.body()).foregroundStyle(Theme.ink).tint(Theme.accentStrong)
         .preferredColorScheme(.light)
         .controlSize(.large)
         .onOpenURL { app.open($0) }
@@ -18,7 +18,7 @@ enum Route: Hashable {
   case opportunity(String)
   case request(String)
   case developer(String)
-  case profile, area, newRequest, newOpportunity
+  case profile, setupProfile, area, newRequest, newOpportunity
   case editRequest(String)
   case editOpportunity(String)
   case map(String)
@@ -35,6 +35,9 @@ enum AuthMode: String, Identifiable {
   let api: APIClient
   var member: Member?
   var checkingSession = true
+  var hasCheckedSession = false
+  var browsingAsGuest = false
+  var needsProfileSetup = false
   var sessionError: Error?
   var selectedTab: AppTab = .home
   var homePath: [Route] = []
@@ -71,17 +74,31 @@ enum AuthMode: String, Identifiable {
     #endif
   }
 
-  func refreshSession() async {
+  func refreshSession(resumeNavigation: Bool = true) async {
     checkingSession = true
-    defer { checkingSession = false }
+    defer {
+      checkingSession = false
+      hasCheckedSession = true
+    }
+    guard api.token != nil else {
+      member = nil
+      sessionError = nil
+      return
+    }
     do {
       if api.token != nil {
         let session: EmptyResponse? = try await api.get("/auth/get-session")
         guard session != nil else { throw APIError(status: 401, message: "Your session expired.") }
       }
+      let wasGuest = member == nil
       member = try await api.get("/me")
+      if wasGuest { selectedTab = .explore }
+      if role == .developer {
+        needsProfileSetup =
+          DraftCache.load(Bool.self, key: "\(identity)/profile/onboarding") ?? needsProfileSetup
+      }
       sessionError = nil
-      if role != nil { resumePendingRoute() }
+      if resumeNavigation && role != nil && !needsProfileSetup { resumePendingRoute() }
     } catch let error as APIError where error.status == 401 {
       if member != nil || api.token != nil {
         clearLocalSession(clearDrafts: false)
@@ -95,6 +112,9 @@ enum AuthMode: String, Identifiable {
     if clearDrafts { DraftCache.clear() }
     api.clearSession()
     member = nil
+    authMode = nil
+    browsingAsGuest = false
+    needsProfileSetup = false
     sessionError = nil
     homePath = []
     explorePath = []
@@ -150,6 +170,7 @@ enum AuthMode: String, Identifiable {
       selectedTab = .home
       homePath.append(route)
     } else if case .map = route {
+      browsingAsGuest = true
       selectedTab = .explore
       explorePath.append(route)
     } else {
@@ -164,18 +185,27 @@ struct RootView: View {
   var body: some View {
     @Bindable var app = app
     Group {
-      if app.checkingSession && app.member == nil {
-        ProgressView("Opening Build & Connect").frame(maxWidth: .infinity, maxHeight: .infinity)
-          .background(Theme.canvas)
+      if !app.hasCheckedSession && app.member == nil {
+        VStack(spacing: 24) {
+          BrandLockup()
+          ProgressView()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity).background(Theme.canvas)
       } else if app.signedIn && app.role == nil {
         NavigationStack { RoleSelectionView() }
+      } else if app.signedIn && app.needsProfileSetup {
+        NavigationStack { DeveloperOnboardingView() }
+      } else if !app.signedIn && !app.browsingAsGuest {
+        WelcomeView()
+      } else if !app.signedIn {
+        AppNavigation(path: $app.explorePath) { ExploreView() }
       } else {
         tabs
       }
     }
     .task { await app.refreshSession() }
     .onChange(of: scenePhase) { _, phase in
-      if phase == .active {
+      if phase == .active && app.hasCheckedSession && !app.checkingSession {
         Task {
           await app.refreshSession()
           app.changed()
@@ -188,9 +218,18 @@ struct RootView: View {
         app.notice = "Your session expired. Sign in again to continue."
       }
     }
-    .sheet(item: $app.authMode, onDismiss: { if !app.signedIn { app.pendingRoute = nil } }) {
+    .sheet(
+      item: Binding(get: { app.browsingAsGuest ? app.authMode : nil }, set: { app.authMode = $0 }),
+      onDismiss: { if !app.signedIn { app.pendingRoute = nil } }
+    ) {
       mode in
-      NavigationStack { AuthView(initialMode: mode) }
+      ScrollView {
+        VStack(spacing: 0) {
+          HeroLandscape(compact: true).frame(height: 170)
+          AuthView(initialMode: mode).padding(16).padding(.top, -24)
+        }
+      }.background(Theme.softAccent).presentationDragIndicator(.visible).preferredColorScheme(
+        .light)
     }
     .alert(
       "Account",
@@ -205,17 +244,22 @@ struct RootView: View {
   private var tabs: some View {
     @Bindable var app = app
     return TabView(selection: $app.selectedTab) {
-      AppNavigation(path: $app.homePath) {
-        if app.signedIn { DashboardView() } else { WelcomeView() }
-      }.tabItem { Label(homeTitle, systemImage: "house") }.tag(AppTab.home)
       AppNavigation(path: $app.explorePath) { ExploreView() }
         .tabItem { Label("Explore", systemImage: "map") }.tag(AppTab.explore)
+      if app.signedIn {
+        AppNavigation(path: $app.homePath) { DashboardView() }
+          .tabItem {
+            Label(
+              homeTitle,
+              systemImage: app.role == .developer ? "square.stack.3d.up" : "square.grid.2x2")
+          }.tag(AppTab.home)
+      }
       if app.role == .developer || app.role == .company {
         AppNavigation(path: $app.connectionsPath) { ConnectionsView() }
           .tabItem { Label("Connections", systemImage: "person.2") }.tag(AppTab.connections)
       }
       if app.role == .developer {
-        AppNavigation(path: $app.profilePath) { ProfileView() }
+        AppNavigation(path: $app.profilePath) { OwnProfileView() }
           .tabItem { Label("Profile", systemImage: "person.crop.circle") }.tag(AppTab.profile)
       }
       if app.signedIn && app.role != .developer {
@@ -223,6 +267,11 @@ struct RootView: View {
           .tabItem { Label("Account", systemImage: "person.crop.circle") }.tag(AppTab.account)
       }
     }.id(app.identity)
+      .toolbarBackground(
+        app.selectedTab == .explore ? Theme.mapSurface : Theme.canvas, for: .tabBar
+      )
+      .toolbarColorScheme(.light, for: .tabBar)
+      .tint(Theme.accentStrong)
   }
 
   private var homeTitle: String {
@@ -230,7 +279,7 @@ struct RootView: View {
     case .requester: "Requests"
     case .company: "Opportunities"
     case .recruiter: "Developers"
-    default: "Home"
+    default: "My work"
     }
   }
 }
@@ -240,42 +289,23 @@ struct AppNavigation<Content: View>: View {
   @ViewBuilder let content: () -> Content
   var body: some View {
     NavigationStack(path: $path) {
-      content().navigationDestination(for: Route.self) { route in
-        switch route {
-        case .opportunity(let id): OpportunityDetailView(id: id)
-        case .request(let id): RequestDetailView(id: id)
-        case .developer(let id): DeveloperDetailView(id: id)
-        case .profile: ProfileView()
-        case .area: AreaEditorView()
-        case .newRequest: RequestEditorView()
-        case .newOpportunity: OpportunityEditorView()
-        case .editRequest(let id): RequestEditorView(id: id)
-        case .editOpportunity(let id): OpportunityEditorView(id: id)
-        case .map(let id): ExploreView(focus: id)
-        case .account: AccountView()
+      content().toolbarBackground(Theme.canvas, for: .navigationBar)
+        .navigationDestination(for: Route.self) { route in
+          switch route {
+          case .opportunity(let id): OpportunityDetailView(id: id)
+          case .request(let id): RequestDetailView(id: id)
+          case .developer(let id): DeveloperDetailView(id: id)
+          case .profile: ProfileView()
+          case .setupProfile: DeveloperOnboardingView()
+          case .area: AreaEditorView()
+          case .newRequest: RequestEditorView()
+          case .newOpportunity: OpportunityEditorView()
+          case .editRequest(let id): RequestEditorView(id: id)
+          case .editOpportunity(let id): OpportunityEditorView(id: id)
+          case .map(let id): ExploreView(focus: id)
+          case .account: AccountView()
+          }
         }
-      }
     }
-  }
-}
-
-struct WelcomeView: View {
-  @Environment(AppModel.self) private var app
-  var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 24) {
-        Label("Build & Connect", systemImage: "leaf").font(Theme.body().weight(.semibold))
-        GardenScene()
-        Text("Build experience.\nMake a difference.").font(Theme.title(38)).fixedSize(
-          horizontal: false, vertical: true)
-        Text("Find a local project, bring what you know, and grow something good together.")
-          .foregroundStyle(Theme.muted)
-        Button("Find a project") { app.selectedTab = .explore }.buttonStyle(RaisedButtonStyle())
-        Button("Create an account") { app.authMode = .signUp }.buttonStyle(.bordered).frame(
-          maxWidth: .infinity)
-        Button("Sign in") { app.authMode = .signIn }.frame(maxWidth: .infinity)
-        if let error = app.sessionError { FailureView(error: error) { await app.refreshSession() } }
-      }.padding(20)
-    }.pageBackground().navigationBarHidden(true)
   }
 }

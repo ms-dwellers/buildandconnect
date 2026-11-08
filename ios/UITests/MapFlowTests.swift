@@ -16,8 +16,9 @@ final class MapFlowTests: XCTestCase {
     app.launchEnvironment["BUILD_CONNECT_TEST_API"] = "http://127.0.0.1:5199"
     app.launchEnvironment["BUILD_CONNECT_TEST_RESET_SESSION"] = "1"
     app.launch()
-    XCTAssertTrue(app.buttons["Find a project"].waitForExistence(timeout: 15))
-    app.buttons["Find a project"].tap()
+    XCTAssertTrue(app.buttons["welcome.signin"].waitForExistence(timeout: 15))
+    app.buttons["welcome.signin"].tap()
+    app.buttons["welcome.explore"].tap()
     if app.staticTexts["The live map is not configured. Project lists remain available."].exists {
       throw XCTSkip(
         "Configure a native-compatible Mapbox public token to verify live map rendering.")
@@ -32,6 +33,11 @@ final class MapFlowTests: XCTestCase {
     }
     title.tap()
     XCTAssertTrue(app.buttons["Back to results"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["Sign in to respond"].isHittable)
+    let detail = XCTAttachment(screenshot: app.screenshot())
+    detail.name = "City idea with persistent action"
+    detail.lifetime = .keepAlways
+    add(detail)
     let done = app.buttons["Done"].firstMatch
     XCTAssertTrue(done.waitForExistence(timeout: 5))
     done.tap()
@@ -42,5 +48,12 @@ final class MapFlowTests: XCTestCase {
     add(screenshot)
     app.buttons["All Calgary"].tap()
     XCTAssertTrue(app.staticTexts["City overview"].waitForExistence(timeout: 10))
+    app.buttons["explore.results"].tap()
+    XCTAssertTrue(title.waitForExistence(timeout: 5))
+    title.tap()
+    app.buttons["Sign in to respond"].tap()
+    XCTAssertTrue(app.textFields["auth.email"].waitForExistence(timeout: 5))
+    app.buttons["Close sign in"].tap()
+    XCTAssertTrue(app.buttons["explore.results"].waitForExistence(timeout: 5))
   }
 }

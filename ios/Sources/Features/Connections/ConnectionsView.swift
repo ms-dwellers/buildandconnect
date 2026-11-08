@@ -9,6 +9,9 @@ struct ConnectionsView: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
+        FeatureBanner(title: "Good people.\nShared ambition.", symbol: "person.2.fill")
+        Text("A connection forms when both sides are interested in an opportunity.")
+          .foregroundStyle(Theme.muted)
         Picker("Interest", selection: $filter) {
           Text("All").tag("all")
           Text("Received").tag("received")
@@ -18,19 +21,22 @@ struct ConnectionsView: View {
         PageList(store: interests, load: load) { interest in
           if matchesFilter(interest) { InterestCard(interest: interest) { await load(true) } }
         }
-        if interests.loaded && interests.items.isEmpty {
+        if interests.loaded && !interests.items.contains(where: matchesFilter) {
           EmptyState(
-            title: "No interest yet", symbol: "person.2",
-            message:
-              "A connection forms when a company and developer both express interest in an opportunity."
+            title: filter == "all" ? "No interest yet" : "No matches in these results",
+            symbol: "person.2"
           )
-          Button("Explore opportunities") { app.selectedTab = .explore }.buttonStyle(
-            RaisedButtonStyle())
+          if filter == "all" {
+            Button("Explore opportunities") { app.selectedTab = .explore }.buttonStyle(
+              RaisedButtonStyle())
+          } else {
+            Button("Show all interest") { filter = "all" }.buttonStyle(.bordered)
+          }
         }
-        Text("Connections record mutual interest. Contact details and messaging are not available.")
+        Text("Contact details and messaging are not available.")
           .font(.footnote).foregroundStyle(Theme.muted)
       }.padding(20)
-    }.pageBackground().navigationTitle("Connections")
+    }.pageBackground().navigationTitle("Connections").navigationBarTitleDisplayMode(.inline)
       .task(id: app.revision) { await load(true) }.refreshable { await load(true) }
       .task(id: scenePhase) {
         guard scenePhase == .active else { return }
@@ -66,8 +72,10 @@ struct InterestCard: View {
         text: interest.connected
           ? "Connected" : interest.theirs(app.role) ? "Interest received" : "Waiting for a reply")
       NavigationLink("Open opportunity", value: Route.opportunity(interest.opportunityId))
+        .buttonStyle(.bordered)
       if app.role == .company {
         NavigationLink("View consenting profile", value: Route.developer(interest.developerId))
+          .buttonStyle(.bordered)
       }
       if interest.mine(app.role) {
         ConfirmAction(

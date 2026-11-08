@@ -210,7 +210,7 @@ private struct AuroraView: View {
   var body: some View {
     TimelineView(.animation(minimumInterval: 1.0 / 30, paused: paused || reduceMotion)) { context in
       Canvas { graphics, size in
-        graphics.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.pine))
+        graphics.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.ink))
         for ribbon in 0..<4 {
           var path = Path()
           for step in 0...80 {
@@ -228,8 +228,9 @@ private struct AuroraView: View {
             path,
             with: .linearGradient(
               Gradient(colors: [
-                Theme.mint.opacity(0.1), ribbon.isMultiple(of: 2) ? Theme.wheat : Theme.coral,
-                Theme.mint.opacity(0.2),
+                Theme.softAccent.opacity(0.1),
+                ribbon.isMultiple(of: 2) ? Theme.accent : Theme.highlight,
+                Theme.softAccent.opacity(0.2),
               ]), startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height)),
             style: StrokeStyle(lineWidth: 15, lineCap: .round))
         }

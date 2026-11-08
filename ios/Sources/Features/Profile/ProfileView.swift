@@ -5,11 +5,17 @@ struct TagField: View {
   @Binding var values: [String]
   @State private var text = ""
   var body: some View {
-    TextField(title, text: $text, axis: .vertical)
+    VStack(alignment: .leading, spacing: 8) {
+      Text(title).font(Theme.body(15).weight(.medium))
+      TextField(
+        title, text: $text,
+        prompt: Text("Separate entries with commas").foregroundStyle(Theme.muted), axis: .vertical
+      )
       .textInputAutocapitalization(.never).autocorrectionDisabled()
       .onAppear { text = values.joined(separator: ", ") }
       .onChange(of: text) { _, value in values = parseTags(value) }
-      .accessibilityHint("Separate entries with commas")
+      .accessibilityLabel(title).accessibilityHint("Separate entries with commas")
+    }
   }
 }
 
@@ -235,10 +241,12 @@ struct ProfileView: View {
 struct CollaborationPicker: View {
   @Binding var value: String
   var body: some View {
-    Picker("Collaboration", selection: $value) {
-      Text("Flexible").tag("flexible")
-      Text("Mostly async").tag("async")
-      Text("Live sessions").tag("sync")
+    LabeledContent("Collaboration") {
+      Picker("Collaboration", selection: $value) {
+        Text("Flexible").tag("flexible")
+        Text("Mostly async").tag("async")
+        Text("Live sessions").tag("sync")
+      }.labelsHidden()
     }
   }
 }
@@ -258,7 +266,7 @@ struct AreaEditorView: View {
         Section {
           FailureView(error: error) { await load() }
           if (error as? APIError)?.status == 404 {
-            NavigationLink("Create profile", value: Route.profile)
+            NavigationLink("Create profile", value: Route.setupProfile)
           }
         }
       }
@@ -315,17 +323,14 @@ struct DeveloperDetailView: View {
       VStack(alignment: .leading, spacing: 20) {
         if let error = profile.error { FailureView(error: error) { await load() } }
         if let developer = profile.value {
-          VStack(alignment: .leading, spacing: 12) {
-            Text(developer.name).font(Theme.title())
-            Text("\(developer.city) · \(developer.weeklyHours) hrs / week").foregroundStyle(
-              Theme.muted)
-            StatusBadge(text: developer.available ? "Available" : "Not available")
-            Text(developer.bio)
-          }.paperCard()
+          ProfileIdentity(
+            name: developer.name, city: developer.city, available: developer.available)
+          Text(developer.bio).font(Theme.body(19)).lineSpacing(4)
+          LabeledContent("Weekly availability", value: "\(developer.weeklyHours) hours")
           VStack(alignment: .leading, spacing: 12) {
             Text("Skills").font(Theme.title(24))
             ForEach(developer.skills) { skill in
-              LabeledContent(skill.name, value: "\(skill.level) / 5")
+              SkillRow(name: skill.name, level: skill.level)
             }
             Text("Wants to learn").font(.headline)
             Text(developer.wantsToLearn.joined(separator: ", "))

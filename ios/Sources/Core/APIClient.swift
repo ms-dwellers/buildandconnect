@@ -170,6 +170,7 @@ enum SessionKeychain {
     }
     let generation = credentialGeneration
     let (data, response) = try await session.data(for: request)
+    try Task.checkCancellation()
     guard generation == credentialGeneration else { throw CancellationError() }
     guard let response = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
     guard (200..<300).contains(response.statusCode) else {

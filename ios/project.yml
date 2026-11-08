@@ -41,7 +41,8 @@ targets:
         CFBundleDisplayName: Build & Connect
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: LaunchCanvas
         APIBaseURL: $(API_BASE_URL)
         MBXAccessToken: $(MAPBOX_PUBLIC_TOKEN)
         NSLocationWhenInUseUsageDescription: Use your location to choose a project area. You can always place a pin manually.

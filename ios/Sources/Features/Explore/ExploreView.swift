@@ -18,42 +18,79 @@ enum MapConfiguration {
   static func configure() {
     if !token.isEmpty { MapboxOptions.accessToken = token }
   }
-  static func marker(_ listing: Listing) -> PointAnnotation.Image {
-    let symbol = listing.source == "request" ? "R" : listing.kind == "paid" ? "P" : "V"
+  static var style: MapStyle {
+    .standard(
+      theme: .custom, lightPreset: .day, showPointOfInterestLabels: false,
+      showTransitLabels: false, showRoadLabels: false,
+      colorBuildingHighlight: StyleColor(UIColor(Theme.accent)),
+      colorBuildings: StyleColor(UIColor(Theme.mapBuildings)),
+      colorCommercial: StyleColor(UIColor(Theme.mapBuildings)),
+      colorEducation: StyleColor(UIColor(Theme.softAccent)),
+      colorGreenspace: StyleColor(UIColor(Theme.mapGreenspace)),
+      colorIndustrial: StyleColor(UIColor(Theme.mapBuildings)),
+      colorLand: StyleColor(UIColor(Theme.mapLand)),
+      colorMedical: StyleColor(UIColor(Theme.errorSurface)),
+      colorMotorways: StyleColor(UIColor(Theme.mapHighways)),
+      colorPlaceLabels: StyleColor(UIColor(Theme.mapText)),
+      colorRoadLabels: StyleColor(UIColor(Theme.mapMuted)),
+      colorRoads: StyleColor(UIColor(Theme.mapRoads)),
+      colorTrunks: StyleColor(UIColor(Theme.mapHighways)),
+      colorWater: StyleColor(UIColor(Theme.mapWater)),
+      show3dTrees: false)
+  }
+  static var overview: Viewport {
+    var viewport = Viewport.camera(center: center, zoom: 10, pitch: 0)
+    viewport.padding = EdgeInsets(top: 90, leading: 24, bottom: 300, trailing: 24)
+    return viewport
+  }
+  static func marker(_ listing: Listing, selected: Bool = false) -> PointAnnotation.Image {
+    let category = listing.category
     let renderer = UIGraphicsImageRenderer(size: CGSize(width: 42, height: 48))
     let image = renderer.image { _ in
-      UIColor(Theme.pine).setFill()
+      UIColor(category == .paid ? Theme.highlight : Theme.accent).setFill()
       UIBezierPath(roundedRect: CGRect(x: 2, y: 1, width: 38, height: 38), cornerRadius: 11).fill()
+      if selected {
+        UIColor(Theme.mapText).setStroke()
+        let outline = UIBezierPath(
+          roundedRect: CGRect(x: 4, y: 3, width: 34, height: 34), cornerRadius: 9)
+        outline.lineWidth = 3
+        outline.stroke()
+      }
       let path = UIBezierPath()
       path.move(to: CGPoint(x: 15, y: 36))
       path.addLine(to: CGPoint(x: 21, y: 47))
       path.addLine(to: CGPoint(x: 27, y: 36))
       path.close()
       path.fill()
-      (symbol as NSString).draw(
-        at: CGPoint(x: 14, y: 10),
-        withAttributes: [
-          .font: UIFont.systemFont(ofSize: 18, weight: .bold),
-          .foregroundColor: UIColor(Theme.canvas),
-        ])
+      let configuration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+      UIImage(systemName: category.symbol, withConfiguration: configuration)?
+        .withTintColor(
+          UIColor(Theme.ink), renderingMode: .alwaysOriginal
+        )
+        .draw(in: CGRect(x: 12, y: 10, width: 18, height: 20))
     }
-    return PointAnnotation.Image(image: image, name: "listing-\(symbol)")
+    return PointAnnotation.Image(image: image, name: "listing-\(category.rawValue)-\(selected)")
   }
 }
 
 struct ExploreView: View {
+  private enum MapAction {
+    case signIn(Route?)
+    case post
+  }
   var focus: String?
   @Environment(APIClient.self) private var api
   @Environment(AppModel.self) private var app
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @State private var feed = Resource<MapFeed>()
   @State private var query = ""
   @State private var filter = "all"
   @State private var selected: Listing?
   @State private var showingSheet = false
   @State private var sheetPath: [Route] = []
-  @State private var deferredAuth: Route?
-  @State private var viewport: Viewport = .camera(center: MapConfiguration.center, zoom: 10)
+  @State private var pendingAction: MapAction?
+  @State private var viewport: Viewport = MapConfiguration.overview
   @State private var mapReady = false
   @State private var is3D = false
   @State private var mapSettled = false
@@ -65,6 +102,7 @@ struct ExploreView: View {
   @State private var postPath: [Route] = []
   @State private var focused = false
   @State private var cloudVisible = true
+  @State private var trayHeight: CGFloat = 280
 
   private var listings: [Listing] {
     (feed.value?.listings ?? []).filter { item in
@@ -82,82 +120,110 @@ struct ExploreView: View {
 
   var body: some View {
     ZStack(alignment: .top) {
-      map
-      VStack(spacing: 12) {
-        HStack {
-          Image(systemName: "magnifyingglass").accessibilityHidden(true)
-          TextField(
-            "Search Calgary projects", text: $query,
-            prompt: Text("Search Calgary projects").foregroundStyle(Theme.muted)
-          ).submitLabel(.search)
-            .accessibilityIdentifier("explore.search")
-          if !query.isEmpty {
-            Button("Clear", systemImage: "xmark.circle.fill") { query = "" }.labelStyle(.iconOnly)
-          }
-        }.padding(16).mapControlSurface()
-        HStack(spacing: 12) {
-          Menu {
-            Picker("Project type", selection: $filter) {
-              Text("All projects").tag("all")
-              Text("Paid").tag("paid")
-              Text("Volunteer").tag("volunteer")
-              Text("Community").tag("request")
-            }
-          } label: {
-            Label(
-              filter == "all" ? "All projects" : filter.capitalized,
-              systemImage: "line.3.horizontal.decrease")
-          }
-          Spacer()
-          Button("All Calgary", systemImage: "arrow.up.left.and.arrow.down.right") {
+      map.ignoresSafeArea()
+      VStack(spacing: 16) {
+        HStack(alignment: .top, spacing: 12) {
+          HStack(spacing: 10) {
+            if !dynamicTypeSize.isAccessibilitySize { BrandLockup(compact: true) }
+            Text("Calgary").font(Theme.title(24)).lineLimit(1).minimumScaleFactor(0.65)
+          }.padding(.horizontal, 14).padding(.vertical, 10).mapControlSurface(mapOverlay: true)
+          Spacer(minLength: 0)
+          Button {
             selected = nil
-            move(to: .camera(center: MapConfiguration.center, zoom: 10, pitch: 0))
+            move(to: MapConfiguration.overview)
+          } label: {
+            Image(systemName: "arrow.up.left.and.arrow.down.right").font(
+              .system(size: 20, weight: .medium)
+            ).frame(width: 54, height: 54)
+          }.mapControlSurface(mapOverlay: true).accessibilityLabel("All Calgary")
+            .accessibilityValue(
+              is3D ? "3D view" : "City overview")
+          if app.role == .requester || app.role == .company {
+            Button {
+              present(.post)
+            } label: {
+              Image(systemName: "plus").font(.system(size: 20, weight: .medium)).frame(
+                width: 54, height: 54)
+            }.mapControlSurface(mapOverlay: true).accessibilityLabel("Post").accessibilityHint(
+              "Add an idea to the city map")
+          } else if !app.signedIn {
+            Button {
+              present(.signIn(nil))
+            } label: {
+              Image(systemName: "person.crop.circle").font(.system(size: 20, weight: .medium))
+                .frame(width: 54, height: 54)
+            }.mapControlSurface(mapOverlay: true).accessibilityLabel("Sign in")
           }
-        }.padding(14).mapControlSurface()
+        }
         Spacer()
         if let error = feed.error { FailureView(error: error) { await load() }.paperCard() }
         if feed.value?.truncated == true {
-          Text("Some projects are omitted from this feed.").font(.footnote).paperCard()
+          Text("Some ideas are omitted from this feed.").font(.footnote).paperCard()
         }
         if let focus, focused && !(feed.value?.listings.contains { $0.id == focus } ?? false) {
           Text("This posting is closed, unavailable, or not on the Calgary map.").font(.footnote)
             .paperCard()
         }
-        HStack {
-          Button {
-            selected = nil
-            sheetPath = []
-            showingSheet = true
-          } label: {
-            Label("\(listings.count) projects", systemImage: "list.bullet").frame(minHeight: 48)
-          }.accessibilityIdentifier("explore.results")
-          Spacer()
-          if app.role == .requester || app.role == .company {
-            Button("Post", systemImage: "plus") { choosingPin = true }.frame(minHeight: 48)
-          }
-        }.padding(.horizontal, 18).mapControlSurface()
-      }.padding(16).padding(.bottom, 40)
-      if mapReady && !mapFailed {
-        VStack {
-          Spacer()
+        VStack(alignment: .leading, spacing: 16) {
           HStack {
-            Text(is3D ? (mapSettled ? "3D view" : "Flying to project") : "City overview").font(
-              Theme.metadata
-            ).padding(8)
-              .background(Theme.card, in: RoundedRectangle(cornerRadius: 8))
+            Text("Explore").font(
+              Theme.title(29))
             Spacer()
+            Button {
+              openResults()
+            } label: {
+              Image(systemName: "chevron.up").font(.system(size: 18, weight: .medium)).frame(
+                width: 44, height: 44)
+            }.accessibilityLabel("Show city ideas")
           }
-        }.padding(.leading, 16).padding(.bottom, 105).allowsHitTesting(false)
-      }
+          Button {
+            openResults()
+          } label: {
+            HStack(spacing: 10) {
+              Image(systemName: "magnifyingglass").font(.system(size: 18))
+              Text(
+                query.isEmpty
+                  ? "Search ideas" : query
+              ).lineLimit(1).minimumScaleFactor(0.8)
+              Spacer(minLength: 0)
+            }.font(Theme.body(17)).foregroundStyle(Theme.mapMuted)
+              .padding(.horizontal, 16).frame(minHeight: 52)
+              .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 16))
+          }.buttonStyle(.plain).accessibilityLabel("Search city ideas")
+          categoryFilters
+          Button {
+            openResults()
+          } label: {
+            HStack {
+              if feed.loading { ProgressView().controlSize(.small) }
+              Text(
+                feed.loading && feed.value == nil
+                  ? "Finding city ideas…"
+                  : "\(listings.count) \(listings.count == 1 ? "idea" : "ideas")")
+              Spacer()
+              Image(systemName: "arrow.right").font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.ink).frame(width: 38, height: 38)
+                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12))
+            }.font(Theme.body(16)).frame(minHeight: 44)
+          }.accessibilityIdentifier("explore.results")
+        }.padding(20).mapControlSurface(cornerRadius: 28, mapOverlay: true)
+          .onGeometryChange(for: CGFloat.self) { geometry in
+            geometry.size.height
+          } action: {
+            trayHeight = $0
+          }
+      }.padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 12)
       if cloudVisible && !MapConfiguration.token.isEmpty && !reduceMotion {
         VStack(spacing: 14) {
-          Image(systemName: "cloud.fill").font(.system(size: 100)).foregroundStyle(Theme.canvas)
+          SparkShape().fill(Theme.accent).frame(width: 88, height: 88).accessibilityHidden(true)
           Text("Calgary.").font(Theme.title(40))
           Button("Skip animation") { cloudVisible = false }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity).background(Theme.mint)
+        }.foregroundStyle(Theme.mapText).tint(Theme.accent)
+          .frame(maxWidth: .infinity, maxHeight: .infinity).background(Theme.mapLand)
           .transition(.opacity).accessibilityElement(children: .contain)
       }
-    }.pageBackground().navigationTitle("Explore").navigationBarTitleDisplayMode(.inline)
+    }.pageBackground().navigationTitle("Explore").toolbar(.hidden, for: .navigationBar)
+      .toolbarColorScheme(.light, for: .tabBar)
       .task(id: app.revision) { await load() }
       .task {
         MapConfiguration.configure()
@@ -178,9 +244,9 @@ struct ExploreView: View {
       .sheet(
         isPresented: $showingSheet,
         onDismiss: {
-          if let route = deferredAuth {
-            deferredAuth = nil
-            app.authenticate(for: route)
+          if let action = pendingAction {
+            pendingAction = nil
+            present(action)
           }
         }
       ) {
@@ -188,18 +254,38 @@ struct ExploreView: View {
           ScrollView {
             VStack(alignment: .leading, spacing: 18) {
               if let selected {
-                ListingPreview(listing: selected) { route in
-                  deferredAuth = route
-                  showingSheet = false
-                }
+                ListingPreview(listing: selected)
                 Button("Back to results") { self.selected = nil }
               } else {
-                Text("Calgary projects").font(Theme.title(28))
+                HStack(spacing: 10) {
+                  Image(systemName: "magnifyingglass").font(.system(size: 18)).accessibilityHidden(
+                    true)
+                  TextField(
+                    "Search city ideas", text: $query,
+                    prompt: Text("Search ideas, skills, places").foregroundStyle(Theme.muted)
+                  ).submitLabel(.search)
+                    .accessibilityLabel("Search city ideas").accessibilityIdentifier(
+                      "explore.search")
+                  if !query.isEmpty {
+                    Button {
+                      query = ""
+                    } label: {
+                      Image(systemName: "xmark.circle.fill").frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Clear search")
+                  }
+                }.padding(.horizontal, 16).frame(minHeight: 54)
+                  .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
+                categoryFilters
+                Text("\(listings.count) \(listings.count == 1 ? "idea" : "ideas")").font(
+                  Theme.metadata
+                )
+                .foregroundStyle(Theme.muted).accessibilityAddTraits(.updatesFrequently)
                 if feed.loading { ProgressView() }
                 if listings.isEmpty {
                   EmptyState(
                     title: query.isEmpty && filter == "all"
-                      ? "Nothing posted yet" : "No matching projects", symbol: "map")
+                      ? "No city ideas yet" : "No matching ideas", symbol: "lightbulb")
                   if !query.isEmpty || filter != "all" {
                     Button("Clear filters") {
                       query = ""
@@ -211,21 +297,31 @@ struct ExploreView: View {
                   Button {
                     select(listing)
                   } label: {
-                    VStack(alignment: .leading, spacing: 10) {
-                      Text(listing.title).font(Theme.title(23))
-                      Text(listing.neighbourhood).font(Theme.metadata)
-                      Text(listing.compensation).foregroundStyle(Theme.muted)
-                    }.paperCard()
+                    IdeaRowContent(
+                      title: listing.title, detail: listing.neighbourhood,
+                      category: listing.category,
+                      subtitle: listing.summaryMetadata
+                    ).paperCard()
                   }.buttonStyle(.plain)
                 }
-                Button("Refresh projects") { Task { await load() } }.disabled(feed.loading)
+                Button("Refresh ideas") { Task { await load() } }.disabled(feed.loading)
               }
             }.padding(20)
-          }.pageBackground().navigationBarTitleDisplayMode(.inline)
+          }.safeAreaInset(edge: .bottom) {
+            if let selected {
+              ListingAction(listing: selected) { route in
+                present(.signIn(route))
+              }.padding(.horizontal, 20).padding(.vertical, 12).background(Theme.canvas)
+            }
+          }.pageBackground().navigationTitle(selected == nil ? "Ideas for Calgary" : "City idea")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
               ToolbarItem(placement: .topBarTrailing) { Button("Done") { showingSheet = false } }
             }
         }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+          .presentationBackground(Theme.canvas).presentationCornerRadius(30)
+          .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+          .preferredColorScheme(.light)
       }
       .sheet(
         isPresented: $choosingPin,
@@ -240,6 +336,7 @@ struct ExploreView: View {
         PinPicker(
           latitude: MapConfiguration.center.latitude, longitude: MapConfiguration.center.longitude
         ) { pendingPostPin = $0 }
+        .preferredColorScheme(.light)
       }
       .sheet(item: $postPin) { pin in
         AppNavigation(path: $postPath) {
@@ -252,50 +349,86 @@ struct ExploreView: View {
           }.toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("Done") { postPin = nil } }
           }
-        }
+        }.preferredColorScheme(.light)
       }
+  }
+
+  private var categoryFilters: some View {
+    Picker("Idea category", selection: $filter) {
+      Text("All").tag("all")
+      Text("Community").tag("request")
+      Text("Volunteer").tag("volunteer")
+      Text("Paid").tag("paid")
+    }
+    .pickerStyle(.segmented)
+    .frame(minHeight: 44)
+    .accessibilityIdentifier("explore.category")
+  }
+  private func openResults() {
+    selected = nil
+    sheetPath = []
+    showingSheet = true
+  }
+  private func present(_ action: MapAction) {
+    if showingSheet {
+      pendingAction = action
+      showingSheet = false
+      return
+    }
+    switch action {
+    case .signIn(let route): app.authenticate(for: route)
+    case .post: choosingPin = true
+    }
   }
 
   @ViewBuilder private var map: some View {
     if MapConfiguration.token.isEmpty || mapFailed {
       VStack(spacing: 18) {
-        GardenScene().frame(maxWidth: 400)
-        Text("Good work. Close to home.").font(Theme.title(28)).multilineTextAlignment(.center)
+        HeroLandscape(compact: true).frame(height: 160).clipShape(
+          RoundedRectangle(cornerRadius: 28))
+        Text("The city is full of possibilities.").font(Theme.title(28)).multilineTextAlignment(
+          .center)
         Text(
           MapConfiguration.token.isEmpty
             ? "The live map is not configured. Project lists remain available."
             : "The map could not load. Project lists remain available."
         )
-        .foregroundStyle(Theme.muted).multilineTextAlignment(.center)
+        .foregroundStyle(Theme.mapMuted).multilineTextAlignment(.center)
         if mapFailed {
           Button("Retry map") {
             mapFailed = false
             mapGeneration += 1
           }
         }
-      }.padding(28).frame(maxWidth: .infinity, maxHeight: .infinity).background(Theme.canvas)
+      }.padding(28).padding(.bottom, 230).frame(maxWidth: .infinity, maxHeight: .infinity)
+        .foregroundStyle(Theme.mapText).background(Theme.mapLand)
     } else {
       MapboxMaps.Map(viewport: $viewport) {
         PointAnnotationGroup(listings, id: \.id) { listing in
           PointAnnotation(
             coordinate: .init(latitude: listing.latitude, longitude: listing.longitude)
           )
-          .image(MapConfiguration.marker(listing)).iconAnchor(.bottom)
+          .image(MapConfiguration.marker(listing, selected: selected?.id == listing.id)).iconAnchor(
+            .bottom
+          )
           .onTapGesture { select(listing) }
         }.clusterOptions(
           ClusterOptions(
-            circleColor: .constant(StyleColor(UIColor(Theme.pine))),
-            textColor: .constant(StyleColor(UIColor(Theme.canvas))))
+            circleColor: .constant(StyleColor(UIColor(Theme.accent))),
+            textColor: .constant(StyleColor(UIColor(Theme.ink))))
         )
         .onClusterTapGesture { context in
           move(
             to: .camera(center: context.coordinate, zoom: context.expansionZoom ?? 14))
         }
-      }.mapStyle(.standard(lightPreset: .day))
+      }.mapStyle(MapConfiguration.style)
         .ornamentOptions(
           OrnamentOptions(
             scaleBar: .init(visibility: .hidden),
-            compass: .init(position: .bottomTrailing, margins: CGPoint(x: 16, y: 150)))
+            compass: .init(position: .topTrailing, margins: CGPoint(x: 16, y: 82)),
+            logo: .init(position: .bottomLeading, margins: CGPoint(x: 20, y: trayHeight + 24)),
+            attributionButton: .init(
+              position: .bottomTrailing, margins: CGPoint(x: 20, y: trayHeight + 24)))
         )
         .onMapLoaded { _ in mapReady = true }
         .onMapIdle { _ in mapSettled = true }
@@ -341,13 +474,9 @@ struct ExploreView: View {
 
 struct ListingPreview: View {
   let listing: Listing
-  let authenticate: (Route) -> Void
-  @Environment(AppModel.self) private var app
-  private var route: Route {
-    listing.source == "request" ? .request(listing.id) : .opportunity(listing.id)
-  }
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
+      IdeaArtwork(category: listing.category)
       StatusBadge(
         text: listing.source == "request" ? "Community · \(listing.status)" : listing.kind)
       Text(listing.title).font(Theme.title(30))
@@ -357,7 +486,22 @@ struct ListingPreview: View {
         Text("Approximate area. Developer accounts can see the exact place.").font(.footnote)
       }
       Text(listing.description)
+      LabeledContent("Commitment", value: listing.commitment)
+      LabeledContent("Compensation", value: listing.compensation)
       Text(listing.skills.joined(separator: " / ")).font(Theme.metadata)
+    }
+  }
+}
+
+private struct ListingAction: View {
+  let listing: Listing
+  let authenticate: (Route) -> Void
+  @Environment(AppModel.self) private var app
+  private var route: Route {
+    listing.source == "request" ? .request(listing.id) : .opportunity(listing.id)
+  }
+  var body: some View {
+    Group {
       if !app.signedIn {
         Button("Sign in to respond") { authenticate(route) }.buttonStyle(RaisedButtonStyle())
       } else if listing.source == "opportunity" || listing.viewerIsOwner || app.role == .developer {
@@ -368,9 +512,19 @@ struct ListingPreview: View {
         )
         .buttonStyle(RaisedButtonStyle())
       } else {
-        Text("Developer accounts can accept community requests.").font(.footnote).foregroundStyle(
+        Text("Developer accounts can pick up community ideas.").font(.footnote).foregroundStyle(
           Theme.muted)
       }
     }
+  }
+}
+
+extension Listing {
+  var category: IdeaCategory {
+    source == "request" ? .community : kind == "paid" ? .paid : .volunteer
+  }
+  var summaryMetadata: String {
+    category.title.localizedCaseInsensitiveCompare(compensation) == .orderedSame
+      ? category.title : "\(category.title) · \(compensation)"
   }
 }

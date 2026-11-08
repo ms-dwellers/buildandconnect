@@ -71,18 +71,18 @@ struct PinPicker: View {
             }
             MapViewAnnotation(coordinate: pin.coordinate) {
               Image(systemName: "mappin.circle.fill").font(.system(size: 42)).foregroundStyle(
-                Theme.pine
+                Theme.accent
               )
-              .background(Theme.canvas, in: Circle()).accessibilityLabel("Selected pin")
+              .background(Theme.mapLand, in: Circle()).accessibilityLabel("Selected pin")
             }
             if let radiusKm {
               PolygonAnnotation(
                 polygon: Polygon(center: pin.coordinate, radius: radiusKm * 1000, vertices: 64)
               )
-              .fillColor(StyleColor(UIColor(Theme.pine))).fillOpacity(0.12)
-              .fillOutlineColor(StyleColor(UIColor(Theme.pine)))
+              .fillColor(StyleColor(UIColor(Theme.accent))).fillOpacity(0.16)
+              .fillOutlineColor(StyleColor(UIColor(Theme.accent)))
             }
-          }.mapStyle(.standard(lightPreset: .day))
+          }.mapStyle(MapConfiguration.style)
             .onMapLoadingError { _ in failed = true }
             .frame(minHeight: 220)
             .accessibilityHint("Tap the map to place a pin, or enter coordinates below")

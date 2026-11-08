@@ -55,6 +55,37 @@ function resolve(name, depth = 0) {
     resolve(reference, depth + 1),
   );
 }
+const canvas = resolve("--palette-cream");
+if (!/^#[\da-f]{6}$/i.test(canvas))
+  throw new Error("The native launch canvas needs a six-digit sRGB color.");
+const components = Object.fromEntries(
+  ["red", "green", "blue"].map((channel, index) => [
+    channel,
+    (parseInt(canvas.slice(1 + index * 2, 3 + index * 2), 16) / 255).toFixed(6),
+  ]),
+);
+mkdirSync("ios/Resources/Assets.xcassets/LaunchCanvas.colorset", {
+  recursive: true,
+});
+writeFileSync(
+  "ios/Resources/Assets.xcassets/LaunchCanvas.colorset/Contents.json",
+  JSON.stringify(
+    {
+      colors: [
+        {
+          idiom: "universal",
+          color: {
+            "color-space": "srgb",
+            components: { ...components, alpha: "1.000000" },
+          },
+        },
+      ],
+      info: { author: "xcode", version: 1 },
+    },
+    null,
+    2,
+  ) + "\n",
+);
 const svg = renderToStaticMarkup(createElement(CommunityGarden))
   .replace(
     "<svg",

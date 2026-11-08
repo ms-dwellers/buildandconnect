@@ -18,6 +18,7 @@ struct OpportunityDetailView: View {
           VStack(alignment: .leading, spacing: 20) {
             if let error = opportunity.error { FailureView(error: error) { await load() } }
             if let item = opportunity.value {
+              IdeaArtwork(category: item.kind == "paid" ? .paid : .volunteer)
               summary(item)
               AnalysisCard(analysis: item.analysis)
               if item.ownerId == app.member?.user.id {
@@ -110,7 +111,7 @@ struct OpportunityDetailView: View {
   @ViewBuilder private func personalFit(_ item: Opportunity) -> some View {
     Text("Your fit").font(Theme.title(27))
     if (ownMatch.error as? APIError)?.status == 404 {
-      NavigationLink("Create profile to see your fit", value: Route.profile).buttonStyle(
+      NavigationLink("Create profile to see your fit", value: Route.setupProfile).buttonStyle(
         RaisedButtonStyle())
     } else if let error = ownMatch.error {
       FailureView(error: error) { await load() }

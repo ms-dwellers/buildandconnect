@@ -75,7 +75,7 @@ final class ProfileFlowTests: XCTestCase {
             x: -CGFloat(image.width) * fraction, y: -CGFloat(image.height) * 0.5,
             width: CGFloat(image.width), height: CGFloat(image.height)))
       }
-      for (actual, expected) in zip(pixel.prefix(3), [248, 247, 222]) {
+      for (actual, expected) in zip(pixel.prefix(3), [244, 243, 238]) {
         XCTAssertEqual(Double(actual), Double(expected), accuracy: 3, "Canvas must fill both edges")
       }
     }

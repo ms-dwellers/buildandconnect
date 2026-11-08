@@ -66,6 +66,26 @@ final class ModelTests: XCTestCase {
     XCTAssertNil(app.authMode)
   }
 
+  @MainActor func testMapLinkOpensGuestBrowsingWithoutRequiringSignIn() {
+    let app = AppModel(
+      api: APIClient(baseURL: URL(string: "https://example.test")!, restoreSession: false))
+    app.open(URL(string: "https://example.test/map?focus=city-idea")!)
+    XCTAssertTrue(app.browsingAsGuest)
+    XCTAssertEqual(app.explorePath, [.map("city-idea")])
+    XCTAssertNil(app.authMode)
+  }
+
+  @MainActor func testWelcomeDoesNotNeedNetworkToOpenWithoutSession() async {
+    let app = AppModel(
+      api: APIClient(
+        baseURL: URL(string: "https://configuration-required.invalid")!, restoreSession: false))
+    await app.refreshSession()
+    XCTAssertTrue(app.hasCheckedSession)
+    XCTAssertFalse(app.checkingSession)
+    XCTAssertFalse(app.signedIn)
+    XCTAssertNil(app.sessionError)
+  }
+
   @MainActor func testOpportunityLinkPreservesDestinationThroughSignIn() {
     let app = AppModel(
       api: APIClient(baseURL: URL(string: "https://example.test")!, restoreSession: false))

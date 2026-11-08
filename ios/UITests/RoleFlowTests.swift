@@ -28,21 +28,43 @@ final class RoleFlowTests: XCTestCase {
     }
   }
 
-  @MainActor private func signIn(_ account: Account) -> XCUIApplication {
+  @MainActor private func signIn(
+    _ account: Account, workspace: String, testPasswordReveal: Bool = false
+  ) -> XCUIApplication {
     let app = XCUIApplication()
     app.launchEnvironment["BUILD_CONNECT_TEST_API"] = "http://127.0.0.1:5199"
     app.launchEnvironment["BUILD_CONNECT_TEST_RESET_SESSION"] = "1"
     app.launch()
-    XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 15))
-    app.buttons["Sign in"].tap()
+    XCTAssertTrue(app.buttons["welcome.signin"].waitForExistence(timeout: 15))
+    app.buttons["welcome.signin"].tap()
     let email = app.textFields["auth.email"]
     XCTAssertTrue(email.waitForExistence(timeout: 5))
     email.tap()
     email.typeText(account.email)
     let password = app.secureTextFields["auth.password"]
     password.tap()
-    password.typeText(account.password)
+    if testPasswordReveal {
+      let middle = account.password.index(
+        account.password.startIndex, offsetBy: account.password.count / 2)
+      password.typeText(String(account.password[..<middle]))
+      app.buttons["Show password"].tap()
+      XCTAssertTrue(
+        app.textFields["auth.password"].value as? String == String(account.password[..<middle]),
+        "Revealing must preserve the typed password")
+      app.buttons["Hide password"].tap()
+      password.typeText(String(account.password[middle...]))
+      app.buttons["Show password"].tap()
+      XCTAssertTrue(
+        app.textFields["auth.password"].value as? String == account.password,
+        "Editing after hiding must preserve every password character")
+      app.buttons["Hide password"].tap()
+    } else {
+      password.typeText(account.password)
+    }
     app.buttons["auth.submit"].tap()
+    let destination = app.tabBars.buttons[workspace]
+    XCTAssertTrue(destination.waitForExistence(timeout: 15))
+    destination.tap()
     return app
   }
 
@@ -69,7 +91,7 @@ final class RoleFlowTests: XCTestCase {
 
   @MainActor func testCompanyClosesAndReopensOpportunity() async throws {
     let context = try await context()
-    let app = signIn(context.company)
+    let app = signIn(context.company, workspace: "Opportunities")
     let title = app.staticTexts[context.opportunityTitle].firstMatch
     XCTAssertTrue(title.waitForExistence(timeout: 15))
     title.tap()
@@ -88,15 +110,15 @@ final class RoleFlowTests: XCTestCase {
 
   @MainActor func testDeveloperAcceptsRequestAndFormsMutualConnection() async throws {
     let context = try await context()
-    let app = signIn(context.developer)
+    let app = signIn(context.developer, workspace: "My work", testPasswordReveal: true)
     let request = app.staticTexts[context.requestTitle].firstMatch
     XCTAssertTrue(request.waitForExistence(timeout: 15))
     reveal(request, in: app)
     request.tap()
-    let accept = app.buttons["Accept request"]
+    let accept = app.buttons["Pick up this idea"]
     reveal(accept, in: app)
     accept.tap()
-    confirm("Accept request", in: app)
+    confirm("Pick up this idea", in: app)
     XCTAssertTrue(app.staticTexts["Claimed"].waitForExistence(timeout: 10))
     capture("Accepted community request", app: app)
     let release = app.buttons["Release request"]
@@ -104,10 +126,10 @@ final class RoleFlowTests: XCTestCase {
     release.tap()
     confirm("Release request", in: app)
     XCTAssertTrue(app.staticTexts["Open"].waitForExistence(timeout: 10))
-    let acceptAgain = app.buttons["Accept request"]
+    let acceptAgain = app.buttons["Pick up this idea"]
     reveal(acceptAgain, in: app)
     acceptAgain.tap()
-    confirm("Accept request", in: app)
+    confirm("Pick up this idea", in: app)
     XCTAssertTrue(app.staticTexts["Claimed"].waitForExistence(timeout: 10))
     app.navigationBars.buttons.firstMatch.tap()
     let opportunity = app.staticTexts[context.opportunityTitle].firstMatch
@@ -124,13 +146,13 @@ final class RoleFlowTests: XCTestCase {
 
   @MainActor func testRecruiterBrowsesConsentingProfileWithoutWriteActions() async throws {
     let context = try await context()
-    let app = signIn(context.recruiter)
+    let app = signIn(context.recruiter, workspace: "Developers")
     let developer = app.staticTexts["iPhone developer"].firstMatch
     XCTAssertTrue(developer.waitForExistence(timeout: 15))
     developer.tap()
     XCTAssertTrue(app.staticTexts["Skills"].waitForExistence(timeout: 10))
     XCTAssertFalse(app.buttons["I'm interested"].exists)
-    XCTAssertFalse(app.buttons["Accept request"].exists)
+    XCTAssertFalse(app.buttons["Pick up this idea"].exists)
     capture("Recruiter developer profile", app: app)
   }
 
@@ -140,7 +162,7 @@ final class RoleFlowTests: XCTestCase {
     claim.httpMethod = "POST"
     let (_, response) = try await URLSession.shared.data(for: claim)
     XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
-    let app = signIn(context.requester)
+    let app = signIn(context.requester, workspace: "Requests")
     let request = app.staticTexts[context.requestTitle].firstMatch
     XCTAssertTrue(request.waitForExistence(timeout: 15))
     request.tap()
@@ -156,7 +178,7 @@ final class RoleFlowTests: XCTestCase {
 
   @MainActor func testRequesterPostsFromMapAndReturnsToItsPin() async throws {
     let context = try await context()
-    let app = signIn(context.requester)
+    let app = signIn(context.requester, workspace: "Requests")
     XCTAssertTrue(app.tabBars.buttons["Explore"].waitForExistence(timeout: 15))
     app.tabBars.buttons["Explore"].tap()
     if !app.staticTexts["The live map is not configured. Project lists remain available."].exists {

@@ -21,6 +21,7 @@ struct RequestDetailView: View {
           VStack(alignment: .leading, spacing: 20) {
             if let error = request.error { FailureView(error: error) { await load() } }
             if let item = request.value {
+              IdeaArtwork(category: .community)
               VStack(alignment: .leading, spacing: 14) {
                 StatusBadge(text: item.status)
                 Text(item.title).font(Theme.title())
@@ -77,17 +78,18 @@ struct RequestDetailView: View {
         }
       } else if item.status == "open" {
         if (profile.error as? APIError)?.status == 404 {
-          NavigationLink("Create profile to accept", value: Route.profile).buttonStyle(
-            RaisedButtonStyle())
+          NavigationLink("Create a profile to pick up ideas", value: Route.setupProfile)
+            .buttonStyle(
+              RaisedButtonStyle())
         } else if let error = profile.error {
           FailureView(error: error) { await load() }
         } else if let developer = profile.value {
           if developer.location == nil {
-            NavigationLink("Set your area to accept", value: Route.area).buttonStyle(
+            NavigationLink("Set your area to pick up ideas", value: Route.area).buttonStyle(
               RaisedButtonStyle())
           } else {
             ConfirmAction(
-              label: "Accept request",
+              label: "Pick up this idea",
               consequence:
                 "The requester will see your name. The server checks your area and eligibility before assigning it exclusively to you.",
               disabled: action.busy
