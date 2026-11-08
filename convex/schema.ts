@@ -155,6 +155,18 @@ export default defineSchema({
     .index("by_conversation", ["conversationId", "sequence"])
     .index("by_submission", ["conversationId", "senderId", "clientId"])
     .index("by_sender", ["senderId", "sentAt"]),
+  developerReviews: defineTable({
+    developerId: v.string(),
+    requesterId: v.string(),
+    requesterName: v.string(),
+    opportunityId: v.string(),
+    projectTitle: v.string(),
+    rating: v.number(),
+    comment: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_developer", ["developerId"])
+    .index("by_project_developer", ["opportunityId", "developerId"]),
   projectDrafts: defineTable({
     id: v.string(),
     ownerId: v.string(),

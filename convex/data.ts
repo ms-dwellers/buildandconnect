@@ -509,6 +509,98 @@ export const getDeveloper = query({
   },
 });
 
+export const developerReputation = query({
+  args: { sessionId, id: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await access(ctx, args.sessionId);
+    const developer = await findDeveloper(ctx, args.id);
+    if (
+      !developer ||
+      (actor.user.id !== args.id &&
+        (actor.role !== "requester" || !developer.profile.discoverable))
+    ) {
+      fail(404, "This developer is no longer discoverable");
+    }
+    const rows = await ctx.db
+      .query("developerReviews")
+      .withIndex("by_developer", (q) => q.eq("developerId", args.id))
+      .collect();
+    return {
+      count: rows.length,
+      average: rows.length
+        ? rows.reduce((sum, row) => sum + row.rating, 0) / rows.length
+        : null,
+      reviews: rows
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 50)
+        .map((row) => ({
+          opportunityId: row.opportunityId,
+          requesterName: row.requesterName,
+          projectTitle: row.projectTitle,
+          rating: row.rating,
+          comment: row.comment,
+          createdAt: row.createdAt,
+        })),
+    };
+  },
+});
+
+export const reviewDeveloper = mutation({
+  args: {
+    sessionId,
+    opportunityId: v.string(),
+    developerId: v.string(),
+    rating: v.number(),
+    comment: v.string(),
+    workedTogether: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
+    const opportunity = await findOpportunity(ctx, args.opportunityId);
+    if (!opportunity || opportunity.ownerId !== user.id)
+      fail(403, "Only the project owner can leave feedback");
+    if (args.developerId === user.id) fail(403, "You cannot review yourself");
+    const connection = await ctx.db
+      .query("interests")
+      .withIndex("by_pair", (q) =>
+        q
+          .eq("opportunityId", args.opportunityId)
+          .eq("developerId", args.developerId),
+      )
+      .unique();
+    if (!connection?.companyInterested || !connection.developerInterested)
+      fail(403, "Feedback requires a mutual project connection");
+    if (!args.workedTogether)
+      fail(400, "Confirm that you worked with this developer");
+    if (!Number.isInteger(args.rating) || args.rating < 1 || args.rating > 5)
+      fail(400, "Choose a rating from 1 to 5");
+    const comment = args.comment.trim();
+    if (comment.length < 20 || comment.length > 1500)
+      fail(400, "Write between 20 and 1,500 characters of feedback");
+    const previous = await ctx.db
+      .query("developerReviews")
+      .withIndex("by_project_developer", (q) =>
+        q
+          .eq("opportunityId", args.opportunityId)
+          .eq("developerId", args.developerId),
+      )
+      .unique();
+    if (previous)
+      fail(409, "You have already reviewed this developer for this project");
+    await ctx.db.insert("developerReviews", {
+      developerId: args.developerId,
+      requesterId: user.id,
+      requesterName: user.name,
+      opportunityId: args.opportunityId,
+      projectTitle: opportunity.details.title,
+      rating: args.rating,
+      comment,
+      createdAt: Date.now(),
+    });
+    return { saved: true };
+  },
+});
+
 export const createOpportunity = mutation({
   args: {
     sessionId,

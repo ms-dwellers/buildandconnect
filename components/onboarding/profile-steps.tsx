@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Radio, RadioGroup } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { TextAreaField, TextField } from "@/components/forms/form-kit";
+import { LearningGoals } from "@/components/learning-goals";
 import {
   onboardingList,
   toggleOnboardingSkill,
@@ -108,6 +109,7 @@ export function AboutStep({ draft, update }: Props) {
           Your current level with these skills
         </Label>
         <RadioGroup
+          className="grid gap-3 sm:grid-cols-2"
           name="experienceLevel"
           aria-labelledby="starting-level-label"
           value={draft.experienceLevel}
@@ -185,12 +187,9 @@ export function AvailabilityStep({ draft, update }: Props) {
 export function PreferencesStep({ draft, update }: Props) {
   return (
     <div className="space-y-5">
-      <TextField
-        name="wantsToLearn"
-        label="What would you like to learn? (optional)"
+      <LearningGoals
         value={draft.wantsToLearn}
-        onChange={(event) => update("wantsToLearn", event.target.value)}
-        maxLength={3000}
+        onChange={(value) => update("wantsToLearn", value)}
       />
       <TextField
         name="interests"

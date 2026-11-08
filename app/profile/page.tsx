@@ -9,7 +9,10 @@ export default async function ProfilePage({
 }) {
   const params = await searchParams;
   return (
-    <AppShell title="Your developer profile" width="narrow">
+    <AppShell
+      title="Your developer profile"
+      description="A home for your work, your next skills and feedback from the people you build with."
+    >
       <ProfileEditor next={safeNext(params.next)} />
     </AppShell>
   );

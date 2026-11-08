@@ -26,7 +26,7 @@ export function AccountShell({
       >
         <aside
           aria-label="Build something meaningful"
-          className="fieldbook-board relative isolate hidden min-h-[39rem] self-stretch overflow-hidden rounded-2xl border border-primary/30 bg-secondary p-9 lg:flex lg:flex-col"
+          className="fieldbook-board relative isolate hidden h-[39rem] self-start overflow-hidden rounded-2xl border border-primary/30 bg-secondary p-9 lg:sticky lg:top-8 lg:flex lg:flex-col"
         >
           <div className="relative z-10">
             <p className="max-w-sm font-display text-5xl font-bold leading-[1.04] tracking-tight">

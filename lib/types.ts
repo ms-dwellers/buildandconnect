@@ -26,6 +26,19 @@ export type OwnProfile = DeveloperProfile & {
 
 export type PublicDeveloper = DeveloperProfile & { id: string; name: string };
 
+export type DeveloperReputation = {
+  count: number;
+  average: number | null;
+  reviews: {
+    opportunityId: string;
+    requesterName: string;
+    projectTitle: string;
+    rating: number;
+    comment: string;
+    createdAt: number;
+  }[];
+};
+
 export type OpportunityRecord = OpportunityInput & {
   revision?: number;
   id: string;

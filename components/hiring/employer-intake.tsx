@@ -390,6 +390,17 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
                       {match.profile.name}
                     </h3>
                     <p className="text-sm">{match.reason}</p>
+                    <Button
+                      render={
+                        <a
+                          href={`/developers/${encodeURIComponent(match.developerId)}`}
+                        />
+                      }
+                      variant="outline"
+                      size="sm"
+                    >
+                      View profile & feedback
+                    </Button>
                     <p className="text-sm text-muted-foreground">
                       {match.profile.city} · {match.profile.weeklyHours}{" "}
                       hours/week

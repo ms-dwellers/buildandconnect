@@ -5,6 +5,7 @@ import { StartChatButton } from "@/components/chat/start-chat-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePaged } from "@/lib/use-api";
+import { DeveloperReviewForm } from "@/components/developer-review-form";
 import type { Interest, OpportunityRecord } from "@/lib/types";
 import {
   interestState,
@@ -168,6 +169,28 @@ export function InterestSection({
                     opportunityId={interest.opportunityId}
                     developerId={interest.developerId}
                   />
+                )}
+                {viewer === "requester" && (
+                  <>
+                    <Button
+                      render={
+                        <a
+                          href={`/developers/${encodeURIComponent(interest.developerId)}`}
+                        />
+                      }
+                      variant="outline"
+                      size="sm"
+                    >
+                      View profile
+                    </Button>
+                    {interest.connected && (
+                      <DeveloperReviewForm
+                        opportunityId={interest.opportunityId}
+                        developerId={interest.developerId}
+                        name={interest.developerName}
+                      />
+                    )}
+                  </>
                 )}
                 {state === "connected" ? (
                   <Badge variant="success">Connected</Badge>

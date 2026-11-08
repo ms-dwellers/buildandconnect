@@ -28,6 +28,7 @@ import { useApi, usePaged } from "@/lib/use-api";
 import { ProjectScope } from "@/components/project-scope";
 import { ConfirmButton } from "@/components/dashboards/parts";
 import { withNext } from "@/lib/navigation";
+import { DeveloperReviewForm } from "@/components/developer-review-form";
 import type {
   DeveloperMatch,
   Interest,
@@ -366,6 +367,26 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
                       {match.explanation}
                     </p>
                     <Scores scores={match.scores} />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        render={
+                          <a
+                            href={`/developers/${encodeURIComponent(match.developerId)}`}
+                          />
+                        }
+                        variant="outline"
+                        size="sm"
+                      >
+                        View profile & feedback
+                      </Button>
+                      {current?.connected && (
+                        <DeveloperReviewForm
+                          opportunityId={opportunity.id}
+                          developerId={match.developerId}
+                          name={match.name}
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap items-start gap-2">
                     {current?.connected && (

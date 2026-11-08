@@ -224,6 +224,34 @@ export async function handleApi(
     };
     const id = decodeURIComponent(path.split("/")[2] ?? "");
 
+    if (/^\/developers\/[^/]+\/reputation$/.test(path) && method === "GET") {
+      return json(
+        await ctx.runQuery(internal.data.developerReputation, {
+          sessionId,
+          id,
+        }),
+      );
+    }
+    if (/^\/opportunities\/[^/]+\/reviews$/.test(path) && method === "POST") {
+      const input = z
+        .object({
+          developerId: z.string().min(1),
+          rating: z.number().int().min(1).max(5),
+          comment: z.string().trim().min(20).max(1500),
+          workedTogether: z.literal(true),
+        })
+        .strict()
+        .parse(await body(request));
+      return json(
+        await ctx.runMutation(internal.data.reviewDeveloper, {
+          sessionId,
+          opportunityId: id,
+          ...input,
+        }),
+        201,
+      );
+    }
+
     if (path === "/developers/me/career-target") {
       requireRole("developer");
       const current = await ctx.runQuery(internal.data.ownCareerTarget, {

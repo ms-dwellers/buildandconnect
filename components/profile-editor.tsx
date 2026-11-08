@@ -38,6 +38,9 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { DeveloperProfile, OwnProfile } from "@/lib/types";
 import { DeveloperPreferencesForm } from "@/components/developer-preferences-form";
+import { DeveloperProfileView } from "@/components/developer-profile";
+import { LearningGoals } from "@/components/learning-goals";
+import { Tabs, TabsList, TabsTab, TabsPanel } from "@/components/ui/tabs";
 
 const LEVELS = [
   { value: "1", label: "1 · Beginner" },
@@ -83,20 +86,67 @@ function LoadProfile({ next }: { next: string | null }) {
           Return to project
         </Button>
       )}
-      <ProfileForm
-        initial={profile.data}
-        onSaved={saveAndReturn}
-        returnToProject={!!next}
-      />
-      <DeveloperPreferencesForm
-        initial={profile.data}
-        onSaved={profile.reload}
-      />
-      <AreaForm
-        profile={profile.data}
-        onSaved={saveAndReturn}
-        returnToProject={!!next}
-      />
+      {profile.data && (
+        <div className="rounded-2xl border bg-secondary/30 p-5 sm:p-6">
+          <h2 className="text-xl font-semibold">
+            Make your work easy to trust
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Share what you built, what you contributed and what changed. Your
+            preview shows the same profile requesters can see when you turn
+            visibility on.
+          </p>
+          <ul className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+            <li>
+              {profile.data.projects.length
+                ? "✓ Project evidence added"
+                : "Add your first project"}
+            </li>
+            <li>
+              {profile.data.wantsToLearn.length
+                ? "✓ Learning goals added"
+                : "Choose learning goals"}
+            </li>
+            <li>
+              {profile.data.discoverable
+                ? "✓ Visible to requesters"
+                : "Private: only you see this preview"}
+            </li>
+          </ul>
+        </div>
+      )}
+      <Tabs defaultValue={next ? "edit" : "preview"} className="gap-6">
+        <TabsList
+          variant="underline"
+          aria-label="Profile workspace"
+          className="max-w-full flex-wrap"
+        >
+          <TabsTab value="preview">Profile preview</TabsTab>
+          <TabsTab value="edit">Edit profile</TabsTab>
+          <TabsTab value="preferences">Matching & area</TabsTab>
+        </TabsList>
+        <TabsPanel value="preview" keepMounted>
+          {profile.data && <DeveloperProfileView profile={profile.data} />}
+        </TabsPanel>
+        <TabsPanel value="edit" keepMounted>
+          <ProfileForm
+            initial={profile.data}
+            onSaved={saveAndReturn}
+            returnToProject={!!next}
+          />
+        </TabsPanel>
+        <TabsPanel value="preferences" keepMounted className="space-y-6">
+          <DeveloperPreferencesForm
+            initial={profile.data}
+            onSaved={profile.reload}
+          />
+          <AreaForm
+            profile={profile.data}
+            onSaved={saveAndReturn}
+            returnToProject={!!next}
+          />
+        </TabsPanel>
+      </Tabs>
     </div>
   );
 }
@@ -133,6 +183,9 @@ function ProfileForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [learningGoals, setLearningGoals] = useState(
+    initial?.wantsToLearn.join(", ") ?? "",
+  );
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -191,7 +244,11 @@ function ProfileForm({
   return (
     <Card>
       <CardPanel className="p-6">
-        <Form onSubmit={submit} errors={errors} className="space-y-10">
+        <Form
+          onSubmit={submit}
+          errors={errors}
+          className="mx-auto max-w-3xl space-y-10"
+        >
           <FormSection title="About you">
             <TextAreaField
               name="bio"
@@ -332,8 +389,9 @@ function ProfileForm({
 
           <FormSection title="Projects">
             <p className="text-sm text-muted-foreground">
-              These projects are self-reported examples of your work. Requesters
-              can see them when your profile is visible.
+              Show what you contributed and the result, not just the stack.
+              Personal, school and volunteer work all count. Requesters can see
+              these self-reported examples when your profile is visible.
             </p>
             <ul className="w-full space-y-4">
               {projects.map((project, index) => {
@@ -382,6 +440,7 @@ function ProfileForm({
                         minLength={10}
                         maxLength={1000}
                         rows={3}
+                        placeholder="The problem, what I built, and the result. Include a demo or repository URL if you have one."
                         onChange={(event) =>
                           update({ description: event.target.value })
                         }
@@ -425,13 +484,7 @@ function ProfileForm({
           </FormSection>
 
           <FormSection title="Growth and interests">
-            <TextField
-              name="wantsToLearn"
-              label="What you want to learn"
-              description="Separated by commas. Growth matching favours projects that teach these."
-              defaultValue={initial?.wantsToLearn.join(", ")}
-              placeholder="typescript, accessibility"
-            />
+            <LearningGoals value={learningGoals} onChange={setLearningGoals} />
             <TextField
               name="interests"
               label="Causes you care about"
