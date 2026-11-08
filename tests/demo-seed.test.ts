@@ -103,7 +103,7 @@ test("demo interactions refer only to the intended fictional account roles", () 
   }
 });
 
-test("local AI binding and Vite remote opt-in stay aligned", () => {
+test("inference credentials live in Convex, not in the Worker or Vite config", () => {
   const binding = readFileSync(
     new URL("../cloudflare.config.ts", import.meta.url),
     "utf8",
@@ -112,12 +112,22 @@ test("local AI binding and Vite remote opt-in stay aligned", () => {
     new URL("../vite.config.ts", import.meta.url),
     "utf8",
   );
-  assert.match(
-    binding,
-    /AI: bindings\.ai\(\{\s*dev: \{ remote: process\.env\.WORKERS_AI_REMOTE === "true" \}/,
+  const convexAI = readFileSync(
+    new URL("../convex/ai.ts", import.meta.url),
+    "utf8",
   );
-  assert.match(
-    vite,
-    /remoteBindings: process\.env\.WORKERS_AI_REMOTE === "true"/,
+  const guide = readFileSync(
+    new URL("../docs/hackathon-demo.md", import.meta.url),
+    "utf8",
   );
+  assert.doesNotMatch(binding, /bindings\.ai\(|WORKERS_AI/);
+  assert.doesNotMatch(vite, /WORKERS_AI_REMOTE/);
+  for (const name of [
+    "WORKERS_AI_ENABLED",
+    "WORKERS_AI_ACCOUNT_ID",
+    "WORKERS_AI_API_TOKEN",
+  ])
+    assert.match(convexAI, new RegExp(`process\\.env\\.${name}`));
+  assert.doesNotMatch(guide, /WORKERS_AI_REMOTE/);
+  assert.match(guide, /WORKERS_AI_ENABLED/);
 });
