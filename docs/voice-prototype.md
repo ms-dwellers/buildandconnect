@@ -6,7 +6,7 @@ The voice agent and background form-filling agent have separate responsibilities
 ## Two agents
 
 - **ElevenLabs interviews.** Its private conversational agent handles live audio,
-  transcription, turn detection, interruptions, questions, and spoken replies.
+  transcription, turn detection, questions, and spoken replies.
   The central text begins with “Hey — ready whenever you are.” and then shows the
   agent’s current words. It does not fill fields or invoke application tools.
   Replies roll in word by word with a short upward fade; reduced-motion users
@@ -34,6 +34,12 @@ Earlier extracted facts are retained in the previous brief.
    disconnects the voice session and releases the microphone. Resume establishes
    a fresh connection with recent transcript context. Muting spoken replies
    changes playback volume without stopping transcription.
+   During spoken replies, the microphone is muted so incidental speech does not
+   interrupt or enter the brief. **Interrupt** appears only while the AI is
+   speaking; it stops the reply and reconnects with the conversation and brief
+   preserved. There may be a short connection delay before listening resumes.
+   The SDK does not expose a stop-current-reply operation, so no fake user
+   utterance is sent to force an interruption.
 4. **Review project brief** ends the interview and opens the existing editable
    review and matching flow. Suggestions require explicit review/consent. Nothing
    is published and no invitations are sent automatically.

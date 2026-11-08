@@ -69,4 +69,15 @@ test("navigation stays above the unframed voice panel, with the transcript below
     /@media \(prefers-reduced-motion: no-preference\)\s*\{\s*\.voice-reply/,
   );
   assert.match(css, /animation-delay: var\(--word-delay\)/);
+  assert.match(source, /phase === "speaking" &&/);
+  assert.match(source, /conversation\.interrupt\(\)/);
+});
+
+test("the interview agent ignores talk-over instead of interrupting automatically", () => {
+  const source = readFileSync(
+    new URL("../backend/hiring/interview-agent.ts", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(source, /"interruption"/);
+  assert.match(source, /transcribe_on_disabled_interruptions: false/);
 });

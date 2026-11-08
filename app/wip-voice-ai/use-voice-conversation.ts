@@ -109,7 +109,7 @@ export function useVoiceConversation() {
     const current = connection.current;
     connection.current = null;
     level.current = 0;
-    if (current) void current.endSession().catch(() => {});
+    return current?.endSession().catch(() => {});
   }, []);
 
   async function start(textOnly = false): Promise<Conversation | null> {
@@ -168,7 +168,11 @@ export function useVoiceConversation() {
           const key = `${role}:${message.event_id}`;
           if (seen.has(key)) return;
           seen.add(key);
-          if (role === "assistant") setAgentText(message.message);
+          if (role === "assistant") {
+            if (connection.current?.type === "voice")
+              connection.current.setMicMuted(true);
+            setAgentText(message.message);
+          }
           if (role === "user" && pendingText.current === message.message) {
             pendingText.current = null;
             return;
@@ -196,8 +200,10 @@ export function useVoiceConversation() {
           }
         },
         onModeChange: ({ mode }) => {
-          if (attempt === generation.current)
-            setPhase(mode === "speaking" ? "speaking" : "listening");
+          if (attempt !== generation.current) return;
+          if (connection.current?.type === "voice")
+            connection.current.setMicMuted(mode === "speaking");
+          setPhase(mode === "speaking" ? "speaking" : "listening");
         },
         onDisconnect: () => {
           if (attempt !== generation.current) return;
@@ -253,6 +259,17 @@ export function useVoiceConversation() {
     updateHistory([...history.current, { role: "user", content }]);
     session.sendUserMessage(content);
     return true;
+  }
+
+  async function interrupt() {
+    if (phase !== "speaking" || !connection.current) return;
+    const stopped = disconnect();
+    const attempt = generation.current;
+    setPhase("connecting");
+    // The SDK has no stop-current-reply API. Reconnect with the existing context
+    // rather than faking a user message or leaving queued audio playing silently.
+    await stopped;
+    if (attempt === generation.current) await start();
   }
 
   const pause = useCallback(() => {
@@ -325,6 +342,7 @@ export function useVoiceConversation() {
     extracting,
     microphone: level,
     send,
+    interrupt,
     resume: () => void start(),
     pause,
     end,

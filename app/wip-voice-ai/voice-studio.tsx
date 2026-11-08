@@ -5,6 +5,7 @@ import {
   ArrowLeftIcon,
   ArrowUpIcon,
   CheckIcon,
+  HandIcon,
   MicIcon,
   PauseIcon,
   PlayIcon,
@@ -37,6 +38,7 @@ function Studio() {
   const [reviewing, setReviewing] = useState(false);
   const transcript = useRef<HTMLDivElement>(null);
   const briefPanel = useRef<HTMLElement>(null);
+  const conversationControl = useRef<HTMLButtonElement>(null);
   const active = isSessionActive(phase);
   const canReply =
     !reviewing && ["ready", "listening", "paused", "ended"].includes(phase);
@@ -149,6 +151,7 @@ function Studio() {
                   </Button>
                 ) : (
                   <Button
+                    ref={conversationControl}
                     size="xl"
                     className="voice-start"
                     onClick={
@@ -180,6 +183,19 @@ function Studio() {
                   <span className="voice-control-spacer" />
                 )}
               </div>
+              {phase === "speaking" && (
+                <Button
+                  variant="outline"
+                  className="mt-3"
+                  onClick={() => {
+                    void conversation.interrupt();
+                    conversationControl.current?.focus();
+                  }}
+                >
+                  <HandIcon aria-hidden="true" />
+                  Interrupt
+                </Button>
+              )}
               {conversation.error && (
                 <p className="voice-device-note" role="alert">
                   {conversation.error}

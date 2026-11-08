@@ -13,12 +13,15 @@ You only conduct the conversation. A separate background AI reads the transcript
       },
     },
     tts: { model_id: "eleven_flash_v2", voice_id: "JBFqnCBsd6RMkjVDRZzb" },
-    turn: { turn_eagerness: "patient", initial_wait_time: 20 },
+    turn: {
+      turn_eagerness: "patient",
+      initial_wait_time: 20,
+      transcribe_on_disabled_interruptions: false,
+    },
     conversation: {
       max_duration_seconds: 900,
       client_events: [
         "audio",
-        "interruption",
         "user_transcript",
         "agent_response",
         "agent_response_correction",
