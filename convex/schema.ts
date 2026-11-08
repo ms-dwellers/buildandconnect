@@ -153,8 +153,7 @@ export default defineSchema({
     sentAt: v.number(),
   })
     .index("by_conversation", ["conversationId", "sequence"])
-    .index("by_submission", ["conversationId", "senderId", "clientId"])
-    .index("by_sender", ["senderId", "sentAt"]),
+    .index("by_submission", ["conversationId", "senderId", "clientId"]),
   developerReviews: defineTable({
     developerId: v.string(),
     requesterId: v.string(),

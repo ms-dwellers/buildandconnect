@@ -161,9 +161,9 @@ sequence. The inbox loads 20 conversations at a time, up to 200 most recent;
 older threads remain reachable from their project connection. Earlier message
 pages use stable sequence cursors. The UI marks messages read only when the
 visible, focused thread is at its latest messages. Message text is rendered as
-plain text, not HTML or Markdown. Sending is limited to 30 new messages per
-sender per minute across projects. Retrying an identical `clientId` returns the
-same message without consuming the quota; changing its text returns 409.
+plain text, not HTML or Markdown. There is no per-sender message rate limit.
+Retrying an identical `clientId` returns the same message without inserting a
+duplicate; changing its text returns 409.
 
 This rollout adds two tables and indexes without modifying existing rows. Sync
 Convex functions/schema to the chosen development deployment and run the updated

@@ -255,14 +255,6 @@ export const send = internalMutation({
         "Messaging is paused because this connection is no longer mutual",
       );
     const sentAt = Date.now();
-    const recent = await ctx.db
-      .query("messages")
-      .withIndex("by_sender", (q) =>
-        q.eq("senderId", actor.user.id).gt("sentAt", sentAt - 60_000),
-      )
-      .take(30);
-    if (recent.length >= 30)
-      fail(429, "Too many messages. Wait a minute before sending again.");
     const sequence = row.lastSequence + 1;
     const id = await ctx.db.insert("messages", {
       conversationId: row._id,

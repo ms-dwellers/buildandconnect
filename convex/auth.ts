@@ -31,14 +31,7 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
     // unverified email/password account is never linked silently.
     socialProviders: socialProviders(process.env),
     account: { encryptOAuthTokens: true },
-    rateLimit: {
-      enabled: true,
-      storage: "database",
-      customRules: {
-        "/convex/jwks": false,
-        "/convex/.well-known/openid-configuration": false,
-      },
-    },
+    rateLimit: { enabled: false },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         const origin = ctx.headers?.get("origin");

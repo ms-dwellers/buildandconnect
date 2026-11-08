@@ -283,12 +283,11 @@ test("history pages use stable sequences without gaps or duplicates", async () =
   expect(earlier.hasMore).toBe(false);
 });
 
-test("per-sender message limits are enforced without charging identical retries", async () => {
+test("senders can exceed 30 messages per minute without duplicating identical retries", async () => {
   const { developer, send, watch } = await connectedProject();
   const first = await send();
-  for (let index = 1; index < 30; index++)
+  for (let index = 1; index < 35; index++)
     await send(developer, `Message ${index}`);
   expect((await send(developer, first.body, first.clientId)).id).toBe(first.id);
-  await expect(send()).rejects.toThrow(/Too many messages/);
-  expect((await watch()).conversation?.messages).toHaveLength(30);
+  expect((await watch()).conversation?.messages).toHaveLength(35);
 });

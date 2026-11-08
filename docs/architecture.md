@@ -104,8 +104,9 @@ colluding-account abuse prevention is outside this MVP.
 - Use same-origin cookie requests. Mutation origins are checked; Better Auth
   retains its own CSRF/cookie protections. API responses are never shared-cached.
   Request bodies are capped at 32 KB and input fields/collections are bounded.
-- Better Auth stores rate limits in Convex. Public JWT key discovery is excluded
-  from rate limiting. The web forwarder strips untrusted forwarding headers;
+- Application rate limiting is disabled for authentication and chat. External
+  providers can still enforce their own limits. The web forwarder strips untrusted
+  forwarding headers;
   never treat a caller-supplied IP header as an authorization credential.
   The rest of the API has no per-account AI quota yet;
   add quotas and email verification before opening public registration at scale.
