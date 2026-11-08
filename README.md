@@ -7,7 +7,7 @@ A hackathon app connecting early-career developers with non-technical requesters
 through shared interests and social-impact projects.
 
 **Current state:** a Three.js landing scene, Mapbox nearby-request UI, `/api/health`, and a
-Convex backend with Better Auth (email/password, Google, GitHub), Convex HTTP actions, Workers AI analysis, growth-oriented
+Convex backend with Better Auth (email/password, Google, GitHub), Convex HTTP actions, OpenRouter analysis, growth-oriented
 matching, consent-based developer discovery, opportunity-specific mutual interest, and exclusive
 local-request claims. See [the backend guide](docs/backend.md) for setup and API
 examples. For browser-based backend QA, run the frontend and open `/debug`.
@@ -159,8 +159,8 @@ emerald, cream, wheat, apricot, and coral palette. See
 
 See [docs/architecture.md](docs/architecture.md) for ownership and integration
 steps. React/Vinext App Router and Tailwind run on the web host. Convex owns the
-HTTP API, application data, authentication, and AI execution. Workers AI supplies Llama analysis and
-BGE Small embeddings; TypeScript owns deterministic matching. Mapbox powers
+HTTP API, application data, authentication, and AI execution. OpenRouter supplies Gemini analysis and
+OpenAI embeddings; TypeScript owns deterministic matching. Mapbox powers
 location search and nearby maps. Convex is the only application database; the
 Worker remains the browser-facing API.
 

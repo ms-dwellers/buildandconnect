@@ -5,7 +5,7 @@ import type { ActionCtx } from "./_generated/server";
 import { createAuth } from "./auth";
 import { configuredProviders } from "./socialProviders";
 import { fail } from "./access";
-import { workersAI } from "./ai";
+import { openRouterAI } from "./ai";
 import { createHiringRoutes } from "./hiring/routes";
 import { HiringProviderError } from "./hiring/providers";
 import { HTTPException } from "hono/http-exception";
@@ -185,7 +185,7 @@ export async function handleApi(
           );
         const target = await (
           services.analyzeCareerTarget ?? analyzeCareerTarget
-        )(workersAI(), input);
+        )(openRouterAI(), input);
         return json(
           await ctx.runMutation(internal.data.putCareerTarget, {
             sessionId,
@@ -288,7 +288,7 @@ export async function handleApi(
           "The saved draft changed. Reload and review it before publishing.",
         );
       const details = opportunityFromDraft(draft.content);
-      const result = await services.analyzeOpportunity(workersAI(), details);
+      const result = await services.analyzeOpportunity(openRouterAI(), details);
       return json(
         await ctx.runMutation(internal.data.createOpportunity, {
           sessionId,
@@ -324,7 +324,10 @@ export async function handleApi(
         requireRole("developer");
         const expectedRevision = revision(request);
         const profile = developerSchema.parse(await body(request));
-        const embedding = await services.analyzeDeveloper(workersAI(), profile);
+        const embedding = await services.analyzeDeveloper(
+          openRouterAI(),
+          profile,
+        );
         return json(
           await ctx.runMutation(internal.data.putDeveloper, {
             sessionId,
@@ -399,7 +402,10 @@ export async function handleApi(
         requireRole("requester");
         const id = postingId();
         const details = opportunitySchema.parse(await body(request));
-        const result = await services.analyzeOpportunity(workersAI(), details);
+        const result = await services.analyzeOpportunity(
+          openRouterAI(),
+          details,
+        );
         return json(
           await ctx.runMutation(internal.data.createOpportunity, {
             sessionId,
@@ -445,7 +451,7 @@ export async function handleApi(
         requireRole("requester");
         const id = postingId();
         const details = requestSchema.parse(await body(request));
-        const result = await services.analyzeRequest(workersAI(), details);
+        const result = await services.analyzeRequest(openRouterAI(), details);
         return json(
           await ctx.runMutation(internal.data.createRequest, {
             sessionId,
@@ -476,7 +482,10 @@ export async function handleApi(
           fail(403, "Only the opportunity owner can edit it");
         const expectedRevision = revision(request);
         const details = opportunitySchema.parse(await body(request));
-        const result = await services.analyzeOpportunity(workersAI(), details);
+        const result = await services.analyzeOpportunity(
+          openRouterAI(),
+          details,
+        );
         return json(
           await ctx.runMutation(internal.data.reviseOpportunity, {
             sessionId,
@@ -559,7 +568,7 @@ export async function handleApi(
           fail(409, "Only open requests can be edited");
         const expectedRevision = revision(request);
         const details = requestSchema.parse(await body(request));
-        const result = await services.analyzeRequest(workersAI(), details);
+        const result = await services.analyzeRequest(openRouterAI(), details);
         return json(
           await ctx.runMutation(internal.data.reviseRequest, {
             sessionId,

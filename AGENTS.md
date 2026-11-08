@@ -36,6 +36,9 @@ the only account roles; do not reintroduce Company or Recruiter account types.
   Convex HTTP site directly. Persistence functions are internal and revalidate
   live sessions, ownership, and roles; clients never submit trusted AI output.
 - Maps: Mapbox.
+- AI: OpenRouter for Gemini analysis and OpenAI embeddings; ElevenLabs for voice.
+  Provider calls and credentials belong in Convex, not in the frontend Worker.
+  Do not reintroduce Cloudflare Workers AI.
 - Other infrastructure: prefer Cloudflare products (Workers, R2, Queues,
   Durable Objects, etc.), except the explicitly selected Convex backend.
 - iPhone: native SwiftUI in `ios/`; build, test, and formatting commands are in
@@ -61,7 +64,7 @@ configuration. This permission does not make the chat itself a secret vault.
   before writing a local secret. Prefer stdin over command-line arguments.
 - Keep `.env.example` value-free. Never put secrets in Nix expressions, derivation
   arguments, or store paths; the Nix store is not private storage.
-- `BETTER_AUTH_SECRET` and Workers AI credentials belong only in Convex's
+- `BETTER_AUTH_SECRET`, OpenRouter, and ElevenLabs credentials belong only in Convex's
   environment. No application bridge secret is needed. Keep Convex CLI account/deploy keys
   outside tracked source; never publish production changes during local setup.
 - `NEXT_PUBLIC_*` and `VITE_*` values are public. Never place a private key or

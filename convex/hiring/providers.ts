@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { HiringEnv } from "./env";
+import { openRouterSchema } from "../../backend/ai-schema.ts";
 
 import {
   DEFAULT_GEMINI_MODEL,
@@ -69,7 +70,9 @@ export async function geminiJson<T>(
             json_schema: {
               name: options.name,
               strict: true,
-              schema: z.toJSONSchema(options.schema, { io: "input" }),
+              schema: openRouterSchema(
+                z.toJSONSchema(options.schema, { io: "input" }),
+              ),
             },
           },
           provider: { require_parameters: true, data_collection: "deny" },

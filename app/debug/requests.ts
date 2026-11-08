@@ -299,7 +299,7 @@ export const qaSteps = [
   ],
   [
     "Save a developer profile",
-    "Use the sample profile as the developer, then post the sample opportunity as the requester. Both actions need Workers AI.",
+    "Use the sample profile as the developer, then post the sample opportunity as the requester. Both actions need OpenRouter.",
   ],
   [
     "Rank and inspect",

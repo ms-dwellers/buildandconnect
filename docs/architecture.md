@@ -8,7 +8,7 @@
 | API routing and authorization | Convex HTTP actions, `convex/api.ts` | Implemented                     |
 | Accounts and sessions         | Better Auth's Convex component       | Email/password, Google, GitHub  |
 | Application and auth data     | Convex, `convex/schema.ts`           | Implemented                     |
-| Job analysis and embeddings   | Convex actions and Workers AI REST   | Requires Cloudflare access      |
+| Job analysis and embeddings   | Convex actions and OpenRouter REST   | Requires OpenRouter credentials |
 | Growth matching               | `backend/matching.ts`                | Deterministic, versioned        |
 | Mutual interest               | Convex interest records              | Opportunity-specific, revocable |
 | Role views                    | `app/dashboard`, `components/`       | One dashboard per account type  |
@@ -33,9 +33,9 @@ remains a minimal public liveness route, not a provider-readiness check.
    company/recruiter records are read as requesters, preserving ownership and
    existing data; the old roles cannot be selected or submitted anymore.
 3. Developers submit explicit skills, projects, interests, learning goals, and
-   discovery consent. BGE Small embeds demonstrated experience, not aspirations.
-4. Requesters post opportunities. Llama produces schema-constrained job analysis;
-   Zod validates it. BGE Small embeds the structured requirements. Only after both
+   discovery consent. OpenAI embeds demonstrated experience, not aspirations.
+4. Requesters post opportunities. Gemini produces schema-constrained job analysis;
+   Zod validates it. OpenAI embeds the structured requirements. Only after both
    succeed is the complete record written to Convex. A failure returns 503 and saves
    nothing. Updating a profile similarly preserves its previous version on failure.
 5. Requesters fetch ranked candidates for their own opportunities. Convex narrows
@@ -122,8 +122,10 @@ colluding-account abuse prevention is outside this MVP.
 
 See [backend.md](backend.md) for Convex setup and the HTTP contract.
 `convex/http.ts` registers authentication and application HTTP actions.
-`convex/ai.ts` calls Workers AI REST using credentials stored only in Convex and an
-explicit `WORKERS_AI_ENABLED=true` opt-in. `cloudflare.config.ts` contains only
+`convex/ai.ts` calls OpenRouter using `OPENROUTER_API_KEY` stored only in Convex.
+Gemini handles extraction; `openai/text-embedding-3-small` supplies 384-dimensional
+embeddings. Provider schemas retain structure while Zod enforces all output
+constraints before persistence. `cloudflare.config.ts` contains only
 website hosting and forwarding configuration. Nothing is provisioned or deployed
 by the checks. The isolated native test server uses an ephemeral Convex test runtime
 and scripted inference, never a cloud database or paid model.

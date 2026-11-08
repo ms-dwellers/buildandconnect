@@ -1,6 +1,6 @@
 # iPhone app
 
-Native SwiftUI client for the Convex HTTP API, Better Auth, Workers AI,
+Native SwiftUI client for the Convex HTTP API, Better Auth, OpenRouter,
 and Mapbox. Minimum iOS 18. No application database or server credential is bundled
 with the app.
 
@@ -209,7 +209,7 @@ This is not yet App Store ready:
 - Closing a request clears its claimant in the current service. The owner sees
   closed history, but a former claimant does not have a persistent closure receipt.
   A minimal receipt needs an agreed retention/access policy.
-- Real Workers AI inference, email delivery, physical-device mapping, accessibility
+- Real OpenRouter inference, email delivery, physical-device mapping, accessibility
   assistive-technology checks, and production privacy disclosures need verification.
 
 The app privacy manifest covers first-party profile, contact, location, and user

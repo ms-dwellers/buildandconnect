@@ -1,43 +1,88 @@
+import { z } from "zod";
 import { AnalysisUnavailable, type AIService } from "../backend/ai.ts";
+import { ANALYSIS_MODEL, EMBEDDING_MODEL } from "../backend/models.ts";
+import { vectorSchema } from "../backend/schemas.ts";
+import { openRouterSchema } from "../backend/ai-schema.ts";
 
-/** Provider credentials stay in Convex. No Worker or browser AI binding is needed. */
-export function workersAI(): AIService | undefined {
-  const account = process.env.WORKERS_AI_ACCOUNT_ID;
-  const token = process.env.WORKERS_AI_API_TOKEN;
-  if (process.env.WORKERS_AI_ENABLED !== "true" || !account || !token)
-    return undefined;
-  if (!/^[a-f0-9]{32}$/i.test(account))
-    throw new AnalysisUnavailable("Workers AI is not configured");
+const chatResponse = z.object({
+  choices: z
+    .array(
+      z.object({
+        finish_reason: z.literal("stop"),
+        message: z.object({ content: z.string().min(1) }),
+      }),
+    )
+    .min(1),
+});
+const embeddingResponse = z.object({
+  data: z
+    .array(z.object({ index: z.literal(0), embedding: vectorSchema }))
+    .length(1),
+});
+
+/** Credentials and provider requests stay in Convex, never in the web Worker. */
+export function openRouterAI(): AIService | undefined {
+  const token = process.env.OPENROUTER_API_KEY;
+  if (!token) return undefined;
   return {
     async run(model, input, options) {
-      const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/${model}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+      try {
+        const embedding = model === EMBEDDING_MODEL;
+        if (!embedding && model !== ANALYSIS_MODEL)
+          throw new Error("Unsupported analysis model");
+        const format = embedding
+          ? undefined
+          : z
+              .object({
+                type: z.literal("json_schema"),
+                json_schema: z.record(z.string(), z.unknown()),
+              })
+              .parse(input.response_format);
+        const payload = {
+          ...input,
+          model,
+          provider: { require_parameters: true, data_collection: "deny" },
+          ...(format
+            ? {
+                stream: false,
+                response_format: {
+                  type: "json_schema",
+                  json_schema: {
+                    name: "analysis",
+                    strict: true,
+                    schema: openRouterSchema(format.json_schema),
+                  },
+                },
+              }
+            : {}),
+        };
+        const response = await fetch(
+          `https://openrouter.ai/api/v1/${embedding ? "embeddings" : "chat/completions"}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+            signal: options?.signal,
+            redirect: "error",
           },
-          body: JSON.stringify(input),
-          signal: options?.signal,
-          redirect: "error",
-        },
-      );
-      if (!response.ok)
-        throw new AnalysisUnavailable("Workers AI is unavailable");
-      const payload: unknown = await response.json();
-      if (
-        !payload ||
-        typeof payload !== "object" ||
-        !("success" in payload) ||
-        payload.success !== true ||
-        !("result" in payload) ||
-        !payload.result ||
-        typeof payload.result !== "object" ||
-        Array.isArray(payload.result)
-      )
-        throw new AnalysisUnavailable("Workers AI is unavailable");
-      return payload.result as Record<string, unknown>;
+        );
+        if (!response.ok) {
+          await response.body?.cancel();
+          throw new Error("Provider rejected request");
+        }
+        const result: unknown = await response.json();
+        if (embedding) {
+          return { data: [embeddingResponse.parse(result).data[0].embedding] };
+        }
+        return {
+          response: chatResponse.parse(result).choices[0].message.content,
+        };
+      } catch {
+        throw new AnalysisUnavailable("OpenRouter is unavailable");
+      }
     },
   };
 }

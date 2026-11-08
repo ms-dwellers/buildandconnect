@@ -691,7 +691,7 @@ export function DebugConsole() {
                     )}
                     {selected.ai && (
                       <p className="rounded-lg bg-secondary/60 p-3 text-xs leading-5">
-                        <strong>Workers AI required.</strong> Remote AI must be
+                        <strong>OpenRouter required.</strong> AI must be
                         configured. Without it, expect 503 and no saved data.
                       </p>
                     )}
@@ -809,8 +809,7 @@ export function DebugConsole() {
                   after selecting a Convex development deployment, then keep{" "}
                   <code className="font-mono text-xs">bun run dev:backend</code>{" "}
                   running. Set SITE_URL to this page&apos;s origin. Set{" "}
-                  WORKERS_AI_ENABLED=true and the provider credentials in Convex
-                  for real AI calls. See{" "}
+                  OPENROUTER_API_KEY in Convex for real AI calls. See{" "}
                   <code className="font-mono text-xs">docs/backend.md</code>.
                 </p>
               </div>

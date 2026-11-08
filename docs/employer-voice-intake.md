@@ -102,7 +102,7 @@ routing requires structured output support and excludes data-collection routes.
   invented conversions. These boundaries are rechecked after inference.
   Causes and communities refer to project beneficiaries, not protected traits
   of the developer.
-- Existing Workers AI analysis/embeddings and deterministic opportunity matching
+- Existing OpenRouter analysis/embeddings and deterministic opportunity matching
   are unchanged. Gemini intake matching is a separate explicit action, not a
   silent replacement for those routes.
 - Timeouts, malformed outputs and provider failures produce retryable errors,
