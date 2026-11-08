@@ -25,6 +25,7 @@ const NAVIGATION: Record<Role | "unassigned" | "guest", NavItem[]> = {
   ],
   developer: [
     { href: "/dashboard", label: "Dashboard" },
+    { href: "/career", label: "Career path" },
     { href: "/map", label: "Map" },
     { href: "/profile", label: "Profile" },
   ],

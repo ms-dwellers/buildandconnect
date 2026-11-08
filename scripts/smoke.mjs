@@ -128,6 +128,13 @@ try {
   const voiceHtml = await voice.text();
   assert.doesNotMatch(voiceHtml, /Local demo/);
   assert.match(voiceHtml, /noindex/);
+  const career = await fetch(`${origin}/career`);
+  assert.equal(career.status, 200);
+  assert.match(await career.text(), /noindex/);
+  for (const path of ["career-target", "career-projects"]) {
+    const response = await fetch(`${origin}/api/developers/me/${path}`);
+    assert.equal(response.status, 401);
+  }
   assert.doesNotMatch(voiceHtml, /local-only voice prototype/);
   const legacyVoice = await fetch(`${origin}/wip-voice-ai`, {
     redirect: "manual",

@@ -111,6 +111,22 @@ function Dashboard({
   return (
     <div className="space-y-12">
       <Card>
+        <CardPanel className="flex flex-wrap items-center justify-between gap-4 p-6">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">
+              Work toward your next role
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Find projects that let you practice requirements from a target
+              job.
+            </p>
+          </div>
+          <Button render={<a href="/career" />}>
+            Explore your career path
+          </Button>
+        </CardPanel>
+      </Card>
+      <Card>
         <CardPanel className="grid gap-6 p-6 md:grid-cols-[1fr_auto]">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">

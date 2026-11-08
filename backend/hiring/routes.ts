@@ -19,6 +19,7 @@ import {
 } from "./schemas.ts";
 import { draftBrief, extractBrief, recommendDevelopers } from "./service.ts";
 import { hiringEligibility } from "./eligibility.ts";
+import { postingDraftFromBrief } from "./posting.ts";
 
 export async function listHiringDevelopers(
   client: ConvexHttpClient,
@@ -133,6 +134,10 @@ export function createHiringRoutes(
       await c.req.json(),
     );
     return c.json(await services.extractBrief(c.env, messages, brief));
+  });
+  routes.post("/posting-draft", async (c) => {
+    const { brief } = confirmedBriefSchema.parse(await c.req.json());
+    return c.json(postingDraftFromBrief(brief));
   });
   routes.post("/matches", async (c) => {
     const { brief } = confirmedBriefSchema.parse(await c.req.json());

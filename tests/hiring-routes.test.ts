@@ -314,3 +314,43 @@ test("matching uses saved zero-year preferences and rechecks changed boundaries 
   const result = (await response.json()) as { developers: unknown[] };
   assert.deepEqual(result.developers, []);
 });
+
+test("posting draft preparation requires a requester and makes no model or candidate requests", async () => {
+  const { app, calls } = harness();
+  const path = "/api/hiring/posting-draft";
+  const input = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ brief }),
+  };
+  const response = await app.request(path, input);
+  assert.equal(response.status, 200);
+  const result = (await response.json()) as {
+    draft: { title: string };
+    requiresConfirmation: boolean;
+  };
+  assert.equal(result.draft.title, brief.title);
+  assert.equal(result.requiresConfirmation, true);
+  assert.deepEqual(calls, {
+    transcription: 0,
+    drafting: 0,
+    matching: 0,
+    sessions: 0,
+    extraction: 0,
+    listing: 0,
+    candidates: [],
+  });
+  assert.equal(
+    (
+      await app.request(path, {
+        ...input,
+        body: JSON.stringify({ brief: emptyHiringBrief() }),
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (await harness("developer").app.request(path, input)).status,
+    403,
+  );
+});

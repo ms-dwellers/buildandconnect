@@ -22,6 +22,7 @@ import {
   location,
   analysis,
   developerPreferences,
+  careerTarget as careerTargetValidator,
 } from "./schema";
 import {
   developerSchema,
@@ -39,7 +40,14 @@ import {
   rankNearbyRequests,
   WEIGHTS,
   MATCH_VERSION,
+  asMatchOpportunity,
+  haversineKm,
 } from "../backend/matching";
+import {
+  careerSkillGaps,
+  scoreCareerProject,
+  CAREER_MATCH_VERSION,
+} from "../backend/career/matching";
 import {
   ANALYSIS_MODEL,
   ANALYSIS_VERSION,
@@ -47,6 +55,10 @@ import {
 } from "../backend/models";
 import { opportunityListing, requestListing } from "../backend/listings";
 import { CALGARY_BOUNDS, type CityJob } from "../lib/calgary-area";
+import {
+  CAREER_ANALYSIS_VERSION,
+  careerTargetSchema,
+} from "../backend/career/schemas";
 
 const secret = v.string();
 const pagination = { after: v.string(), limit: v.number() };
@@ -54,6 +66,171 @@ function checkLimit(limit: number) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 100)
     fail(400, "Limit must be between 1 and 100");
 }
+
+export const ownCareerTarget = query({
+  args: { secret },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["developer"]);
+    const row = await ctx.db
+      .query("careerTargets")
+      .withIndex("by_developer", (q) => q.eq("developerId", user.id))
+      .unique();
+    return row
+      ? {
+          ...row.target,
+          developerId: row.developerId,
+          analysisVersion: row.analysisVersion,
+          updatedAt: row.updatedAt,
+        }
+      : null;
+  },
+});
+
+export const putCareerTarget = mutation({
+  args: {
+    secret,
+    target: careerTargetValidator,
+    expectedUpdatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["developer"]);
+    const target = careerTargetSchema.parse(args.target);
+    const old = await ctx.db
+      .query("careerTargets")
+      .withIndex("by_developer", (q) => q.eq("developerId", user.id))
+      .unique();
+    if ((old?.updatedAt ?? 0) !== args.expectedUpdatedAt)
+      fail(409, "Your career target changed. Reload it before saving again.");
+    const values = {
+      developerId: user.id,
+      target,
+      analysisVersion: CAREER_ANALYSIS_VERSION,
+      updatedAt: Math.max(Date.now(), (old?.updatedAt ?? 0) + 1),
+    };
+    if (old) await ctx.db.replace(old._id, values);
+    else await ctx.db.insert("careerTargets", values);
+    return {
+      ...target,
+      developerId: user.id,
+      analysisVersion: values.analysisVersion,
+      updatedAt: values.updatedAt,
+    };
+  },
+});
+
+export const careerRecommendations = query({
+  args: { secret, limit: v.number() },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["developer"]);
+    checkLimit(args.limit);
+    const targetRow = await ctx.db
+      .query("careerTargets")
+      .withIndex("by_developer", (q) => q.eq("developerId", user.id))
+      .unique();
+    if (!targetRow) fail(404, "Save a career target first");
+    const profile = await findDeveloper(ctx, user.id);
+    if (!profile) fail(404, "Create a developer profile first");
+    const developer = await developerData(ctx, profile);
+    const target = careerTargetSchema.parse(targetRow.target);
+    const opportunities = await ctx.db
+      .query("opportunities")
+      .withIndex("by_status", (q) => q.eq("status", "open"))
+      .take(1001);
+    const location = developer.location;
+    const box = location
+      ? boundingBox(location.latitude, location.longitude, location.radiusKm)
+      : null;
+    const requests = box
+      ? await ctx.db
+          .query("requests")
+          .withIndex("by_status_latitude", (q) =>
+            q
+              .eq("status", "open")
+              .gte("details.latitude", box.minLat)
+              .lte("details.latitude", box.maxLat),
+          )
+          .filter((q) =>
+            q.and(
+              q.gte(q.field("details.longitude"), box.minLng),
+              q.lte(q.field("details.longitude"), box.maxLng),
+            ),
+          )
+          .take(1001)
+      : [];
+    if (opportunities.length > 1000 || requests.length > 1000)
+      fail(
+        503,
+        "Career project pool exceeds the MVP limit; narrowed matching is needed",
+      );
+    const data = opportunities.flatMap((row) => {
+      const match = scoreCareerProject(target, developer, opportunityData(row));
+      return match
+        ? [
+            {
+              source: "opportunity" as const,
+              id: row.id,
+              title: row.details.title,
+              description: row.details.description,
+              city: row.details.city,
+              latitude: row.details.latitude,
+              longitude: row.details.longitude,
+              activities: row.analysis.activities ?? [],
+              ...match,
+            },
+          ]
+        : [];
+    });
+    const nearby = requests.flatMap((row) => {
+      if (!location) return [];
+      const request = requestData(row);
+      const distanceKm = haversineKm(location, request);
+      if (distanceKm > location.radiusKm) return [];
+      const match = scoreCareerProject(
+        target,
+        developer,
+        asMatchOpportunity(request),
+      );
+      return match
+        ? [
+            {
+              source: "request" as const,
+              id: row.id,
+              title: request.title,
+              description: request.description,
+              city: request.place,
+              latitude: request.latitude,
+              longitude: request.longitude,
+              distanceKm: Math.round(distanceKm * 10) / 10,
+              activities: row.analysis.activities ?? [],
+              ...match,
+            },
+          ]
+        : [];
+    });
+    const ranked = [...data, ...nearby].sort(
+      (a, b) =>
+        b.careerRelevance.gapRequirementsWithPractice -
+          a.careerRelevance.gapRequirementsWithPractice ||
+        b.careerRelevance.requirementsWithPractice -
+          a.careerRelevance.requirementsWithPractice ||
+        b.score - a.score ||
+        a.source.localeCompare(b.source) ||
+        a.id.localeCompare(b.id),
+    );
+    return {
+      data: ranked.slice(0, args.limit),
+      total: ranked.length,
+      requirements: careerSkillGaps(target, developer),
+      targetUpdatedAt: targetRow.updatedAt,
+      profileUpdatedAt: profile.updatedAt,
+      nearbyRequestsAvailable: location !== null,
+      version: CAREER_MATCH_VERSION,
+      targetAnalysisVersion: targetRow.analysisVersion,
+      matchVersion: MATCH_VERSION,
+      weights: WEIGHTS,
+    };
+  },
+});
 
 export const me = query({
   args: { secret },

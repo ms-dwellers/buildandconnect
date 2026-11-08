@@ -5,6 +5,11 @@ import test from "node:test";
 import { build } from "esbuild";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { developer, opportunity } from "./fixtures/matching.ts";
+import { careerTarget } from "./fixtures/career.ts";
+import type {
+  CareerRecommendations,
+  SavedCareerTarget,
+} from "../lib/career.ts";
 
 test(
   "backend HTTP pipeline with real Better Auth, workerd, and Convex",
@@ -225,6 +230,87 @@ test(
     assert.equal(created.status, 201, await created.clone().text());
     const { id } = (await created.json()) as { id: string };
     const path = `/opportunities/${id}`;
+    const careerPath = "/developers/me/career-target";
+    assert.equal((await request(careerPath)).status, 401);
+    assert.equal(
+      (await request(careerPath, "GET", undefined, company.cookie)).status,
+      403,
+    );
+    assert.equal(
+      await (await request(careerPath, "GET", undefined, junior.cookie)).json(),
+      null,
+    );
+    const targetResponse = await request(
+      careerPath,
+      "PUT",
+      {
+        sourceText: careerTarget.sourceText,
+        sourceUrl: "https://example.org/jobs/junior",
+        expectedUpdatedAt: 0,
+      },
+      junior.cookie,
+    );
+    assert.equal(
+      targetResponse.status,
+      200,
+      await targetResponse.clone().text(),
+    );
+    const savedTarget = (await targetResponse.json()) as SavedCareerTarget;
+    assert.equal(savedTarget.developerId, junior.id);
+    assert.equal(savedTarget.requirements[0].sourceQuote, "React");
+    assert.deepEqual(
+      await (await request(careerPath, "GET", undefined, junior.cookie)).json(),
+      savedTarget,
+    );
+    assert.equal(
+      (
+        await request(
+          careerPath,
+          "PUT",
+          { sourceText: careerTarget.sourceText, expectedUpdatedAt: 0 },
+          junior.cookie,
+        )
+      ).status,
+      409,
+    );
+    assert.equal(
+      (
+        await request(
+          careerPath,
+          "PUT",
+          {
+            sourceText: "AI_UNAVAILABLE " + careerTarget.sourceText,
+            expectedUpdatedAt: savedTarget.updatedAt,
+          },
+          junior.cookie,
+        )
+      ).status,
+      503,
+    );
+    assert.deepEqual(
+      await (await request(careerPath, "GET", undefined, junior.cookie)).json(),
+      savedTarget,
+    );
+    const careerProjects = await request(
+      "/developers/me/career-projects?limit=100",
+      "GET",
+      undefined,
+      junior.cookie,
+    );
+    assert.equal(
+      careerProjects.status,
+      200,
+      await careerProjects.clone().text(),
+    );
+    const recommendations =
+      (await careerProjects.json()) as CareerRecommendations;
+    assert.ok(recommendations.data.some((project) => project.id === id));
+    assert.equal(recommendations.targetUpdatedAt, savedTarget.updatedAt);
+    assert.equal(
+      recommendations.requirements.find((item) => item.id === "degree")
+        ?.evidenceStatus,
+      "needs_evidence",
+    );
     assert.equal(
       (
         (await (

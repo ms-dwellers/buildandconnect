@@ -35,6 +35,7 @@ export function CalgaryCanvas({
   renderActions?: (job: CityJob) => ReactNode;
 }) {
   const { phase, ready } = useMapJourney();
+  const frame = useRef<HTMLDivElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 1000, height: 700 });
   const selectedJob = jobs.find((job) => job.id === selectedId);
@@ -60,19 +61,20 @@ export function CalgaryCanvas({
     if (!loading) ready();
   }, [loading, ready]);
   useEffect(() => {
-    if (!container.current) return;
+    if (!frame.current) return;
     const observer = new ResizeObserver(([entry]) =>
       setSize({
         width: entry.contentRect.width,
         height: entry.contentRect.height,
       }),
     );
-    observer.observe(container.current);
+    observer.observe(frame.current);
     return () => observer.disconnect();
   }, []);
 
   return (
     <div
+      ref={frame}
       className={`relative isolate size-full overflow-hidden bg-map-land ${placing ? "cursor-crosshair" : ""}`}
       data-testid="calgary-canvas"
       data-map-mode={mode}
@@ -92,7 +94,7 @@ export function CalgaryCanvas({
       )}
       <div
         ref={container}
-        className={`absolute inset-0 ${live ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`absolute inset-0 size-full ${live ? "opacity-100" : "pointer-events-none opacity-0"}`}
         aria-label="Interactive Calgary city map"
       />
       {mode === "preview" && (

@@ -28,6 +28,8 @@ import {
 import type { BackendEnv } from "./env";
 import { createHiringRoutes } from "./hiring/routes";
 import { HiringProviderError } from "./hiring/providers";
+import { createCareerRoutes } from "./career/routes";
+import type { analyzeCareerTarget } from "./career/analysis";
 
 export type ApiEnv = {
   Bindings: BackendEnv;
@@ -38,6 +40,7 @@ type AnalysisServices = {
   analyzeDeveloper: typeof analyzeDeveloper;
   analyzeOpportunity: typeof analyzeOpportunity;
   analyzeRequest: typeof analyzeRequest;
+  analyzeCareerTarget?: typeof analyzeCareerTarget;
 };
 const pagination = z.object({
   after: z.string().max(100).default(""),
@@ -107,6 +110,7 @@ export function createApi(
     c.json(await client(c).query(convex.data.me, { secret: secret(c) })),
   );
   app.route("/hiring", createHiringRoutes());
+  app.route("/developers/me", createCareerRoutes(services.analyzeCareerTarget));
   app.put("/me/role", async (c) => {
     const input = z
       .object({

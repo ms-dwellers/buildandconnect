@@ -149,6 +149,11 @@ ElevenLabs interviewer to the microphone and displays its words over the aurora.
 A separate Gemini agent fills the project brief in the background. Requesters
 review the brief before requesting developer suggestions.
 
+Developers can use `/career` to save a private target job, inspect requirements
+and their source quotes, and find relevant project activities on the Calgary map
+and list. See [user flows](docs/user-flows.md) for the current product decisions
+and [the judging plan](docs/product-and-judging-plan.md) for the demo story.
+
 The component foundation is [coss ui](https://coss.com/ui/docs), with the supplied
 emerald, cream, wheat, apricot, and coral palette. See
 [docs/design-system.md](docs/design-system.md) before adding UI components.

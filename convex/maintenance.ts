@@ -18,6 +18,11 @@ export const cleanupVerification = internalMutation({
     }
     for (const id of userIds) {
       for (const row of await ctx.db
+        .query("careerTargets")
+        .withIndex("by_developer", (q) => q.eq("developerId", id))
+        .collect())
+        await ctx.db.delete(row._id);
+      for (const row of await ctx.db
         .query("members")
         .withIndex("by_user", (q) => q.eq("userId", id))
         .collect())
