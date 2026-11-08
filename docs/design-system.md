@@ -73,25 +73,28 @@ percentages enforced on every component or the map.
   canvas-drawn campfire. The canvas covers the whole hero rather than a box: a
   camera view offset frames the furniture into the band beneath the copy at full
   size while the heading floats in the same space. Every colour comes from `--palette-*`
-  and `--scene-*` tokens read at runtime; no asset files are loaded. The header
-  and hero fill at least the first viewport; the remaining sections scroll
-  below. Typography adapts to viewport width and height.
+  and `--scene-*` tokens read at runtime. Behind the developer chair, canvas-drawn
+  tech marks (brackets, braces, a chip, a prompt) sit in pine and apricot; behind
+  the partner chair, a light set of pixel trees and garden accents from
+  `public/sprites/` return some of the old personality without the full cloud
+  layer. The header and hero fill at least the first viewport; the remaining
+  sections scroll below. Typography adapts to viewport width and height.
 - The chairs are the calls to action. Each carries a real button above it
   ("I'm a developer: Find a project" on the task chair, "I need a developer:
   Post a request" on the wooden chair), positioned from the scene's projected
   anchors on screens 40rem and wider and shown as a plain row under the scene
   otherwise, before WebGL is ready, and without WebGL at all. Hovering or
-  focusing a chair or its button lifts the chair. Clicking the developer chair
-  or the monitor starts the map journey; clicking the partner chair opens the
-  request form. The canvas itself is `aria-hidden`. Reduced motion renders one
-  static frame, and the render loop pauses while the tab is hidden or the hero
-  is off-screen.
+  focusing a chair or its button lifts the chair and intensifies that side's
+  backdrop (scale, opacity, a soft bob). Clicking the developer chair or the
+  monitor starts the map journey; clicking the partner chair opens the request
+  form. The canvas itself is `aria-hidden`. Reduced motion renders one static
+  frame, and the render loop pauses while the tab is hidden or the hero is
+  off-screen.
 - When the map journey begins with the hero visible, the scene registers an
   approach beat: the canvas breaks out of its box to cover the whole viewport
   (a camera view offset keeps the furniture where it was while the frame grows),
   the camera dollies into the monitor while its screen crossfades to the city
-  name, and then the mist takes over. The former pixel-art sprite collection has
-  been removed.
+  name, and then the mist takes over.
 
 - No decorative pills. Ordinary labels are plain text. Badges are
   softly rectangular with a small radius, explicit line height, and enough padding

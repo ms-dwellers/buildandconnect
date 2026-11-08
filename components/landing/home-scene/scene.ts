@@ -13,6 +13,11 @@ import {
 } from "@/lib/home-scene";
 import { createFirepitTexture } from "./firepit-texture";
 import {
+  buildDeveloperBackdrop,
+  buildPartnerBackdrop,
+  type BackdropField,
+} from "./backdrops";
+import {
   buildContactShadow,
   buildMonitor,
   buildSideTable,
@@ -167,6 +172,29 @@ export function createHomeScene(
   ].filter((shadow): shadow is THREE.Mesh => shadow !== null);
   scene.add(developer, partner, table, monitor, ...shadows);
 
+  // Personality behind each chair: tech marks for the developer, pixel trees
+  // for the partner. Hovering a chair intensifies its side.
+  const developerBackdrop = buildDeveloperBackdrop(tokens);
+  scene.add(developerBackdrop.group);
+  const backdrops: BackdropField[] = [developerBackdrop];
+  let partnerBackdrop: BackdropField | null = null;
+  let cancelled = false;
+  void buildPartnerBackdrop(tokens).then((field) => {
+    if (!field || cancelled) {
+      field?.group.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return;
+        object.geometry.dispose();
+        const material = object.material as THREE.MeshBasicMaterial;
+        material.map?.dispose();
+        material.dispose();
+      });
+      return;
+    }
+    partnerBackdrop = field;
+    backdrops.push(field);
+    scene.add(field.group);
+  });
+
   const groups: Record<PickTarget, THREE.Group> = {
     developer,
     partner,
@@ -318,6 +346,9 @@ export function createHomeScene(
       applyPose(restPose(rig), yaw, pitch);
       wantsFrame = motion;
     }
+    for (const field of backdrops) {
+      if (field.update(now, motion && approach === null)) wantsFrame = true;
+    }
     firepit?.draw(now, blend, motion);
     renderer.render(scene, camera);
     return wantsFrame;
@@ -356,6 +387,8 @@ export function createHomeScene(
         THREE.Group,
       ][])
         group.position.y = id === target ? 0.015 : 0;
+      developerBackdrop.setTarget(target === "developer" ? 1 : 0);
+      partnerBackdrop?.setTarget(target === "partner" ? 1 : 0);
     },
     setMotion(enabled) {
       motion = enabled;
@@ -420,6 +453,8 @@ export function createHomeScene(
           material.dispose();
         }
       });
+      cancelled = true;
+      for (const field of backdrops) field.dispose();
       firepit?.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

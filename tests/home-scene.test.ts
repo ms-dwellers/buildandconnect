@@ -183,12 +183,27 @@ test("the home page renders copy on the server and loads three lazily", () => {
   assert.match(scene, /forceContextLoss/);
   assert.match(scene, /NoToneMapping/);
   assert.match(scene, /powerPreference: "low-power"/);
+  assert.match(scene, /buildDeveloperBackdrop/);
+  assert.match(scene, /buildPartnerBackdrop/);
   assert.doesNotMatch(scene, /castShadow\s*=\s*true/);
   const css = read("app/globals.css");
   assert.match(css, /min-height: calc\(100svh - 6rem\)/);
   assert.match(css, /--home-scene-height/);
+  // Personality assets for the chair backdrops; the old full sprite set is gone.
+  for (const sprite of [
+    "tree-4.svg",
+    "grass-1.svg",
+    "grass-2.svg",
+    "flower-1.svg",
+    "flower-2.svg",
+  ])
+    assert.equal(
+      existsSync(new URL(`../public/sprites/${sprite}`, import.meta.url)),
+      true,
+      sprite,
+    );
   assert.equal(
-    existsSync(new URL("../public/sprites", import.meta.url)),
+    existsSync(new URL("../public/sprites/tets.svg", import.meta.url)),
     false,
   );
 });

@@ -15,9 +15,9 @@ export const SCENE = {
   fov: 32,
   /** Close enough that the furniture fills the frame height on wide canvases. */
   minDistance: 3.5,
-  /** Half of the composition that must stay in frame: both chairs plus margin. */
-  halfWidth: 1.65,
-  objectTop: 1.5,
+  /** Half of the composition that must stay in frame: chairs, trees, and marks. */
+  halfWidth: 1.85,
+  objectTop: 1.7,
   chairOffset: 1.15,
   chairDepth: 0.35,
   chairYaw: Math.PI / 4,
