@@ -22,11 +22,7 @@ export function groundAutumnTree(root: THREE.Object3D): THREE.Group {
   box.getCenter(center);
   if (size.y < 1e-6) return wrapper;
   const scale = 1 / size.y;
-  root.position.set(
-    -center.x * scale,
-    -box.min.y * scale,
-    -center.z * scale,
-  );
+  root.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
   root.scale.setScalar(scale);
   wrapper.updateMatrixWorld(true);
   return wrapper;
