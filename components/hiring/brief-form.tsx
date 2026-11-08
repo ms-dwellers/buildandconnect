@@ -243,8 +243,8 @@ export function BriefForm({
               disabled={pending || disabled}
             />
             <Label htmlFor="hiring-consent" className="text-sm leading-6">
-              I’ve reviewed this brief and agree to send it to Gemini through
-              OpenRouter for developer suggestions.
+              I’ve reviewed this brief and agree to send it to Fireworks for
+              developer suggestions.
             </Label>
           </div>
           <p role="alert" className="text-sm text-destructive-foreground">

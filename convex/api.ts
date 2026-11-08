@@ -5,7 +5,7 @@ import type { ActionCtx } from "./_generated/server";
 import { createAuth } from "./auth";
 import { configuredProviders } from "./socialProviders";
 import { fail } from "./access";
-import { openRouterAI } from "./ai";
+import { fireworksAI } from "./ai";
 import { createHiringRoutes } from "./hiring/routes";
 import { HiringProviderError } from "./hiring/providers";
 import { HTTPException } from "hono/http-exception";
@@ -137,8 +137,8 @@ export async function handleApi(
         throw error;
       });
       return await app.fetch(request, {
-        OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-        OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
+        FIREWORKS_API_KEY: process.env.FIREWORKS_API_KEY,
+        FIREWORKS_MODEL: process.env.FIREWORKS_MODEL,
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
         ELEVENLABS_STT_MODEL: process.env.ELEVENLABS_STT_MODEL,
         ELEVENLABS_AGENT_ID: process.env.ELEVENLABS_AGENT_ID,
@@ -185,7 +185,7 @@ export async function handleApi(
           );
         const target = await (
           services.analyzeCareerTarget ?? analyzeCareerTarget
-        )(openRouterAI(), input);
+        )(fireworksAI(), input);
         return json(
           await ctx.runMutation(internal.data.putCareerTarget, {
             sessionId,
@@ -288,7 +288,7 @@ export async function handleApi(
           "The saved draft changed. Reload and review it before publishing.",
         );
       const details = opportunityFromDraft(draft.content);
-      const result = await services.analyzeOpportunity(openRouterAI(), details);
+      const result = await services.analyzeOpportunity(fireworksAI(), details);
       return json(
         await ctx.runMutation(internal.data.createOpportunity, {
           sessionId,
@@ -325,7 +325,7 @@ export async function handleApi(
         const expectedRevision = revision(request);
         const profile = developerSchema.parse(await body(request));
         const embedding = await services.analyzeDeveloper(
-          openRouterAI(),
+          fireworksAI(),
           profile,
         );
         return json(
@@ -403,7 +403,7 @@ export async function handleApi(
         const id = postingId();
         const details = opportunitySchema.parse(await body(request));
         const result = await services.analyzeOpportunity(
-          openRouterAI(),
+          fireworksAI(),
           details,
         );
         return json(
@@ -451,7 +451,7 @@ export async function handleApi(
         requireRole("requester");
         const id = postingId();
         const details = requestSchema.parse(await body(request));
-        const result = await services.analyzeRequest(openRouterAI(), details);
+        const result = await services.analyzeRequest(fireworksAI(), details);
         return json(
           await ctx.runMutation(internal.data.createRequest, {
             sessionId,
@@ -483,7 +483,7 @@ export async function handleApi(
         const expectedRevision = revision(request);
         const details = opportunitySchema.parse(await body(request));
         const result = await services.analyzeOpportunity(
-          openRouterAI(),
+          fireworksAI(),
           details,
         );
         return json(
@@ -568,7 +568,7 @@ export async function handleApi(
           fail(409, "Only open requests can be edited");
         const expectedRevision = revision(request);
         const details = requestSchema.parse(await body(request));
-        const result = await services.analyzeRequest(openRouterAI(), details);
+        const result = await services.analyzeRequest(fireworksAI(), details);
         return json(
           await ctx.runMutation(internal.data.reviseRequest, {
             sessionId,

@@ -100,7 +100,7 @@ export function createHiringRoutes(
   routes.get("/status", (c) =>
     c.json({
       transcription: Boolean(c.env.ELEVENLABS_API_KEY),
-      matching: Boolean(c.env.OPENROUTER_API_KEY),
+      matching: Boolean(c.env.FIREWORKS_API_KEY),
       conversation: Boolean(
         c.env.ELEVENLABS_API_KEY && c.env.ELEVENLABS_AGENT_ID,
       ),

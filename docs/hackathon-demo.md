@@ -6,7 +6,7 @@ paid contracts, or completed work.
 
 ## Seed and sign in
 
-Configure OpenRouter in the development Convex deployment, then run the seed
+Configure Fireworks in the development Convex deployment, then run the seed
 from another terminal:
 
 ```sh
@@ -16,7 +16,7 @@ bun run seed:demo
 
 The seed reads `.env.local`. `SITE_URL` must be the running localhost or private
 Tailscale origin, and `CONVEX_DEPLOYMENT` must select development. Deploy keys
-and public production origins are refused. OpenRouter and the configured career
+and public production origins are refused. Fireworks and the configured career
 analysis provider make real inference calls; provider usage may be billable.
 
 Generated sign-in credentials and record IDs are stored only in ignored

@@ -2,7 +2,6 @@ import { z } from "zod";
 import { AnalysisUnavailable, type AIService } from "../backend/ai.ts";
 import { ANALYSIS_MODEL, EMBEDDING_MODEL } from "../backend/models.ts";
 import { vectorSchema } from "../backend/schemas.ts";
-import { openRouterSchema } from "../backend/ai-schema.ts";
 
 const chatResponse = z.object({
   choices: z
@@ -21,8 +20,8 @@ const embeddingResponse = z.object({
 });
 
 /** Credentials and provider requests stay in Convex, never in the web Worker. */
-export function openRouterAI(): AIService | undefined {
-  const token = process.env.OPENROUTER_API_KEY;
+export function fireworksAI(): AIService | undefined {
+  const token = process.env.FIREWORKS_API_KEY;
   if (!token) return undefined;
   return {
     async run(model, input, options) {
@@ -41,7 +40,6 @@ export function openRouterAI(): AIService | undefined {
         const payload = {
           ...input,
           model,
-          provider: { require_parameters: true, data_collection: "deny" },
           ...(format
             ? {
                 stream: false,
@@ -50,14 +48,14 @@ export function openRouterAI(): AIService | undefined {
                   json_schema: {
                     name: "analysis",
                     strict: true,
-                    schema: openRouterSchema(format.json_schema),
+                    schema: format.json_schema,
                   },
                 },
               }
             : {}),
         };
         const response = await fetch(
-          `https://openrouter.ai/api/v1/${embedding ? "embeddings" : "chat/completions"}`,
+          `https://api.fireworks.ai/inference/v1/${embedding ? "embeddings" : "chat/completions"}`,
           {
             method: "POST",
             headers: {
@@ -81,7 +79,7 @@ export function openRouterAI(): AIService | undefined {
           response: chatResponse.parse(result).choices[0].message.content,
         };
       } catch {
-        throw new AnalysisUnavailable("OpenRouter is unavailable");
+        throw new AnalysisUnavailable("Fireworks is unavailable");
       }
     },
   };

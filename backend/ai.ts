@@ -23,10 +23,10 @@ export async function embed(
   ai: AIService | undefined,
   text: string,
 ): Promise<number[]> {
-  if (!ai) throw new AnalysisUnavailable("OpenRouter is not configured");
+  if (!ai) throw new AnalysisUnavailable("Fireworks is not configured");
   const output = await ai.run(
     EMBEDDING_MODEL,
-    { input: [text.slice(0, 1800)], dimensions: 384, encoding_format: "float" },
+    { input: [text.slice(0, 1800)], dimensions: 384, normalize: true },
     { signal: AbortSignal.timeout(20_000) },
   );
   if (!("data" in output)) throw new Error("Missing embedding");
@@ -40,7 +40,7 @@ export async function analyzeOpportunity(
   input: OpportunityInput,
 ) {
   try {
-    if (!ai) throw new Error("OpenRouter is not configured");
+    if (!ai) throw new Error("Fireworks is not configured");
     const output = await ai.run(
       ANALYSIS_MODEL,
       {

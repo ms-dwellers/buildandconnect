@@ -8,7 +8,7 @@
 | API routing and authorization | Convex HTTP actions, `convex/api.ts` | Implemented                     |
 | Accounts and sessions         | Better Auth's Convex component       | Email/password, Google, GitHub  |
 | Application and auth data     | Convex, `convex/schema.ts`           | Implemented                     |
-| Job analysis and embeddings   | Convex actions and OpenRouter REST   | Requires OpenRouter credentials |
+| Job analysis and embeddings   | Convex actions and Fireworks REST    | Requires Fireworks credentials  |
 | Growth matching               | `backend/matching.ts`                | Deterministic, versioned        |
 | Mutual interest               | Convex interest records              | Opportunity-specific, revocable |
 | Role views                    | `app/dashboard`, `components/`       | One dashboard per account type  |
@@ -33,9 +33,9 @@ remains a minimal public liveness route, not a provider-readiness check.
    company/recruiter records are read as requesters, preserving ownership and
    existing data; the old roles cannot be selected or submitted anymore.
 3. Developers submit explicit skills, projects, interests, learning goals, and
-   discovery consent. OpenAI embeds demonstrated experience, not aspirations.
-4. Requesters post opportunities. Gemini produces schema-constrained job analysis;
-   Zod validates it. OpenAI embeds the structured requirements. Only after both
+   discovery consent. Qwen3 embeds demonstrated experience, not aspirations.
+4. Requesters post opportunities. Fireworks produces schema-constrained job analysis;
+   Zod validates it. Qwen3 embeds the structured requirements. Only after both
    succeed is the complete record written to Convex. A failure returns 503 and saves
    nothing. Updating a profile similarly preserves its previous version on failure.
 5. Requesters fetch ranked candidates for their own opportunities. Convex narrows
@@ -122,9 +122,9 @@ colluding-account abuse prevention is outside this MVP.
 
 See [backend.md](backend.md) for Convex setup and the HTTP contract.
 `convex/http.ts` registers authentication and application HTTP actions.
-`convex/ai.ts` calls OpenRouter using `OPENROUTER_API_KEY` stored only in Convex.
-Gemini handles extraction; `openai/text-embedding-3-small` supplies 384-dimensional
-embeddings. Provider schemas retain structure while Zod enforces all output
+`convex/ai.ts` calls Fireworks using `FIREWORKS_API_KEY` stored only in Convex.
+GLM 5.3 Flash handles extraction; Qwen3 Embedding 8B supplies normalized 384-dimensional
+embeddings. Fireworks receives the full JSON schema and Zod enforces all output
 constraints before persistence. `cloudflare.config.ts` contains only
 website hosting and forwarding configuration. Nothing is provisioned or deployed
 by the checks. The isolated native test server uses an ephemeral Convex test runtime

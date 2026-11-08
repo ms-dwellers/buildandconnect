@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import {
-  geminiJson,
+  fireworksJson,
   transcribeAudio,
   HiringProviderError,
-  DEFAULT_GEMINI_MODEL,
+  DEFAULT_ANALYSIS_MODEL,
   DEFAULT_SCRIBE_MODEL,
   signVoiceConversation,
 } from "../convex/hiring/providers.ts";
@@ -23,7 +23,7 @@ import type { HiringEnv as BackendEnv } from "../convex/hiring/env.ts";
 import type { PublicDeveloper } from "../lib/types.ts";
 
 const env = {
-  OPENROUTER_API_KEY: "test-openrouter",
+  FIREWORKS_API_KEY: "test-fireworks",
   ELEVENLABS_API_KEY: "test-elevenlabs",
 } as BackendEnv;
 
@@ -100,16 +100,18 @@ test("model settings and provider API keys live in Convex, not the Worker", () =
     new URL("../.env.example", import.meta.url),
     "utf8",
   );
-  assert.doesNotMatch(config, /OPENROUTER|ELEVENLABS|WORKERS_AI/);
+  assert.doesNotMatch(config, /FIREWORKS|ELEVENLABS|WORKERS_AI/);
   for (const name of [
-    "OPENROUTER_API_KEY",
-    "OPENROUTER_MODEL",
+    "FIREWORKS_API_KEY",
+    "FIREWORKS_MODEL",
     "ELEVENLABS_API_KEY",
     "ELEVENLABS_STT_MODEL",
   ])
     assert.match(example, new RegExp(`^# ${name}\\b`, "m"));
-  assert.doesNotMatch(example, /^(OPENROUTER|ELEVENLABS)_[A-Z_]*=/m);
-  assert.ok(DEFAULT_GEMINI_MODEL.length > 0 && DEFAULT_SCRIBE_MODEL.length > 0);
+  assert.doesNotMatch(example, /^(FIREWORKS|ELEVENLABS)_[A-Z_]*=/m);
+  assert.ok(
+    DEFAULT_ANALYSIS_MODEL.length > 0 && DEFAULT_SCRIBE_MODEL.length > 0,
+  );
 });
 
 test("Worker config keeps runtime modules out of Vite's denied config dependencies", () => {
@@ -156,23 +158,22 @@ const developer: PublicDeveloper = {
   discoverable: true,
 };
 
-test("Gemini goes through OpenRouter with strict JSON and server-side credentials", async () => {
+test("Fireworks uses strict JSON and server-side credentials", async () => {
   const request: typeof fetch = async (url, init) => {
-    assert.equal(url, "https://openrouter.ai/api/v1/chat/completions");
+    assert.equal(url, "https://api.fireworks.ai/inference/v1/chat/completions");
     assert.equal(
       new Headers(init?.headers).get("Authorization"),
-      "Bearer test-openrouter",
+      "Bearer test-fireworks",
     );
     const body = JSON.parse(String(init?.body));
-    assert.equal(body.model, DEFAULT_GEMINI_MODEL);
+    assert.equal(body.model, DEFAULT_ANALYSIS_MODEL);
     assert.equal(body.response_format.json_schema.strict, true);
-    assert.equal(body.provider.require_parameters, true);
-    assert.equal(body.provider.data_collection, "deny");
+    assert.equal(body.provider, undefined);
     assert.ok(init?.signal);
     return completion(intake);
   };
   assert.deepEqual(
-    await geminiJson(
+    await fireworksJson(
       env,
       {
         name: "intake",
@@ -186,7 +187,7 @@ test("Gemini goes through OpenRouter with strict JSON and server-side credential
   );
 });
 
-test("missing keys, invalid Gemini models and provider errors fail without exposing details", async () => {
+test("missing keys, invalid Fireworks models and provider errors fail without exposing details", async () => {
   const options = {
     name: "intake",
     schema: intakeResponseSchema,
@@ -199,17 +200,17 @@ test("missing keys, invalid Gemini models and provider errors fail without expos
     return completion(intake);
   };
   await assert.rejects(
-    geminiJson({} as BackendEnv, options, request),
+    fireworksJson({} as BackendEnv, options, request),
     (error) => error instanceof HiringProviderError && error.status === 503,
   );
   await assert.rejects(
-    geminiJson({ ...env, OPENROUTER_MODEL: "other/model" }, options, request),
+    fireworksJson({ ...env, FIREWORKS_MODEL: "other/model" }, options, request),
     HiringProviderError,
   );
   assert.equal(calls, 0);
   for (const status of [401, 429, 500]) {
     await assert.rejects(
-      geminiJson(
+      fireworksJson(
         env,
         options,
         async () => new Response("private upstream details", { status }),
@@ -223,13 +224,13 @@ test("missing keys, invalid Gemini models and provider errors fail without expos
     );
   }
   await assert.rejects(
-    geminiJson(env, options, async () =>
+    fireworksJson(env, options, async () =>
       completion({ ...intake, invented: true }),
     ),
     HiringProviderError,
   );
   await assert.rejects(
-    geminiJson(env, options, async () =>
+    fireworksJson(env, options, async () =>
       Response.json({
         choices: [
           {
@@ -317,7 +318,7 @@ test("intake distinguishes user evidence and matching omits identity and unknown
   assert.deepEqual(input.candidates[0].wantsToLearn, ["nodejs"]);
 });
 
-test("Gemini cannot invent or duplicate developer IDs", async (t) => {
+test("Fireworks cannot invent or duplicate developer IDs", async (t) => {
   for (const ids of [["not-in-pool"], [developer.id, developer.id]]) {
     let call = 0;
     t.mock.method(globalThis, "fetch", async () =>
@@ -341,7 +342,7 @@ test("Gemini cannot invent or duplicate developer IDs", async (t) => {
   }
 });
 
-test("Gemini receives saved preferences and can recommend zero years outside the preferred experience range", async (t) => {
+test("Fireworks receives saved preferences and can recommend zero years outside the preferred experience range", async (t) => {
   const preferences = {
     professionalExperienceYears: 0,
     compensationPreference: {

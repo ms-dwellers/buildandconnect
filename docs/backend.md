@@ -58,8 +58,8 @@ or Vite running. Use the HTTP `.convex.site` URL, not the `.convex.cloud` RPC UR
 Internal Convex functions enforce live sessions, ownership, roles, and atomic
 transitions. Clients cannot call them or submit trusted analysis/embeddings.
 
-Convex calls OpenRouter for Gemini analysis and OpenAI embeddings. Set
-`OPENROUTER_API_KEY` only in the Convex environment. Set `ELEVENLABS_API_KEY`
+Convex calls Fireworks for structured analysis and Qwen3 embeddings. Set
+`FIREWORKS_API_KEY` only in the Convex environment. Set `ELEVENLABS_API_KEY`
 and `ELEVENLABS_AGENT_ID` there for voice. None of these credentials belongs in
 web settings, `.xcconfig`, or client code. Missing configuration returns 503
 rather than fabricated data. Only authorized profile/posting requests can invoke
@@ -92,7 +92,7 @@ Developers can `GET /api/developers/me/career-target` to read their private targ
 sourceUrl?, expectedUpdatedAt?}` to replace it. The browser sends the revision
 it loaded (`0` for a new target), so a stale edit returns 409 before inference.
 Source text is 30-6000 characters; URLs must use HTTP
-or HTTPS and are never fetched. Gemini through OpenRouter extracts the title and requirements,
+or HTTPS and are never fetched. Fireworks extracts the title and requirements,
 including normalized skills, unique IDs and verbatim supporting quotes. Clients
 cannot submit trusted requirements or another developer's ID. Analysis failure
 saves nothing; concurrent replacement returns 409 rather than overwriting a
@@ -147,7 +147,7 @@ dashboard: all calls retain backend authorization, including expected 401, 403,
 400 and 409 failures. It is marked `noindex`, but remains a public web route;
 restrict access at deployment if the console should not be publicly reachable.
 
-Use the local setup above first. Without OpenRouter configured, valid profile saves
+Use the local setup above first. Without Fireworks configured, valid profile saves
 and job posts return 503, with no partial persistence. This console does not seed
 fake data or substitute models. `QA walkthrough` on the page covers the matching
 and mutual-interest flow when AI is available.
@@ -358,7 +358,7 @@ Opportunities accept optional listing fields: `compensation` and `commitment`
 (each up to 80 characters), and a map pin given as `place`, `latitude` and
 `longitude` together (all three or none). Unpinned opportunities stay off the map.
 Edits replace the whole record and re-run analysis, so they return 503 and save
-nothing when OpenRouter is unavailable.
+nothing when Fireworks is unavailable.
 
 Nothing is deleted through the API yet. Requests close and opportunities close or
 reopen; archive-versus-delete policy and account deletion await a product decision.
@@ -400,4 +400,10 @@ For a direct-HTTP smoke test against a disposable development deployment, enable
 their records through an operator-only internal function. Do not enable cleanup
 in production. Normal `check`, `build`, and `smoke` never push Convex functions.
 The public health endpoint stays a minimal liveness check, not a connectivity test.
-Live inference requires OpenRouter credentials in the selected Convex deployment.
+Live inference requires Fireworks credentials in the selected Convex deployment.
+
+When changing embedding models, re-embed existing rows before mixing them with
+new vectors. The operator-only `maintenance:refreshDeveloperEmbeddings` action
+refreshes up to 25 profiles per invocation and skips concurrent profile changes.
+It does not alter profile fields or reset their revisions. Existing opportunity
+and request embeddings must also be regenerated if those tables contain older models.
