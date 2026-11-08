@@ -86,15 +86,18 @@ detail depends on Mapbox coverage; this is not a street-level photograph.
 
 **All Calgary** returns to the overhead city overview. Navigation controls support
 manual zoom, rotation and pitch. Flights respect reduced motion. Popups open when
-the camera settles so their anchors do not race the animation. Mobile list
-selection brings the map into view. Navigation bounds allow local context around
+the camera settles so their anchors do not race the animation. Selecting a pin
+on mobile keeps the map in view rather than scrolling away to the project panel.
+Navigation bounds allow local context around
 Calgary so the full city fits on narrow screens, but do not permit world travel.
 There is no geolocation request.
 
 `lib/calgary-map.ts` contains pure GeoJSON, layer and camera definitions.
 `use-calgary-map.ts` owns SDK setup, source updates, camera commands, retries and
 cleanup. GPU-backed clustered layers render postings; one native Mapbox marker
-anchors the selected coss popover without per-frame React updates. Fatal token
+anchors the selected coss popover without per-frame React updates. The selected
+point's circle, halo and label are hidden until selection clears; the source stays
+intact so cluster membership does not change. Fatal token
 or WebGL failures fall back to the illustration; isolated tile errors retain the
 live map and offer a retry.
 

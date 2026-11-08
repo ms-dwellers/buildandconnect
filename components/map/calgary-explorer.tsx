@@ -86,18 +86,12 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
   const [filter, setFilter] = useState<MapFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
-  const projectPanel = useRef<HTMLElement>(null);
   const detailHeading = useRef<HTMLHeadingElement>(null);
   const role = session.status === "member" ? session.role : null;
   const post = role ? POST_TARGET[role] : undefined;
 
   const selectJob = useCallback((id: string | null) => {
     setSelectedId(id);
-    if (id && window.matchMedia("(max-width: 1023px)").matches)
-      projectPanel.current?.scrollIntoView({
-        block: "start",
-        behavior: "instant",
-      });
   }, []);
   const visibleJobs = useMemo(
     () => filterCityJobs(jobs, query, filter),
@@ -135,7 +129,6 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
       <AppHeader />
       <main className="grid flex-1 gap-3 p-3 lg:min-h-0 lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-4 lg:overflow-hidden lg:p-4">
         <aside
-          ref={projectPanel}
           className="order-2 flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-card lg:order-1"
           aria-label="Calgary projects"
         >
@@ -426,7 +419,6 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                 onChanged={() => void feed.reload()}
               />
             )}
-            showMarkerDetails={false}
           />
           {placing && post && (
             <Card className="absolute start-1/2 top-20 z-10 w-[min(27rem,calc(100%-2rem))] -translate-x-1/2 shadow-card">

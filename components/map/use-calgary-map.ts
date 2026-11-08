@@ -7,7 +7,12 @@ import {
   useState,
   type RefObject,
 } from "react";
-import type { GeoJSONSource, Map as MapboxMap, MapMouseEvent } from "mapbox-gl";
+import type {
+  FilterSpecification,
+  GeoJSONSource,
+  Map as MapboxMap,
+  MapMouseEvent,
+} from "mapbox-gl";
 import { isInCalgary, type CityJob, type CityPoint } from "@/lib/calgary";
 import {
   CITY_MAP_STYLE,
@@ -330,6 +335,22 @@ export function useCalgaryMap({
   useEffect(() => {
     live?.map.getSource<GeoJSONSource>(JOB_SOURCE)?.setData(jobFeatures(jobs));
   }, [live, jobs]);
+  useEffect(() => {
+    if (!live) return;
+    // The selected DOM marker replaces all three GPU-rendered point layers.
+    // Keep the source intact so selection never changes cluster membership.
+    const filter: FilterSpecification = ["!", ["has", "point_count"]];
+    const visiblePoints: FilterSpecification = selectedJob
+      ? ["all", filter, ["!=", ["get", "id"], selectedJob.id]]
+      : filter;
+    for (const layer of [
+      `${POINT_LAYER}-halo`,
+      POINT_LAYER,
+      `${POINT_LAYER}-label`,
+    ]) {
+      live.map.setFilter(layer, visiblePoints);
+    }
+  }, [live, selectedJob]);
   useEffect(() => {
     if (!live || !selectedJob) return;
     overviewActive.current = false;
