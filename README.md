@@ -169,4 +169,7 @@ selecting a Convex development deployment. Deploy production only when requested
 reviewing configuration and authenticating with Cloudflare, `bun run deploy`
 builds and publishes the Worker; it is not part of local verification.
 
+See [production deployment](docs/deployment.md) for the `buildandconnect.work`
+Worker, production configuration, and GitHub Actions CI/CD.
+
 No license has been selected for this repository.

@@ -70,6 +70,7 @@
     "build": "vite build",
     "start": "vite preview",
     "deploy": "vinext-cloudflare deploy",
+    "deploy:production": "node --env-file-if-exists=.env.production.local scripts/deploy-production.mjs",
     "typecheck": "cf workers types && tsc --noEmit && tsc --noEmit -p convex/tsconfig.json",
     "test": "node --test tests/*.test.ts && vitest run",
     "test:live": "CONVEX_LIVE_TESTS=1 node --env-file=.env.local --test tests/backend.live.test.ts",
