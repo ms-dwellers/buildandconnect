@@ -1,19 +1,26 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import {
   buildRequest,
   redact,
   requests,
   sampleOpportunity,
   sampleProfile,
+  sampleRequest,
 } from "../app/debug/requests.ts";
-import { developerSchema, opportunitySchema } from "../backend/schemas.ts";
+import {
+  developerSchema,
+  opportunitySchema,
+  requestSchema,
+} from "../backend/schemas.ts";
 
 const preset = (id: string) => requests.find((request) => request.id === id)!;
 
 test("QA samples follow the actual backend contracts", () => {
   assert.ok(developerSchema.safeParse(sampleProfile).success);
   assert.ok(opportunitySchema.safeParse(sampleOpportunity).success);
+  assert.ok(requestSchema.safeParse(sampleRequest).success);
   assert.equal(
     new Set(requests.map((request) => request.id)).size,
     requests.length,
@@ -108,4 +115,37 @@ test("response history recursively redacts credentials and echoed passwords", ()
   assert.match(serialized, /QA Developer/);
   assert.match(serialized, /tomorrow/);
   assert.match(serialized, /\[redacted\]/);
+});
+
+test("every Convex API route has a QA preset", () => {
+  const api = readFileSync(
+    new URL("../convex/api.ts", import.meta.url),
+    "utf8",
+  );
+  const presets = new Set(
+    requests.map(
+      (request) =>
+        `${request.method} ${request.path.replace(":developerId", ":id")}`,
+    ),
+  );
+  const routes = new Set<string>();
+  for (const match of api.matchAll(/case "(GET|POST|PUT|PATCH) (\/[^"]+)"/g))
+    routes.add(`${match[1]} /api${match[2]}`);
+  for (const match of api.matchAll(
+    /\/\^(\S+?)\$\/\.test\(path\) && method === "(GET|POST|PUT|PATCH)"/g,
+  )) {
+    const path = match[1].replace(/\\\//g, "/").replace(/\[\^\/\]\+/g, ":id");
+    routes.add(`${match[2]} /api${path}`);
+  }
+  assert.ok(routes.size >= 20, "route extraction found the API switch");
+  const missing = [...routes].filter((route) => !presets.has(route));
+  assert.deepEqual(missing, []);
+  for (const route of [
+    "GET /api/opportunities/:id",
+    "PATCH /api/opportunities/:id",
+    "GET /api/requests/:id",
+    "PATCH /api/requests/:id",
+    "GET /api/hiring/status",
+  ])
+    assert.ok(presets.has(route), route);
 });
