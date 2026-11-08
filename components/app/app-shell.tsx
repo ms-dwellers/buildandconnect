@@ -1,13 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOutIcon } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { MapJourneyLink } from "@/components/map/map-journey";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/session";
+import { knownAccount, useSession } from "@/lib/session";
 import type { Role } from "@/lib/types";
 
 type NavItem = { href: string; label: string };
@@ -43,8 +44,10 @@ export function AppHeader({ className }: { className?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { session, signOut } = useSession();
-  const member = session.status === "member" ? session : null;
-  const items = navigationFor(member ? member.role : undefined);
+  // A remembered account renders its navigation immediately, so the header
+  // does not flip from guest links to member links after the session loads.
+  const account = knownAccount(session);
+  const items = navigationFor(account ? account.role : undefined);
   return (
     <header
       className={cn(
@@ -52,14 +55,14 @@ export function AppHeader({ className }: { className?: string }) {
         className,
       )}
     >
-      <a
+      <Link
         href="/"
         aria-label="Build & Connect home"
         className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
       >
         <BrandLogo />
         Build &amp; Connect
-      </a>
+      </Link>
       <nav
         aria-label="Main"
         className="flex flex-wrap items-center gap-x-1 gap-y-2"
@@ -84,7 +87,7 @@ export function AppHeader({ className }: { className?: string }) {
           return (
             <Button
               key={item.href}
-              render={<a href={item.href} />}
+              render={<Link href={item.href} />}
               variant="ghost"
               size="sm"
               aria-current={current ? "page" : undefined}
@@ -94,13 +97,13 @@ export function AppHeader({ className }: { className?: string }) {
             </Button>
           );
         })}
-        {member ? (
+        {account ? (
           <span className="ms-2 flex items-center gap-3 border-s ps-3">
             <span className="text-sm leading-tight">
-              <span className="block font-medium">{member.user.name}</span>
-              {member.role && (
+              <span className="block font-medium">{account.user.name}</span>
+              {account.role && (
                 <span className="block text-xs text-muted-foreground">
-                  {ROLE_LABELS[member.role]}
+                  {ROLE_LABELS[account.role]}
                 </span>
               )}
             </span>
@@ -118,10 +121,10 @@ export function AppHeader({ className }: { className?: string }) {
           </span>
         ) : session.status === "guest" ? (
           <span className="ms-2 flex items-center gap-2">
-            <Button render={<a href="/sign-in" />} variant="ghost" size="sm">
+            <Button render={<Link href="/sign-in" />} variant="ghost" size="sm">
               Sign in
             </Button>
-            <Button render={<a href="/sign-up" />} variant="outline" size="sm">
+            <Button render={<Link href="/sign-up" />} size="sm">
               Get started
             </Button>
           </span>

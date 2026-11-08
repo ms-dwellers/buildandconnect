@@ -115,7 +115,9 @@ function Dashboard({
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-semibold">{profile.name}</h2>
-              <Badge variant="outline">{profile.city}</Badge>
+              <span className="text-sm text-muted-foreground">
+                {profile.city}
+              </span>
             </div>
             <p className="line-clamp-2 max-w-xl text-sm text-muted-foreground">
               {profile.bio}

@@ -211,7 +211,7 @@ export function DebugConsole() {
             <span className="font-semibold tracking-tight">
               Build &amp; Connect
             </span>
-            <Badge variant="secondary">QA console</Badge>
+            <span className="text-sm text-muted-foreground">QA console</span>
           </div>
           <Button render={<a href="/" />} variant="ghost">
             <ArrowLeftIcon aria-hidden="true" />

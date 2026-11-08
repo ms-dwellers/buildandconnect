@@ -31,7 +31,9 @@ Semantic HTML is still the right choice for page structure and content.
 | Coral           | `#EB5757` | Landing-page calls to action, illustration |
 
 The page canvas and cards are white (`--palette-white`); the reference colours
-sit on it as structure, scenery, and accents rather than as a page tint.
+sit on it as structure, scenery, and accents rather than as a page tint. Status
+colours are distinct from the primary: success is emerald, info a deep teal,
+warning apricot; muted text is a lighter grey-green than body text.
 
 `app/globals.css` maps these to the complete coss semantic token contract. Use
 `bg-primary`, `text-foreground`, `text-muted-foreground`, etc. in components, not
@@ -114,8 +116,9 @@ percentages enforced on every component or the map.
 - Prefer coss variants and sizes. Use local classes for layout, not a replacement
   set of component styles.
 - Body text, navigation, buttons, and compact component headings use League Spartan.
-  Large headings (`h1`, `h2`, and `font-display`) use bold League Spartan. Form labels and
-  legends use DM Mono, also available through `font-mono` for metadata and code.
+  Large headings (`h1`, `h2`, and `font-display`) use bold League Spartan. Form labels use
+  DM Mono, also available through `font-mono` for metadata and code; legends and
+  section headings stay in League Spartan.
   Fonts are self-hosted in `public/fonts/` with their SIL Open Font Licenses and
   use `font-display: swap`; no Google request is made when visiting the app.
 - The isolated application root and relatively positioned body preserve Base UI

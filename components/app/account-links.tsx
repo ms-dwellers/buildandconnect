@@ -1,27 +1,33 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { homeFor, useSession } from "@/lib/session";
+import { homeFor, knownAccount, useSession } from "@/lib/session";
 
-/** Landing-page account links. Guests see sign-in until the session loads. */
+/**
+ * Landing-page account links: flat links, with one primary action for guests.
+ * Guest links render on the server; a remembered account replaces them on the
+ * first client frame, before the live session has even loaded.
+ */
 export function AccountLinks() {
   const { session } = useSession();
-  if (session.status === "member")
+  const account = knownAccount(session);
+  if (account)
     return (
       <Button
-        render={<a href={homeFor(session.role)} />}
-        variant="outline"
-        size="sm"
+        render={<Link href={homeFor(account.role)} />}
+        variant="link"
+        className="px-0"
       >
-        {session.role ? "Your dashboard" : "Choose account type"}
+        {account.role ? "Your dashboard" : "Choose account type"}
       </Button>
     );
   return (
     <>
-      <Button render={<a href="/sign-in" />} variant="link" className="px-0">
+      <Button render={<Link href="/sign-in" />} variant="link" className="px-0">
         Sign in
       </Button>
-      <Button render={<a href="/sign-up" />} variant="highlight" size="sm">
+      <Button render={<Link href="/sign-up" />} variant="highlight" size="sm">
         Get started
       </Button>
     </>

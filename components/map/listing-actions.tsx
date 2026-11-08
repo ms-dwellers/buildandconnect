@@ -17,7 +17,8 @@ export function ListingActions({
   onChanged: () => void;
 }) {
   const { pending, run } = useMutation();
-  if (session.status === "loading") return null;
+  if (session.status === "loading" || session.status === "resuming")
+    return null;
   if (session.status !== "member")
     return (
       <Button
