@@ -54,3 +54,12 @@ export function afterRoleSelection(
 export function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
+
+/** Dynamic route params can arrive percent-encoded (`a%3Ab`); decode them once. */
+export function routeParam(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
