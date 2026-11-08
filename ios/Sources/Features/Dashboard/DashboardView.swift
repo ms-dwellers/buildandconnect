@@ -188,7 +188,7 @@ struct CompanyHomeView: View {
             title: "Find someone to build with", symbol: "briefcase",
             message: "Post a paid or volunteer opportunity to see ranked candidates.")
         }
-        NavigationLink("Browse discoverable developers") { DiscoveryView() }
+        NavigationLink("Browse discoverable developers", value: Route.discovery)
       }.padding(20)
     }.pageBackground().appNavigationTitle("Opportunities")
       .task(id: app.revision) { await load(true) }.refreshable { await load(true) }
@@ -219,7 +219,8 @@ struct DiscoveryView: View {
                 .accessibilityHidden(
                   true)
                 Text(developer.name).font(Theme.title(25))
-                Spacer()
+                  .fixedSize(horizontal: false, vertical: true)
+                  .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "arrow.up.right").accessibilityHidden(true)
               }
               Text("\(developer.city) · \(developer.weeklyHours) hrs / week").font(Theme.metadata)

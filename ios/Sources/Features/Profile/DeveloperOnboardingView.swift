@@ -4,6 +4,7 @@ struct DeveloperOnboardingView: View {
   @Environment(AppModel.self) private var app
   @Environment(APIClient.self) private var api
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @State private var draft = ProfileInput()
   @State private var step = 0
   @State private var initialized = false
@@ -54,8 +55,9 @@ struct DeveloperOnboardingView: View {
       }.padding(24)
     }.clipped().id(step).safeAreaInset(edge: .bottom) {
       if initialized && !loadFailed { actionDock }
-    }.pageBackground().navigationBarBackButtonHidden(action.busy)
-      .toolbar(.hidden, for: .navigationBar)
+    }.pageBackground().appNavigationTitle("Create your profile")
+      .navigationBarBackButtonHidden(action.busy)
+      .toolbar(action.busy ? .hidden : .visible, for: .navigationBar)
       .task { await load() }
       .task(id: draft) { await preserve() }
       .onChange(of: step) { _, value in try? DraftCache.save(value, key: "\(key)/step") }
@@ -78,12 +80,17 @@ struct DeveloperOnboardingView: View {
         Task { await advance() }
       }.buttonStyle(AppButtonStyle.primary).disabled(!canContinue || action.busy)
         .accessibilityIdentifier("onboarding.continue")
-      HStack {
-        if step > 0 && !profileSaved { Button("Back") { step -= 1 }.frame(minHeight: 44) }
-        Spacer()
+      let layout =
+        dynamicTypeSize.isAccessibilitySize
+        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+        : AnyLayout(HStackLayout())
+      layout {
+        if step > 0 && !profileSaved { Button("Previous step") { step -= 1 }.frame(minHeight: 44) }
+        if !dynamicTypeSize.isAccessibilitySize { Spacer() }
         Button(profileSaved ? "Explore without an area" : "I'll finish this later") { finish() }
           .frame(minHeight: 44)
-      }.font(Theme.body(15)).foregroundStyle(Theme.muted).disabled(action.busy)
+      }.buttonStyle(AppButtonStyle(variant: .ghost, size: .small))
+        .foregroundStyle(Theme.muted).disabled(action.busy)
     }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 6).background(Theme.canvas)
   }
 

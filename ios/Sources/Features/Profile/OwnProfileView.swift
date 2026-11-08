@@ -60,7 +60,7 @@ struct OwnProfileView: View {
           EditorialHeading(
             title: "A little experience.\nA lot to offer.",
             subtitle: "Share what you know and what you'd like to learn.")
-          NavigationLink("Create your profile") { DeveloperOnboardingView() }.buttonStyle(
+          NavigationLink("Create your profile", value: Route.setupProfile).buttonStyle(
             AppButtonStyle.primary)
         } else if let error = profile.error {
           FailureView(error: error) { await load() }

@@ -87,7 +87,7 @@ strong-password generation. Production password-manager support stays enabled.
 ## Manual design previews
 
 After building and installing the Debug app on a simulator, open the real profile,
-request, account, and voice screens with fictional data:
+onboarding, discovery, request, account, and voice screens with fictional data:
 
 ```sh
 SIMCTL_CHILD_BUILD_CONNECT_DESIGN_PREVIEW=1 xcrun simctl launch --terminate-running-process booted org.buildandconnect.iphone

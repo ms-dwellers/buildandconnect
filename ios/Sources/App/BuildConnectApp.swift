@@ -45,7 +45,7 @@ enum Route: Hashable {
   case opportunity(String)
   case request(String)
   case developer(String)
-  case profile, setupProfile, area, newRequest, newOpportunity, voice
+  case profile, setupProfile, area, newRequest, newOpportunity, voice, discovery
   case editRequest(String)
   case editOpportunity(String)
   case map(String)
@@ -367,6 +367,7 @@ struct AppNavigation<Content: View>: View {
             case .map(let id): ExploreView(focus: id)
             case .account: AccountView()
             case .voice: VoiceStudioView()
+            case .discovery: DiscoveryView()
             }
           }
           .navigationBarBackButtonHidden()

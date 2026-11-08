@@ -19,25 +19,32 @@
           destination("Account", route: .account)
           destination("Request editor", route: .newRequest, role: .requester)
           destination("Voice controls", route: .voice)
+          destination("New profile onboarding", route: .setupProfile)
+          destination("Developer discovery", route: .discovery)
         }.pageBackground().appNavigationTitle("Design preview")
       }.environment(app).environment(app.api)
     }
 
     private func destination(_ title: String, route: Route, role: Role = .developer) -> some View {
       Button(title) {
-        app.member = Member(user: .init(id: "preview", name: "Preview Developer"), role: role)
+        app = Self.makeModel(newProfile: route == .setupProfile)
+        app.member = Member(user: .init(id: app.identity, name: "Preview Developer"), role: role)
         path.append(route)
       }
     }
 
-    private static func makeModel() -> AppModel {
+    private static func makeModel(newProfile: Bool = false) -> AppModel {
       let configuration = URLSessionConfiguration.ephemeral
       configuration.protocolClasses = [DesignPreviewProtocol.self]
       let api = APIClient(
-        baseURL: URL(string: "https://design-preview.invalid")!,
+        baseURL: URL(
+          string: newProfile
+            ? "https://new-profile.design-preview.invalid" : "https://design-preview.invalid")!,
         session: URLSession(configuration: configuration), restoreSession: false)
       let model = AppModel(api: api)
-      model.member = Member(user: .init(id: "preview", name: "Preview Developer"), role: .developer)
+      model.member = Member(
+        user: .init(id: newProfile ? "preview-onboarding" : "preview", name: "Preview Developer"),
+        role: .developer)
       model.hasCheckedSession = true
       model.checkingSession = false
       return model
@@ -49,9 +56,15 @@
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
       let isProfile = request.url?.path.hasPrefix("/api/developers/") == true
+      let isDiscovery = request.url?.path == "/api/developers"
+      let newProfile = request.url?.host == "new-profile.design-preview.invalid"
       let readOnly = request.httpMethod == "GET"
-      let status = readOnly ? (isProfile ? 200 : 404) : 405
-      let body = readOnly && isProfile ? Self.profile : #"{"error":"Read-only design preview"}"#
+      let success = readOnly && !newProfile && (isProfile || isDiscovery)
+      let status = readOnly ? (success ? 200 : 404) : 405
+      let body =
+        success
+        ? (isDiscovery ? "{\"data\":[\(Self.profile)],\"nextCursor\":null}" : Self.profile)
+        : #"{"error":"Read-only design preview"}"#
       let response = HTTPURLResponse(
         url: request.url!, statusCode: status,
         httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
