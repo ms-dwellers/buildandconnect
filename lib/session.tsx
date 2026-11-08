@@ -12,8 +12,8 @@ import { api } from "./api.ts";
 import type { Me, Role } from "./types.ts";
 import { usePathname, useRouter } from "next/navigation";
 import { sessionContext as Context, type Session } from "./session-context";
+import { SESSION_MEMORY_KEY } from "./theme-boot";
 export type { Session } from "./session-context";
-const MEMORY_KEY = "bandc.session";
 const ROLES: Role[] = ["developer", "requester"];
 
 type Remembered = { name: string; role: Role | null };
@@ -21,8 +21,9 @@ type Remembered = { name: string; role: Role | null };
 /** Only a display name and role are remembered; nothing that grants access. */
 function remember(value: Remembered | null) {
   try {
-    if (value) window.localStorage.setItem(MEMORY_KEY, JSON.stringify(value));
-    else window.localStorage.removeItem(MEMORY_KEY);
+    if (value)
+      window.localStorage.setItem(SESSION_MEMORY_KEY, JSON.stringify(value));
+    else window.localStorage.removeItem(SESSION_MEMORY_KEY);
   } catch {
     // Storage can be unavailable; the live session still loads.
   }
@@ -30,7 +31,7 @@ function remember(value: Remembered | null) {
 
 function recall(): Remembered | null {
   try {
-    const raw = window.localStorage.getItem(MEMORY_KEY);
+    const raw = window.localStorage.getItem(SESSION_MEMORY_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<Remembered>;
     if (typeof parsed.name !== "string") return null;

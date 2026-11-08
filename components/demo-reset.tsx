@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { api } from "@/lib/api";
 import { createDemoResetSequence } from "@/lib/demo-reset";
 import { useSession } from "@/lib/session";
+import { SESSION_MEMORY_KEY } from "@/lib/theme-boot";
 import { toastManager } from "@/components/ui/toast";
 
 type ResetStatus = { enabled: boolean; generation: number };
@@ -39,7 +40,7 @@ export function DemoReset() {
     async function leave(nextGeneration: number) {
       rememberGeneration(nextGeneration);
       try {
-        localStorage.removeItem("bandc.session");
+        localStorage.removeItem(SESSION_MEMORY_KEY);
       } catch {
         // A full navigation still discards the in-memory account state.
       }

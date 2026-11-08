@@ -7,6 +7,7 @@ import { RoleTheme } from "@/components/app/role-theme";
 import { SessionProvider } from "@/lib/session";
 import { MascotMotionProvider } from "@/lib/mascot-motion";
 import { DemoReset } from "@/components/demo-reset";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme-boot";
 
 export const metadata: Metadata = {
   title: "Build & Connect",
@@ -21,7 +22,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body className="relative">
         <div className="relative isolate flex min-h-svh flex-col">
           <MascotMotionProvider>

@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSession } from "@/lib/session";
+import { knownAccount, useSession } from "@/lib/session";
 
-/** Applies the warm developer theme for the whole signed-in developer session. */
+/**
+ * Keeps `data-theme="developer"` in sync with the live or remembered account.
+ * A blocking head script applies the same hint before paint; this effect must
+ * not clear that hint while the session is still loading.
+ */
 export function RoleTheme() {
   const { session } = useSession();
   useEffect(() => {
+    if (session.status === "loading") return;
     const root = document.documentElement;
-    if (session.status === "member" && session.role === "developer") {
+    if (knownAccount(session)?.role === "developer") {
       root.dataset.theme = "developer";
     } else {
       delete root.dataset.theme;

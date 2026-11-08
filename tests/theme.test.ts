@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import {
+  SESSION_MEMORY_KEY,
+  THEME_BOOTSTRAP_SCRIPT,
+} from "../lib/theme-boot.ts";
 
 const stylesheet = readFileSync(
   new URL("../app/globals.css", import.meta.url),
@@ -98,6 +102,23 @@ test("developer theme remaps to the warm fire kit", () => {
   assert.equal(developerTokens.get("--ring"), "var(--palette-flame)");
   assert.equal(developerTokens.get("--input"), "var(--palette-flame)");
   assert.equal(developerTokens.get("--foreground"), "#ffe8cc");
+});
+
+test("theme bootstrap paints developer before session hydrate", () => {
+  assert.match(THEME_BOOTSTRAP_SCRIPT, new RegExp(SESSION_MEMORY_KEY));
+  assert.match(THEME_BOOTSTRAP_SCRIPT, /data-theme["']?\s*,\s*["']developer/);
+  const layout = readFileSync(
+    new URL("../app/layout.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(layout, /THEME_BOOTSTRAP_SCRIPT/);
+  assert.match(layout, /suppressHydrationWarning/);
+  const roleTheme = readFileSync(
+    new URL("../components/app/role-theme.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(roleTheme, /status === "loading"/);
+  assert.match(roleTheme, /knownAccount/);
 });
 
 test("selected font families are self-hosted with swap and licenses", () => {
