@@ -1,0 +1,259 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  geminiJson,
+  transcribeAudio,
+  HiringProviderError,
+  DEFAULT_GEMINI_MODEL,
+} from "../backend/hiring/providers.ts";
+import {
+  confirmedBriefSchema,
+  emptyHiringBrief,
+  intakeResponseSchema,
+} from "../backend/hiring/schemas.ts";
+import { draftBrief, recommendDevelopers } from "../backend/hiring/service.ts";
+import type { BackendEnv } from "../backend/env.ts";
+import type { PublicDeveloper } from "../lib/types.ts";
+
+const env = {
+  OPENROUTER_API_KEY: "test-openrouter",
+  ELEVENLABS_API_KEY: "test-elevenlabs",
+} as BackendEnv;
+const brief = {
+  ...emptyHiringBrief(),
+  title: "Community calendar",
+  description: "Help older adults find local events.",
+};
+const intake = { brief, reply: "What is the budget?" };
+const completion = (value: unknown) =>
+  Response.json({
+    choices: [
+      { finish_reason: "stop", message: { content: JSON.stringify(value) } },
+    ],
+  });
+const criteria = {
+  technologies: ["react"],
+  experienceYears: { preferredMin: 0, preferredMax: 3 },
+  causes: ["digital inclusion"],
+  communitiesServed: ["older adults"],
+  learningOpportunities: [],
+  practicalConsiderations: [],
+};
+const developer: PublicDeveloper = {
+  id: "dev-one",
+  name: "Not sent to model",
+  bio: "I make community websites.",
+  city: "Calgary",
+  skills: [{ name: "react", level: 2 }],
+  projects: [],
+  interests: ["digital inclusion"],
+  wantsToLearn: ["nodejs"],
+  experienceLevel: 1,
+  collaboration: "async",
+  weeklyHours: 10,
+  acceptsVolunteer: true,
+  available: true,
+  discoverable: true,
+};
+
+test("Gemini goes through OpenRouter with strict JSON and server-side credentials", async () => {
+  const request: typeof fetch = async (url, init) => {
+    assert.equal(url, "https://openrouter.ai/api/v1/chat/completions");
+    assert.equal(
+      new Headers(init?.headers).get("Authorization"),
+      "Bearer test-openrouter",
+    );
+    const body = JSON.parse(String(init?.body));
+    assert.equal(body.model, DEFAULT_GEMINI_MODEL);
+    assert.equal(body.response_format.json_schema.strict, true);
+    assert.equal(body.provider.require_parameters, true);
+    assert.equal(body.provider.data_collection, "deny");
+    assert.ok(init?.signal);
+    return completion(intake);
+  };
+  assert.deepEqual(
+    await geminiJson(
+      env,
+      {
+        name: "intake",
+        schema: intakeResponseSchema,
+        system: "test",
+        input: {},
+      },
+      request,
+    ),
+    intake,
+  );
+});
+
+test("missing keys, invalid Gemini models and provider errors fail without exposing details", async () => {
+  const options = {
+    name: "intake",
+    schema: intakeResponseSchema,
+    system: "test",
+    input: {},
+  };
+  let calls = 0;
+  const request: typeof fetch = async () => {
+    calls++;
+    return completion(intake);
+  };
+  await assert.rejects(
+    geminiJson({} as BackendEnv, options, request),
+    (error) => error instanceof HiringProviderError && error.status === 503,
+  );
+  await assert.rejects(
+    geminiJson({ ...env, OPENROUTER_MODEL: "other/model" }, options, request),
+    HiringProviderError,
+  );
+  assert.equal(calls, 0);
+  for (const status of [401, 429, 500]) {
+    await assert.rejects(
+      geminiJson(
+        env,
+        options,
+        async () => new Response("private upstream details", { status }),
+      ),
+      (error) => {
+        assert.ok(error instanceof HiringProviderError);
+        assert.ok(!error.message.includes("private"));
+        assert.equal(error.status, status === 429 ? 429 : 502);
+        return true;
+      },
+    );
+  }
+  await assert.rejects(
+    geminiJson(env, options, async () =>
+      completion({ ...intake, invented: true }),
+    ),
+    HiringProviderError,
+  );
+  await assert.rejects(
+    geminiJson(env, options, async () =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: "length",
+            message: { content: JSON.stringify(intake) },
+          },
+        ],
+      }),
+    ),
+    HiringProviderError,
+  );
+});
+
+test("ElevenLabs receives only a bounded audio upload and returns transcript text", async () => {
+  const audio = new Blob(["test audio"], { type: "audio/webm" });
+  const request: typeof fetch = async (url, init) => {
+    assert.equal(url, "https://api.elevenlabs.io/v1/speech-to-text");
+    assert.equal(
+      new Headers(init?.headers).get("xi-api-key"),
+      "test-elevenlabs",
+    );
+    const form = init?.body as FormData;
+    assert.equal(form.get("model_id"), "scribe_v2");
+    assert.equal(form.get("diarize"), "false");
+    assert.equal(form.get("tag_audio_events"), "false");
+    assert.equal((form.get("file") as File).type, "audio/webm");
+    return Response.json({ text: " I need a website. ", words: [] });
+  };
+  assert.deepEqual(await transcribeAudio(env, audio, request), {
+    text: "I need a website.",
+  });
+  await assert.rejects(
+    transcribeAudio({} as BackendEnv, audio, request),
+    HiringProviderError,
+  );
+  await assert.rejects(
+    transcribeAudio(env, audio, async () =>
+      Response.json({ nope: "bad response" }),
+    ),
+    HiringProviderError,
+  );
+  await assert.rejects(
+    transcribeAudio(env, audio, async () => {
+      throw new Error("private network error");
+    }),
+    /Transcription was interrupted/,
+  );
+});
+
+test("intake distinguishes user evidence and matching omits identity and unknown preferences", async (t) => {
+  const calls: { messages: { content: string }[] }[] = [];
+  const responses = [
+    intake,
+    criteria,
+    {
+      developers: [
+        {
+          developerId: developer.id,
+          reason: "Relevant interests and React experience.",
+          needsDiscussion: ["Confirm compensation"],
+        },
+      ],
+    },
+  ];
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async (_url: unknown, init: RequestInit) => {
+      calls.push(JSON.parse(String(init.body)));
+      return completion(responses.shift());
+    },
+  );
+  await draftBrief(env, [
+    { role: "user", content: "Help older adults find local events." },
+  ]);
+  const result = await recommendDevelopers(env, brief, [developer]);
+  assert.equal(result.developers[0].profile.name, developer.name);
+  const prompt = calls[2].messages[0].content;
+  assert.match(prompt, /NOT years/);
+  assert.match(prompt, /never hire or reject/);
+  const input = JSON.parse(calls[2].messages[1].content);
+  assert.equal(input.candidates[0].name, undefined);
+  assert.equal(input.candidates[0].professionalExperienceYears, null);
+  assert.equal(input.candidates[0].compensationPreference, null);
+  assert.deepEqual(input.candidates[0].wantsToLearn, ["nodejs"]);
+});
+
+test("Gemini cannot invent or duplicate developer IDs", async (t) => {
+  for (const ids of [["not-in-pool"], [developer.id, developer.id]]) {
+    let call = 0;
+    t.mock.method(globalThis, "fetch", async () =>
+      completion(
+        call++ === 0
+          ? criteria
+          : {
+              developers: ids.map((developerId) => ({
+                developerId,
+                reason: "Example",
+                needsDiscussion: [],
+              })),
+            },
+      ),
+    );
+    await assert.rejects(
+      recommendDevelopers(env, brief, [developer]),
+      /invalid developer list/,
+    );
+    t.mock.restoreAll();
+  }
+});
+
+test("confirmed briefs require reviewable content and valid compensation bounds", () => {
+  assert.equal(confirmedBriefSchema.safeParse({ brief }).success, true);
+  assert.equal(
+    confirmedBriefSchema.safeParse({ brief: emptyHiringBrief() }).success,
+    false,
+  );
+  assert.equal(
+    confirmedBriefSchema.safeParse({
+      brief: {
+        ...brief,
+        compensation: { ...brief.compensation, minimum: 50, maximum: 20 },
+      },
+    }).success,
+    false,
+  );
+});

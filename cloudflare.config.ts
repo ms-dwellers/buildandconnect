@@ -19,6 +19,10 @@ export default defineConfig({
       VITE_CONVEX_SITE_URL: bindings.secret(),
       CONVEX_BRIDGE_SECRET: bindings.secret(),
       SITE_URL: bindings.secret(),
+      OPENROUTER_API_KEY: bindings.secret(),
+      OPENROUTER_MODEL: bindings.secret(),
+      ELEVENLABS_API_KEY: bindings.secret(),
+      ELEVENLABS_STT_MODEL: bindings.secret(),
     },
   }),
 });

@@ -25,8 +25,10 @@ import {
   type Role,
 } from "./schemas";
 import type { BackendEnv } from "./env";
+import { createHiringRoutes } from "./hiring/routes";
+import { HiringProviderError } from "./hiring/providers";
 
-type ApiEnv = {
+export type ApiEnv = {
   Bindings: BackendEnv;
   Variables: { client: ConvexHttpClient; role: Role | null };
 };
@@ -77,12 +79,12 @@ export function createApi(
     }
     await next();
   });
-  app.use(
-    "*",
-    bodyLimit({
-      maxSize: 32 * 1024,
-      onError: (c) => c.json({ error: "Request body exceeds 32 KB" }, 413),
-    }),
+  const jsonBodyLimit = bodyLimit({
+    maxSize: 32 * 1024,
+    onError: (c) => c.json({ error: "Request body exceeds 32 KB" }, 413),
+  });
+  app.use("*", (c, next) =>
+    c.req.path === "/api/hiring/transcribe" ? next() : jsonBodyLimit(c, next),
   );
   app.on(["GET", "POST"], "/auth/*", (c) => proxyAuth(c.env, c.req.raw));
   // The map is public. Viewer-specific detail depends on the optional session.
@@ -103,6 +105,7 @@ export function createApi(
   app.get("/me", async (c) =>
     c.json(await client(c).query(convex.data.me, { secret: secret(c) })),
   );
+  app.route("/hiring", createHiringRoutes());
   app.put("/me/role", async (c) => {
     const input = z
       .object({
@@ -371,6 +374,8 @@ export function createApi(
   );
   app.notFound((c) => c.json({ error: "API route not found" }, 404));
   app.onError((error, c) => {
+    if (error instanceof HiringProviderError)
+      return c.json({ error: error.message }, error.status);
     if (error instanceof HTTPException)
       return c.json({ error: error.message }, error.status);
     if (error instanceof ConvexError) {

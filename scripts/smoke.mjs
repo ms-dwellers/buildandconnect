@@ -101,6 +101,7 @@ try {
     "/profile",
     "/requests/new",
     "/opportunities/new",
+    "/hire",
   ]) {
     const page = await fetch(`${origin}${route}`);
     assert.equal(page.status, 200, `${route} must render`);
@@ -137,6 +138,12 @@ try {
   const logoSvg = await logo.text();
   assert.match(logoSvg, /id="clasped-hands-vector"/);
   assert.doesNotMatch(logoSvg, /<script\b|<foreignObject\b|\bonload\s*=/i);
+
+  const hiringApi = await fetch(`${origin}/api/hiring/status`);
+  assert.ok(
+    [401, 503].includes(hiringApi.status),
+    "Provider status requires authentication",
+  );
 
   const health = await fetch(`${origin}/api/health`);
   assert.equal(health.headers.get("Cache-Control"), "no-store");

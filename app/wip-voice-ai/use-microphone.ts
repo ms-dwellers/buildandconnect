@@ -106,6 +106,7 @@ export function useMicrophone() {
       });
       current.frame = requestAnimationFrame(sample);
       setStatus("on");
+      return stream;
     } catch (cause) {
       stream?.getTracks().forEach((track) => track.stop());
       if (attempt !== generation.current || !mounted.current) return;

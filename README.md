@@ -139,6 +139,11 @@ separate built-in `bun test` runner.
 
 ## Architecture and service setup
 
+Company accounts can use `/hire` for [employer voice intake](docs/employer-voice-intake.md):
+ElevenLabs transcribes recorded answers, and Gemini through OpenRouter drafts a
+reviewable brief and suggests up to ten developers. Both integrations require
+server-only provider keys; no opportunity is posted automatically.
+
 The isolated [voice studio prototype](docs/voice-prototype.md) lives at
 `/wip-voice-ai`. It uses a local mock conversation and an autumn aurora shader;
 there is no ElevenLabs integration or microphone recording.

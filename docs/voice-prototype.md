@@ -1,5 +1,9 @@
 # Voice studio prototype
 
+For real ElevenLabs transcription and Gemini matching, use the separate
+[employer intake at `/hire`](employer-voice-intake.md). This page remains the
+credential-free local prototype.
+
 Open `/wip-voice-ai` for the isolated autumn-aurora voice concept. It does not
 connect to ElevenLabs, record audio, or write to Convex. The surrounding
 application still performs its normal session check.

@@ -3,6 +3,10 @@
   background: var(--voice-paper);
   color: var(--voice-ink);
 }
+.voice-studio[data-embedded="true"] {
+  min-height: 0;
+  background: transparent;
+}
 
 .voice-nav {
   display: flex;

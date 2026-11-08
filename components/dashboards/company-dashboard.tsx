@@ -39,6 +39,7 @@ export function CompanyDashboard() {
 
   return (
     <div className="space-y-12">
+      <Button render={<a href="/hire" />}>Describe a project with voice</Button>
       <Section
         title="Your opportunities"
         description="Open opportunities with a map pin appear on the Calgary map."
