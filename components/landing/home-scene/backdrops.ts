@@ -115,7 +115,8 @@ function makeField(
           item.baseScale * spread * lift,
         );
         if (side === "partner") {
-          // Wind: a gentle lean that strengthens when the side is hovered.
+          // Keep planted Y (autumn trees sit slightly below grade); only lean in wind.
+          item.group.position.y = item.baseY;
           item.group.rotation.z = motion
             ? Math.sin(seconds * 1.3 + item.phase) *
               degrees(1.2 + 2.6 * current)
@@ -200,6 +201,13 @@ const PARTNER_TREE_SLOTS = [
   { x: 7.6, z: -0.75, height: 1.85 },
 ] as const;
 
+/**
+ * Autumn GLBs read as floating on the flat backdrop when they share the pine
+ * z-band with the chair. Push them further back and bury the trunk a little.
+ */
+const AUTUMN_TREE_DEPTH = -1.05;
+const AUTUMN_TREE_SINK = -0.14;
+
 function plantPines(
   group: THREE.Group,
   items: Sprout[],
@@ -275,6 +283,8 @@ export function buildPartnerBackdrop(
     { x: 5.05, z: -0.2, size: 0.4 },
     { x: 6.15, z: -0.3, size: 0.44 },
   ];
+  const bushDepth = autumn ? AUTUMN_TREE_DEPTH * 0.55 : 0;
+  const bushSink = autumn ? AUTUMN_TREE_SINK * 0.5 : 0;
   bushes.forEach((entry, index) => {
     const shrub = new THREE.Group();
     shrub.add(
@@ -295,12 +305,12 @@ export function buildPartnerBackdrop(
         entry.size * 0.2,
       ),
     );
-    shrub.position.set(entry.x, 0, entry.z);
+    shrub.position.set(entry.x, bushSink, entry.z + bushDepth);
     group.add(shrub);
     items.push({
       group: shrub,
       baseScale: 1,
-      baseY: 0,
+      baseY: bushSink,
       baseYaw: 0,
       delay: 60 + index * 70,
       phase: 3 + index,
@@ -317,7 +327,8 @@ export function buildPartnerBackdrop(
             yellow: autumn.yellow.material,
             brown: autumn.brown.material,
           });
-          tree.position.set(slot.x, 0, slot.z);
+          const z = slot.z + AUTUMN_TREE_DEPTH;
+          tree.position.set(slot.x, AUTUMN_TREE_SINK, z);
           tree.rotation.y = degrees((index * 47) % 360);
           const shadow = buildContactShadow(
             slot.height * 0.42,
@@ -326,12 +337,16 @@ export function buildPartnerBackdrop(
             0,
             0,
           );
-          if (shadow) tree.add(shadow);
+          if (shadow) {
+            // Keep the contact blot on the visual grade while the trunk is sunk.
+            shadow.position.y = -AUTUMN_TREE_SINK;
+            tree.add(shadow);
+          }
           group.add(tree);
           items.push({
             group: tree,
             baseScale: slot.height,
-            baseY: 0,
+            baseY: AUTUMN_TREE_SINK,
             baseYaw: tree.rotation.y,
             delay: 80 + index * 70,
             phase: index * 1.1,
