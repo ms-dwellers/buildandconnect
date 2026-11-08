@@ -107,7 +107,7 @@ try {
     assert.equal(page.status, 200, `${route} must render`);
     assert.match(
       await page.text(),
-      /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/,
+      /<img\b[^>]*src="\/assets\/mascots\/still\/base\.gif"/,
       `${route} must use the shared logo`,
     );
   }
@@ -147,7 +147,14 @@ try {
   );
 
   for (const page of [html, designHtml, mapHtml, debugHtml]) {
-    assert.match(page, /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/);
+    assert.match(page, /<img\b[^>]*src="\/assets\/mascots\/still\/base\.gif"/);
+  }
+  for (const pose of ["base", "happy", "crying", "running"]) {
+    const mascot = await fetch(`${origin}/assets/mascots/still/${pose}.gif`);
+    assert.equal(mascot.status, 200);
+    assert.match(mascot.headers.get("content-type"), /image\/gif/);
+    const bytes = Buffer.from(await mascot.arrayBuffer());
+    assert.equal(bytes.toString("ascii", 0, 6), "GIF89a");
   }
   const logo = await fetch(`${origin}/brand/campfire-clasped-hands.svg`);
   assert.equal(logo.status, 200);

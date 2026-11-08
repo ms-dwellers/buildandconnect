@@ -116,9 +116,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --shadow-card:
-    0 2px 0 --alpha(var(--primary) / 8%),
-    0 5px 14px --alpha(var(--primary) / 4%);
+  --shadow-card: 3px 4px 0 --alpha(var(--primary) / 12%);
   --animate-skeleton: skeleton 2s -1s infinite linear;
   --animate-toast-success-odd: toast-success-odd 0.32s
     cubic-bezier(0.5, 1, 0.89, 1);
@@ -277,6 +275,60 @@
   --dashboard-paper: #fffdf5;
   --map-mist-light: #fbfcfa;
   --map-mist-shadow: #bcc9c8;
+  --fieldbook-dot: --alpha(var(--palette-pine) / 16%);
+  --fieldbook-line: --alpha(var(--palette-pine) / 32%);
+  --fieldbook-shadow: 3px 4px 0 --alpha(var(--palette-pine) / 12%);
+}
+
+.fieldbook-surface,
+.account-surface {
+  --card: var(--dashboard-paper);
+  --popover: var(--dashboard-paper);
+  --border: var(--fieldbook-line);
+}
+
+.fieldbook-board {
+  background-image: radial-gradient(var(--fieldbook-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.field-note {
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  background: var(--dashboard-paper);
+  box-shadow: var(--fieldbook-shadow);
+}
+
+.fieldbook-header {
+  border-color: var(--fieldbook-line);
+}
+
+.fieldbook-nav-link[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-color: var(--primary);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.5em;
+}
+
+.practice-trail {
+  border-inline-start: 2px solid var(--primary);
+  padding-inline-start: 1rem;
+}
+
+.practice-trail > li {
+  position: relative;
+}
+
+.practice-trail > li::before {
+  position: absolute;
+  inset-inline-start: -1.4rem;
+  top: 0.45em;
+  width: 0.625rem;
+  height: 0.625rem;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: var(--card);
+  content: "";
 }
 
 .dashboard-surface {
@@ -287,19 +339,6 @@
 .map-workspace {
   --card: var(--dashboard-paper);
   --popover: var(--dashboard-paper);
-}
-
-.account-surface {
-  --card: var(--dashboard-paper);
-  --popover: var(--dashboard-paper);
-}
-
-.account-surface .hero-scene {
-  --tree-scale: 1;
-}
-
-.account-surface .hero-sky-clouds {
-  opacity: 0.45;
 }
 
 .voice-studio {

@@ -14,7 +14,7 @@ export function DeveloperSidebar({ profile }: { profile: OwnProfile }) {
   );
   return (
     <aside aria-label="Your goal and profile" className="min-w-0 space-y-5">
-      <Card className="bg-secondary/35 shadow-none">
+      <Card className="border-t-4 border-t-primary shadow-none">
         <CardPanel className="space-y-4 p-6">
           <h2 className="text-xl">Your next role</h2>
           {target.error ? (
@@ -30,10 +30,7 @@ export function DeveloperSidebar({ profile }: { profile: OwnProfile }) {
               <p className="text-lg font-medium leading-snug">
                 {target.data.title}
               </p>
-              <p className="text-sm leading-6 text-muted-foreground">
-                Find projects where you can practice this job’s requirements.
-              </p>
-              <Button render={<a href="/career" />} variant="outline" size="sm">
+              <Button render={<a href="/career" />} variant="ghost" size="sm">
                 View career target <ArrowRightIcon aria-hidden="true" />
               </Button>
             </>
@@ -43,7 +40,7 @@ export function DeveloperSidebar({ profile }: { profile: OwnProfile }) {
                 Bring a job description. Find real projects connected to the
                 experience it asks for.
               </p>
-              <Button render={<a href="/career" />} variant="outline" size="sm">
+              <Button render={<a href="/career" />} variant="ghost" size="sm">
                 Choose a target job <ArrowRightIcon aria-hidden="true" />
               </Button>
             </>

@@ -5,7 +5,7 @@ import { landingClouds } from "../lib/landing-clouds.ts";
 
 const spriteDirectory = new URL("../public/sprites/", import.meta.url);
 
-test("homepage goes directly to account entry with the shared garden scene", () => {
+test("homepage goes directly to account entry with the mascot fieldbook", () => {
   const page = readFileSync(
     new URL("../app/page.tsx", import.meta.url),
     "utf8",
@@ -16,7 +16,8 @@ test("homepage goes directly to account entry with the shared garden scene", () 
   );
   assert.match(page, /<AccountEntry/);
   assert.match(page, /safeNext\(next\)/);
-  assert.match(shell, /<HeroScene/);
+  assert.match(shell, /<Mascot/);
+  assert.match(shell, /fieldbook-board/);
   assert.match(shell, /<h1/);
 });
 

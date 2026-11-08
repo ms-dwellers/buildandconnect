@@ -83,16 +83,10 @@ function Dashboard({ profile }: { profile: OwnProfile }) {
           pending={pending}
           release={release}
         />
-        <Section
-          title="Explore projects"
-          action={
-            <Button render={<a href="/career" />} variant="ghost" size="sm">
-              Find by career goal <ArrowRightIcon aria-hidden="true" />
-            </Button>
-          }
-        >
+        <Section title="Explore projects">
           <ListState
             {...opportunities}
+            layout="grid"
             onRetry={() => void opportunities.reload()}
             onLoadMore={() => void opportunities.loadMore()}
             empty={
@@ -120,7 +114,7 @@ function Dashboard({ profile }: { profile: OwnProfile }) {
               <li key={opportunity.id}>
                 <ItemCard>
                   <div className="min-w-0 flex-1 space-y-3">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted-foreground">
                       <span>
                         {opportunity.kind === "paid"
                           ? "Paid project"
@@ -138,6 +132,10 @@ function Dashboard({ profile }: { profile: OwnProfile }) {
                     </h3>
                     <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
                       {opportunity.description}
+                    </p>
+                    <p className="text-sm font-medium">
+                      {opportunity.commitment ??
+                        `${opportunity.minimumWeeklyHours}+ hours per week`}
                     </p>
                     <Button
                       render={<a href={`/opportunities/${opportunity.id}`} />}

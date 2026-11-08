@@ -58,7 +58,7 @@ export function AppHeader({ className }: { className?: string }) {
   return (
     <header
       className={cn(
-        "flex min-h-18 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b bg-card px-5 py-3 sm:px-8",
+        "fieldbook-header flex min-h-18 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b bg-card px-5 py-3 sm:px-8",
         className,
       )}
     >
@@ -85,7 +85,7 @@ export function AppHeader({ className }: { className?: string }) {
                 variant="ghost"
                 size="sm"
                 aria-current={current ? "page" : undefined}
-                className="aria-[current=page]:bg-accent"
+                className="fieldbook-nav-link"
               >
                 {item.label}
               </MapJourneyLink>
@@ -106,7 +106,7 @@ export function AppHeader({ className }: { className?: string }) {
               variant="ghost"
               size="sm"
               aria-current={current ? "page" : undefined}
-              className="aria-[current=page]:bg-accent"
+              className="fieldbook-nav-link"
             >
               {item.label}
             </Button>
@@ -180,7 +180,7 @@ export function AppShell({
   width = "default",
   variant = "default",
 }: {
-  title: string;
+  title?: string;
   description?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
@@ -190,7 +190,7 @@ export function AppShell({
   return (
     <div
       className={cn(
-        "flex min-h-svh flex-col bg-background",
+        "fieldbook-surface flex min-h-svh flex-col bg-background",
         variant === "dashboard" && "dashboard-surface",
       )}
     >
@@ -203,55 +203,56 @@ export function AppShell({
         tabIndex={-1}
         className={cn(
           "mx-auto w-full flex-1 px-5 py-10 outline-none sm:px-8 sm:py-12",
-          width === "narrow"
-            ? "max-w-2xl"
-            : variant === "dashboard"
-              ? "max-w-6xl"
-              : "max-w-5xl",
+          width === "narrow" ? "max-w-2xl" : "max-w-6xl",
         )}
       >
-        <div
-          className={cn(
-            "mb-8 flex justify-between gap-4",
-            variant === "dashboard"
-              ? "items-center rounded-3xl border border-primary/15 bg-secondary px-6 pt-7 pb-8 sm:px-9 sm:pt-9"
-              : "flex-wrap items-end",
-          )}
-        >
+        {(title || description || actions) && (
           <div
             className={cn(
-              "max-w-2xl space-y-2",
-              variant === "dashboard" && "min-w-0 space-y-4",
+              "mb-8 flex justify-between gap-4",
+              variant === "dashboard"
+                ? "fieldbook-board items-center rounded-xl border border-primary/30 bg-secondary px-6 pt-7 pb-8 sm:px-9 sm:pt-9"
+                : "flex-wrap items-end",
             )}
           >
-            <h1
+            <div
               className={cn(
-                "font-display text-4xl leading-tight tracking-tight",
-                variant === "dashboard" && "max-w-lg text-balance sm:text-5xl",
+                "max-w-2xl space-y-2",
+                variant === "dashboard" && "min-w-0 space-y-4",
               )}
             >
-              {title}
-            </h1>
-            {description && (
-              <p
-                className={cn(
-                  "text-sm leading-6 text-muted-foreground",
-                  variant === "dashboard" && "max-w-md text-base",
-                )}
-              >
-                {description}
-              </p>
-            )}
-            {variant === "dashboard" && actions && (
-              <div className="pt-2">{actions}</div>
+              {title && (
+                <h1
+                  className={cn(
+                    "font-display text-4xl leading-tight tracking-tight",
+                    variant === "dashboard" &&
+                      "max-w-lg text-balance sm:text-5xl",
+                  )}
+                >
+                  {title}
+                </h1>
+              )}
+              {description && (
+                <p
+                  className={cn(
+                    "text-sm leading-6 text-muted-foreground",
+                    variant === "dashboard" && "max-w-md text-base",
+                  )}
+                >
+                  {description}
+                </p>
+              )}
+              {variant === "dashboard" && actions && (
+                <div className="pt-2">{actions}</div>
+              )}
+            </div>
+            {variant === "dashboard" ? (
+              <DashboardGarden />
+            ) : (
+              actions && <div className="flex flex-wrap gap-2">{actions}</div>
             )}
           </div>
-          {variant === "dashboard" ? (
-            <DashboardGarden />
-          ) : (
-            actions && <div className="flex flex-wrap gap-2">{actions}</div>
-          )}
-        </div>
+        )}
         {children}
       </main>
     </div>

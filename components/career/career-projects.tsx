@@ -104,7 +104,11 @@ function ProjectExplorer({
           {recommendations.requirements.map((item) => (
             <Card
               key={item.id}
-              className={requirementId === item.id ? "border-primary" : ""}
+              className={
+                requirementId === item.id
+                  ? "border-primary bg-secondary/40"
+                  : ""
+              }
             >
               <CardPanel className="space-y-3 p-5">
                 <Button
@@ -293,16 +297,15 @@ function ProjectCard({
       <CardPanel className="space-y-4 p-5">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">{project.title}</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="font-mono text-xs text-muted-foreground">
             {project.city}
             {"distanceKm" in project
               ? ` · ${project.distanceKm} km away`
               : ""}{" "}
-            ·{" "}
-            {project.source === "request" ? "Community request" : "Opportunity"}
+            · {project.source === "request" ? "Community request" : "Project"}
           </p>
         </div>
-        <p className="whitespace-pre-line text-sm leading-6">
+        <p className="line-clamp-3 whitespace-pre-line text-sm leading-6">
           {project.description}
         </p>
         {project.existingRelevantSkills.length > 0 && (
@@ -316,7 +319,7 @@ function ProjectCard({
         <div className="space-y-2">
           <h4 className="font-medium">Relevant project activities</h4>
           {activities.length > 0 ? (
-            <ul className="list-disc space-y-2 ps-5 text-sm">
+            <ul className="practice-trail space-y-4 text-sm">
               {activities.map((activity) => (
                 <li key={activity.id}>
                   {activity.description}

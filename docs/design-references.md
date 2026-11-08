@@ -1,5 +1,9 @@
 # UI review and design references
 
+The core direction below has since been implemented in the
+[mascot fieldbook](mascot-fieldbook.md). The original observations remain here
+as the design rationale; remaining recommendations are follow-up ideas.
+
 ## Recommended direction
 
 **Verdict:** keep the current direction. The review found one small control
@@ -60,8 +64,9 @@ featured lamp discovery; do not assume its current campaign is a project app.
 4. Retain the garden's character at entry, then reduce decoration during work.
    Prefer clear section spacing and restrained borders over nested cards.
 
-These are recommendations, not a shipped redesign. Delivery, messaging,
-payments, and hiring decisions remain outside the current product scope.
+These were the initial recommendations, not additional product features.
+Delivery, messaging, payments, and hiring decisions remain outside the current
+product scope.
 
 ## Review coverage
 

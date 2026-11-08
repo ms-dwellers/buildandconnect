@@ -8,7 +8,7 @@ export default async function OpportunityPage({
 }) {
   const { id } = await params;
   return (
-    <AppShell title="Opportunity">
+    <AppShell>
       <OpportunityDetail id={id} />
     </AppShell>
   );

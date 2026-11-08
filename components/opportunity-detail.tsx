@@ -67,7 +67,7 @@ function Loaded({
   if (opportunity.error)
     return (
       <ErrorAlert
-        title="This opportunity could not be loaded"
+        title="This project could not be loaded"
         message={opportunity.error.message}
         onRetry={() => void opportunity.reload()}
       />
@@ -76,17 +76,58 @@ function Loaded({
   const job = opportunity.data;
   const owner = job.ownerId === userId;
   return (
-    <div className="space-y-12">
-      <Summary opportunity={job} owner={owner} />
+    <div className="space-y-8">
+      <ProjectHeading opportunity={job} owner={owner} />
+      <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <aside
+          aria-label="Project commitment and response"
+          className="space-y-6 lg:order-2"
+        >
+          <Card className="border-t-4 border-t-primary">
+            <CardPanel className="space-y-4 p-6">
+              <h2 className="text-xl font-semibold">The commitment</h2>
+              <dl className="space-y-4 text-sm">
+                <div>
+                  <dt className="font-mono text-xs text-muted-foreground">
+                    Time
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {job.commitment ??
+                      `${job.minimumWeeklyHours}+ hours per week`}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-xs text-muted-foreground">
+                    Compensation
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {job.compensation ??
+                      (job.kind === "paid" ? "Paid" : "Volunteer")}
+                  </dd>
+                </div>
+              </dl>
+              <a
+                href="#project-scope"
+                className="inline-block text-sm underline underline-offset-4"
+              >
+                Read the full project scope
+              </a>
+            </CardPanel>
+          </Card>
+          {role === "developer" && (
+            <YourFit opportunity={job} reloadOpportunity={opportunity.reload} />
+          )}
+        </aside>
+        <div className="min-w-0 lg:order-1" id="project-scope" tabIndex={-1}>
+          <Summary opportunity={job} />
+        </div>
+      </div>
       {owner && <Candidates opportunity={job} />}
-      {role === "developer" && (
-        <YourFit opportunity={job} reloadOpportunity={opportunity.reload} />
-      )}
     </div>
   );
 }
 
-function Summary({
+function ProjectHeading({
   opportunity,
   owner,
 }: {
@@ -95,65 +136,52 @@ function Summary({
 }) {
   const { analysis } = opportunity;
   return (
-    <Card>
-      <CardPanel className="space-y-5 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <OpportunityStatusBadge status={opportunity.status} />
-              <Badge variant="outline">
-                {opportunity.kind === "paid" ? "Paid" : "Volunteer"}
-              </Badge>
-              {analysis.mentorshipAvailable && (
-                <span className="text-xs text-primary">Mentorship offered</span>
-              )}
-            </div>
-            <h2 className="font-display text-3xl leading-tight tracking-tight">
-              {opportunity.title}
-            </h2>
-            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPinIcon aria-hidden="true" className="size-4" />
-              {opportunity.remote
-                ? `Remote or ${opportunity.city}`
-                : (opportunity.place ?? opportunity.city)}
-            </p>
-          </div>
-          {owner && (
-            <Button
-              render={<a href={`/opportunities/${opportunity.id}/edit`} />}
-              variant="outline"
-              size="sm"
-            >
-              <PencilIcon aria-hidden="true" />
-              Edit
-            </Button>
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-6">
+      <div className="space-y-3">
+        <h1 className="max-w-3xl text-balance font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+          {opportunity.title}
+        </h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <OpportunityStatusBadge status={opportunity.status} />
+          <Badge variant="outline">
+            {opportunity.kind === "paid" ? "Paid" : "Volunteer"}
+          </Badge>
+          {analysis.mentorshipAvailable && (
+            <span className="text-xs text-primary">Mentorship offered</span>
           )}
         </div>
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MapPinIcon aria-hidden="true" className="size-4" />
+          {opportunity.remote
+            ? `Remote or ${opportunity.city}`
+            : (opportunity.place ?? opportunity.city)}
+        </p>
+      </div>
+      {owner && (
+        <Button
+          render={<a href={`/opportunities/${opportunity.id}/edit`} />}
+          variant="outline"
+          size="sm"
+        >
+          <PencilIcon aria-hidden="true" />
+          Edit
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function Summary({ opportunity }: { opportunity: OpportunityRecord }) {
+  const { analysis } = opportunity;
+  return (
+    <Card>
+      <CardPanel className="space-y-5 p-6 sm:p-8">
+        <h2 className="text-xl font-semibold">Project brief</h2>
         <p className="whitespace-pre-line text-sm leading-7">
           {opportunity.description}
         </p>
-        <dl className="grid gap-4 border-t pt-5 text-sm sm:grid-cols-3">
+        <dl className="grid gap-4 border-t pt-5 text-sm">
           <div>
-            <dt className="text-xs text-muted-foreground">Compensation</dt>
-            <dd className="mt-1 font-medium">
-              {opportunity.compensation ??
-                (opportunity.kind === "paid" ? "Paid" : "Volunteer")}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Commitment</dt>
-            <dd className="mt-1 font-medium">
-              {opportunity.commitment ??
-                `${opportunity.minimumWeeklyHours}+ hrs / week`}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Difficulty</dt>
-            <dd className="mt-1 font-medium">
-              {analysis.difficulty} of 5 · {analysis.experienceLevel}
-            </dd>
-          </div>
-          <div className="sm:col-span-3">
             <dt className="text-xs text-muted-foreground">Technologies</dt>
             <dd className="mt-1.5 flex flex-wrap gap-1.5">
               {[
@@ -174,7 +202,7 @@ function Summary({
             </dd>
           </div>
           {analysis.learningOpportunities.length > 0 && (
-            <div className="sm:col-span-3">
+            <div>
               <dt className="text-xs text-muted-foreground">You could learn</dt>
               <dd className="mt-1">
                 {analysis.learningOpportunities.join(", ")}
@@ -219,11 +247,24 @@ function useInterestFor(opportunityId: string) {
   return { byDeveloper, reload: interests.reload, error: interests.error };
 }
 
-function Scores({ scores }: { scores: MatchScores }) {
+function Scores({
+  scores,
+  compact = false,
+}: {
+  scores: MatchScores;
+  compact?: boolean;
+}) {
   return (
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs sm:grid-cols-5">
+    <dl
+      className={`grid grid-cols-2 gap-x-6 gap-y-2 text-xs ${compact ? "" : "sm:grid-cols-5"}`}
+    >
       {FACTORS.map(([key, label]) => (
-        <div key={key} className="flex justify-between gap-2 sm:block">
+        <div
+          key={key}
+          className={
+            compact ? "space-y-1" : "flex justify-between gap-2 sm:block"
+          }
+        >
           <dt className="text-muted-foreground">{label}</dt>
           <dd className="font-medium tabular-nums">
             {Math.round(scores[key])}%
@@ -422,7 +463,7 @@ function YourFit({
   if (!match.data) return <LoadingBlock rows={1} />;
   const fit = match.data;
   return (
-    <Section title="Your fit">
+    <Section title="Your next step">
       <Card>
         <CardPanel className="space-y-4 p-6">
           {interest.error && (
@@ -435,9 +476,6 @@ function YourFit({
           {fit.data ? (
             <>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" size="lg">
-                  {Math.round(fit.data.score)}% match
-                </Badge>
                 {mine?.connected && <Badge variant="success">Connected</Badge>}
                 {!mine?.connected && mine?.requesterInterested && (
                   <Badge variant="info">
@@ -446,7 +484,14 @@ function YourFit({
                 )}
               </div>
               <p className="text-sm">{fit.data.explanation}</p>
-              <Scores scores={fit.data.scores} />
+              <details className="border-t pt-3 text-sm">
+                <summary className="cursor-pointer font-medium">
+                  Match details · {Math.round(fit.data.score)}%
+                </summary>
+                <div className="mt-4">
+                  <Scores scores={fit.data.scores} compact />
+                </div>
+              </details>
             </>
           ) : (
             <div className="space-y-2">
@@ -497,7 +542,7 @@ function YourFit({
                 title={
                   interested
                     ? "Withdraw your interest?"
-                    : "Express interest in this opportunity?"
+                    : "Express interest in this project?"
                 }
                 description={
                   interested

@@ -1,14 +1,6 @@
 import { cn } from "@/lib/utils";
+import { Mascot } from "@/components/mascot";
 
 export function BrandLogo({ className }: { className?: string }) {
-  return (
-    <img
-      src="/brand/campfire-clasped-hands.svg"
-      width="900"
-      height="900"
-      alt=""
-      aria-hidden="true"
-      className={cn("size-12 shrink-0 object-contain", className)}
-    />
-  );
+  return <Mascot className={cn("size-11", className)} />;
 }
