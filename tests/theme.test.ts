@@ -49,12 +49,14 @@ test("theme preserves all five supplied reference colors", () => {
   assert.equal(tokens.get("--palette-coral"), "#eb5757");
 });
 
-test("theme pairs a beige page with mint scenery and original warm accents", () => {
+test("theme pairs a white page with green scenery and original warm accents", () => {
   assert.equal(tokens.get("--palette-mint"), "#cce0d9");
   assert.equal(tokens.get("--palette-teal"), "#8fb3ac");
-  assert.equal(tokens.get("--background"), "var(--palette-cream)");
+  assert.equal(tokens.get("--palette-white"), "#ffffff");
+  assert.equal(tokens.get("--background"), "var(--palette-white)");
   assert.equal(tokens.get("--secondary"), "var(--palette-mint)");
-  assert.equal(tokens.get("--card"), "var(--palette-cream)");
+  assert.equal(tokens.get("--card"), "var(--palette-white)");
+  assert.equal(tokens.get("--primary-foreground"), "var(--palette-cream)");
   assert.equal(tokens.get("--highlight"), "var(--palette-coral)");
   assert.equal(tokens.get("--illustration-sun"), "var(--palette-apricot)");
   assert.equal(tokens.get("--sidebar"), "var(--secondary)");
