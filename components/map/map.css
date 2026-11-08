@@ -35,6 +35,10 @@
   background: var(--secondary);
   color: var(--secondary-foreground);
 }
+.map-key-community {
+  background: var(--palette-teal);
+  color: var(--foreground);
+}
 
 .map-journey {
   position: fixed;

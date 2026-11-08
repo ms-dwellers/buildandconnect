@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { toastManager } from "@/components/ui/toast";
 import { MapPinPicker, type Pin } from "@/components/MapPinPicker";
 import { ErrorAlert } from "@/components/app/require-role";
 import { api } from "@/lib/api";
+import type { OpportunityDraft } from "@/lib/opportunity-draft";
 import type { OpportunityInput, OpportunityRecord } from "@/lib/types";
 import {
   FormSection,
@@ -59,19 +61,23 @@ export function ChoiceGroup<T extends string>({
 
 export function OpportunityForm({
   initial,
+  draft,
   defaultPin,
 }: {
   initial?: OpportunityRecord;
+  /** Prefill for a new opportunity, for example from a voice brief. */
+  draft?: OpportunityDraft;
   defaultPin?: Pin | null;
 }) {
   const router = useRouter();
+  const seed = initial ?? draft;
   const [kind, setKind] = useState<OpportunityInput["kind"]>(
-    initial?.kind ?? "volunteer",
+    seed?.kind ?? "volunteer",
   );
   const [collaboration, setCollaboration] = useState<
     OpportunityInput["collaboration"]
-  >(initial?.collaboration ?? "flexible");
-  const [remote, setRemote] = useState(initial?.remote ?? false);
+  >(seed?.collaboration ?? "flexible");
+  const [remote, setRemote] = useState(seed?.remote ?? false);
   const [pin, setPin] = useState<Pin | null>(
     initial?.latitude !== undefined && initial.longitude !== undefined
       ? {
@@ -140,7 +146,7 @@ export function OpportunityForm({
               label="Title"
               required
               maxLength={100}
-              defaultValue={initial?.title}
+              defaultValue={seed?.title}
               placeholder="An events calendar for our community centre"
             />
             <TextAreaField
@@ -151,7 +157,7 @@ export function OpportunityForm({
               minLength={30}
               maxLength={6000}
               rows={7}
-              defaultValue={initial?.description}
+              defaultValue={seed?.description}
             />
             <ChoiceGroup
               label="Opportunity type"
@@ -168,7 +174,7 @@ export function OpportunityForm({
                   name="compensation"
                   label="Compensation"
                   maxLength={80}
-                  defaultValue={initial?.compensation}
+                  defaultValue={seed?.compensation}
                   placeholder="$1,200 project"
                 />
               )}
@@ -176,7 +182,7 @@ export function OpportunityForm({
                 name="commitment"
                 label="Expected commitment"
                 maxLength={80}
-                defaultValue={initial?.commitment}
+                defaultValue={seed?.commitment}
                 placeholder="3-4 weeks"
               />
             </div>
@@ -187,14 +193,14 @@ export function OpportunityForm({
               name="essentialTechnologies"
               label="Essential technologies"
               description="Only list true requirements, separated by commas. Developers without them won't be matched."
-              defaultValue={initial?.essentialTechnologies.join(", ")}
+              defaultValue={seed?.essentialTechnologies?.join(", ")}
               placeholder="React"
             />
             <TextField
               name="interests"
               label="Causes and interests"
               description="Separated by commas. Shared interests improve the match."
-              defaultValue={initial?.interests.join(", ")}
+              defaultValue={seed?.interests?.join(", ")}
               placeholder="community, sustainability"
             />
             <TextField
@@ -204,7 +210,7 @@ export function OpportunityForm({
               required
               min={1}
               max={80}
-              defaultValue={initial?.minimumWeeklyHours ?? 4}
+              defaultValue={seed?.minimumWeeklyHours ?? 4}
               className="w-full sm:max-w-48"
             />
             <ChoiceGroup
@@ -235,7 +241,7 @@ export function OpportunityForm({
               label="City"
               required
               maxLength={100}
-              defaultValue={initial?.city ?? "Calgary"}
+              defaultValue={seed?.city ?? "Calgary"}
               description={
                 remote
                   ? undefined
@@ -297,7 +303,7 @@ export function OpportunityForm({
             <Button type="submit" loading={pending}>
               {initial ? "Save changes" : "Post opportunity"}
             </Button>
-            <Button render={<a href="/dashboard" />} variant="ghost">
+            <Button render={<Link href="/dashboard" />} variant="ghost">
               Cancel
             </Button>
           </div>

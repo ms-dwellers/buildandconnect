@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 import {
   HandshakeIcon,
@@ -113,7 +114,7 @@ function Summary({
           </div>
           {owner && (
             <Button
-              render={<a href={`/opportunities/${opportunity.id}/edit`} />}
+              render={<Link href={`/opportunities/${opportunity.id}/edit`} />}
               variant="outline"
               size="sm"
             >
@@ -333,7 +334,7 @@ function YourFit({ opportunity }: { opportunity: OpportunityRecord }) {
         title="Create your profile to see your fit"
         description="Your match is calculated from your skills, projects and learning goals."
         action={
-          <Button render={<a href="/profile" />}>Create your profile</Button>
+          <Button render={<Link href="/profile" />}>Create your profile</Button>
         }
       />
     );

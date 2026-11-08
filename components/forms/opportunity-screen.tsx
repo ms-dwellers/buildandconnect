@@ -1,11 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Pin } from "@/components/MapPinPicker";
 import {
   ErrorAlert,
   LoadingBlock,
   RequireRole,
 } from "@/components/app/require-role";
+import { takeOpportunityDraft } from "@/lib/opportunity-draft";
 import { useApi } from "@/lib/use-api";
 import type { OpportunityRecord } from "@/lib/types";
 import { OpportunityForm } from "./opportunity-form";
@@ -17,13 +19,26 @@ export function OpportunityScreen({
   id?: string;
   defaultPin?: Pin | null;
 }) {
+  // A draft handed over from the voice brief is read once, on the client.
+  const draft = useMemo(() => (id ? null : takeOpportunityDraft()), [id]);
   return (
     <RequireRole roles={["company"]}>
       {({ user }) =>
         id ? (
           <EditOpportunity id={id} userId={user.id} />
         ) : (
-          <OpportunityForm defaultPin={defaultPin} />
+          <>
+            {draft && (
+              <p className="mb-4 text-sm text-muted-foreground">
+                Prefilled from your voice brief. Check every field before you
+                post.
+              </p>
+            )}
+            <OpportunityForm
+              defaultPin={defaultPin}
+              draft={draft ?? undefined}
+            />
+          </>
         )
       }
     </RequireRole>

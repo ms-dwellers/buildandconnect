@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -138,7 +139,7 @@ export function RequestForm({
             <Button type="submit" loading={pending}>
               {initial ? "Save changes" : "Post request"}
             </Button>
-            <Button render={<a href="/dashboard" />} variant="ghost">
+            <Button render={<Link href="/dashboard" />} variant="ghost">
               Cancel
             </Button>
           </div>

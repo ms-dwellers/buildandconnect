@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { HeartHandshakeIcon, MapPinIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePaged } from "@/lib/use-api";
@@ -50,7 +51,7 @@ export function RequesterDashboard() {
             title="No requests yet"
             description="Describe something your neighbourhood needs and pin where help is needed."
             action={
-              <Button render={<a href="/requests/new" />}>
+              <Button render={<Link href="/requests/new" />}>
                 <PlusIcon aria-hidden="true" />
                 Post a request
               </Button>
@@ -83,7 +84,7 @@ export function RequesterDashboard() {
               <div className="flex flex-wrap gap-2">
                 {request.status === "open" && (
                   <Button
-                    render={<a href={`/requests/${request.id}/edit`} />}
+                    render={<Link href={`/requests/${request.id}/edit`} />}
                     variant="outline"
                     size="sm"
                   >
@@ -92,7 +93,7 @@ export function RequesterDashboard() {
                 )}
                 {request.status !== "closed" && (
                   <Button
-                    render={<a href={`/map?focus=${request.id}`} />}
+                    render={<Link href={`/map?focus=${request.id}`} />}
                     variant="ghost"
                     size="sm"
                   >

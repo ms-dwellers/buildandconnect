@@ -28,6 +28,7 @@ export type MapPalette = {
   primary: string;
   surface: string;
   secondary: string;
+  community: string;
   foreground: string;
   primaryForeground: string;
 };
@@ -75,11 +76,10 @@ export function jobLayers(colors: MapPalette): LayerSpecification[] {
       paint: {
         "circle-radius": 13,
         "circle-color": [
-          "match",
-          ["get", "kind"],
-          "paid",
-          colors.primary,
-          colors.secondary,
+          "case",
+          ["==", ["get", "source"], "request"],
+          colors.community,
+          ["match", ["get", "kind"], "paid", colors.primary, colors.secondary],
         ],
         "circle-stroke-color": colors.surface,
         "circle-stroke-width": 2,
@@ -99,11 +99,16 @@ export function jobLayers(colors: MapPalette): LayerSpecification[] {
       },
       paint: {
         "text-color": [
-          "match",
-          ["get", "kind"],
-          "paid",
-          colors.primaryForeground,
+          "case",
+          ["==", ["get", "source"], "request"],
           colors.foreground,
+          [
+            "match",
+            ["get", "kind"],
+            "paid",
+            colors.primaryForeground,
+            colors.foreground,
+          ],
         ],
         "text-emissive-strength": 1,
       },
@@ -111,11 +116,14 @@ export function jobLayers(colors: MapPalette): LayerSpecification[] {
   ];
 }
 
-export function jobFeatures(
-  jobs: CityJob[],
-): FeatureCollection<
+export function jobFeatures(jobs: CityJob[]): FeatureCollection<
   Point,
-  { id: string; kind: CityJob["kind"]; label: "P" | "V" | "R" }
+  {
+    id: string;
+    kind: CityJob["kind"];
+    source: CityJob["source"];
+    label: "P" | "V" | "R";
+  }
 > {
   return {
     type: "FeatureCollection",
@@ -126,6 +134,7 @@ export function jobFeatures(
       properties: {
         id: job.id,
         kind: job.kind,
+        source: job.source,
         label: job.source === "request" ? "R" : job.kind === "paid" ? "P" : "V",
       },
     })),

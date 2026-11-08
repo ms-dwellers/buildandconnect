@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { MicIcon, SquareIcon } from "lucide-react";
 import { RequireRole, ErrorAlert } from "@/components/app/require-role";
 import { Button } from "@/components/ui/button";
@@ -8,10 +9,11 @@ import { Card, CardPanel } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ConfirmButton } from "@/components/dashboards/parts";
-import { Aurora } from "@/app/wip-voice-ai/aurora";
-import { Waveform } from "@/app/wip-voice-ai/waveform";
-import { useMicrophone } from "@/app/wip-voice-ai/use-microphone";
 import { api } from "@/lib/api";
+import {
+  opportunityDraftFromBrief,
+  storeOpportunityDraft,
+} from "@/lib/opportunity-draft";
 import { useApi } from "@/lib/use-api";
 import type { PublicDeveloper } from "@/lib/types";
 import {
@@ -23,6 +25,10 @@ import {
 } from "@/backend/hiring/schemas";
 import { BriefForm } from "./brief-form";
 import { useVoiceRecorder } from "./use-voice-recorder";
+import { Aurora } from "./voice/aurora";
+import { useMicrophone } from "./voice/use-microphone";
+import { Waveform } from "./voice/waveform";
+import "./voice/intake.css";
 
 type Suggestions = {
   criteria: MatchingCriteria;
@@ -40,6 +46,7 @@ export function EmployerIntake() {
 }
 
 function Intake() {
+  const router = useRouter();
   const config = useApi<{ transcription: boolean; matching: boolean }>(
     "/hiring/status",
   );
@@ -163,6 +170,12 @@ function Intake() {
     }
   }
 
+  /** Carry the brief into the opportunity form so nothing is typed twice. */
+  function postAsOpportunity() {
+    storeOpportunityDraft(opportunityDraftFromBrief(brief));
+    router.push("/opportunities/new");
+  }
+
   function reset() {
     request.current?.abort();
     request.current = null;
@@ -189,18 +202,15 @@ function Intake() {
       )}
       {config.data && !config.data.matching && (
         <p className="text-sm text-muted-foreground">
-          Gemini is not configured yet. An OpenRouter key is needed to generate
-          briefs and developer suggestions.
+          Drafting is not available on this deployment yet, so briefs and
+          developer suggestions cannot be generated.
         </p>
       )}
       {error && <ErrorAlert title="Please try again" message={error} />}
       {stage === "conversation" && (
-        <div
-          className="voice-studio grid gap-6 lg:grid-cols-2"
-          data-embedded="true"
-        >
+        <div className="grid gap-6 lg:grid-cols-2">
           <section
-            className="voice-stage min-h-96 rounded-xl border"
+            className="hiring-stage min-h-96 rounded-xl border"
             aria-label="Employer voice intake"
             data-phase={recording ? "listening" : "ready"}
           >
@@ -222,7 +232,7 @@ function Intake() {
             </div>
             <p role="status" className="text-sm">
               {recording
-                ? "Listening · stop when you finish"
+                ? "Listening. Stop when you finish."
                 : recorder.status === "transcribing"
                   ? "Transcribing…"
                   : recorder.status === "requesting"
@@ -253,20 +263,22 @@ function Intake() {
               )}
             </div>
             <p className="mt-4 max-w-sm text-center text-xs text-muted-foreground">
-              Up to 60 seconds. Stopping sends audio to ElevenLabs. This app
-              does not save recordings.
+              Up to 60 seconds. Stopping sends the audio for transcription. This
+              app does not save recordings.
             </p>
             {config.data && !config.data.transcription && (
               <p className="mt-2 text-xs text-muted-foreground">
-                ElevenLabs is not configured yet. You can type instead.
+                Transcription is not available yet. You can type instead.
               </p>
             )}
-            <p
-              role="alert"
-              className="mt-2 text-sm text-destructive-foreground"
-            >
-              {recorder.error || microphone.error}
-            </p>
+            {(recorder.error || microphone.error) && (
+              <p
+                role="alert"
+                className="mt-2 text-sm text-destructive-foreground"
+              >
+                {recorder.error || microphone.error}
+              </p>
+            )}
           </section>
           <Card>
             <CardPanel className="space-y-5 p-5 sm:p-6">
@@ -309,8 +321,8 @@ function Intake() {
                   placeholder="I need a website for…"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Review the transcription before sending. Answers are sent to
-                  Gemini through OpenRouter.
+                  Review the transcription before sending. Each answer refines
+                  the drafted brief.
                 </p>
                 <Button
                   type="submit"
@@ -319,7 +331,7 @@ function Intake() {
                     !draft.trim() || inputBusy || !config.data?.matching
                   }
                 >
-                  Send to Gemini
+                  Draft the brief
                 </Button>
               </form>
               <Button
@@ -404,13 +416,21 @@ function Intake() {
               </li>
             ))}
           </ul>
-          <p className="text-sm text-muted-foreground">
-            No invitations have been sent. Use your company dashboard to post an
-            opportunity and express interest.
-          </p>
-          <Button render={<a href="/opportunities/new" />}>
-            Post an opportunity
-          </Button>
+          <Card className="border-primary/30 bg-secondary/30">
+            <CardPanel className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="font-semibold">Ready to invite developers?</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Nothing has been sent yet. Post this brief as an opportunity
+                  and the ranked matches appear on your dashboard, where you can
+                  express interest.
+                </p>
+              </div>
+              <Button onClick={postAsOpportunity} className="shrink-0">
+                Post this as an opportunity
+              </Button>
+            </CardPanel>
+          </Card>
         </section>
       )}
       {(messages.length > 0 || draft) && (

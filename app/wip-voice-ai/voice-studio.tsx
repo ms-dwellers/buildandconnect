@@ -36,9 +36,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Aurora } from "./aurora";
-import { useMicrophone } from "./use-microphone";
-import { Waveform } from "./waveform";
+import { Aurora } from "@/components/hiring/voice/aurora";
+import { useMicrophone } from "@/components/hiring/voice/use-microphone";
+import { Waveform } from "@/components/hiring/voice/waveform";
 import {
   formatDuration,
   greeting,

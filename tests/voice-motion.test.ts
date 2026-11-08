@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { microphoneMotionRate } from "../app/wip-voice-ai/voice-motion.ts";
+import { microphoneMotionRate } from "../components/hiring/voice/voice-motion.ts";
 
 test("microphone motion drifts in silence and accelerates with speech", () => {
   assert.equal(microphoneMotionRate(0), 0.25);

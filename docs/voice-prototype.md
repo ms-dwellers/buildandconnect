@@ -34,10 +34,11 @@ are interface concepts, not ElevenLabs voice IDs.
 
 ## Visuals and verification
 
-`app/wip-voice-ai/aurora.tsx` renders layered, flowing ribbons with a WebGL fragment
-shader. It caps pixel density and rendering at 30 FPS, stops when hidden, and uses
-a CSS fallback if WebGL is unavailable. Colors are scoped semantic tokens in
-`app/globals.css`; other routes retain their existing theme.
+`components/hiring/voice/aurora.tsx` renders layered, flowing ribbons with a WebGL
+fragment shader (shared with `/hire`). It caps pixel density and rendering at 30
+FPS, stops when hidden, and uses a CSS fallback if WebGL is unavailable. Colors
+are scoped semantic tokens in `app/globals.css` and `voice.css`; other routes
+retain their existing theme.
 
 Run `bun run check`, `bun run build`, and `bun run smoke`. Browser checks should
 cover the session lifecycle, microphone denial and cancellation, loud/quiet

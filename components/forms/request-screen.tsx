@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CircleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,7 @@ function EditRequest({ id }: { id: string }) {
               : "Post a new request if you still need help."}
           </p>
           <Button
-            render={<a href="/dashboard" />}
+            render={<Link href="/dashboard" />}
             variant="outline"
             size="sm"
             className="mt-2"

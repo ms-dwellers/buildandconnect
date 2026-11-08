@@ -179,6 +179,7 @@ export function useCalgaryMap({
             primary: color("--primary"),
             surface: color("--card"),
             secondary: color("--secondary"),
+            community: color("--palette-teal"),
             foreground: color("--foreground"),
             primaryForeground: color("--primary-foreground"),
           };

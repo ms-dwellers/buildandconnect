@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   BriefcaseBusinessIcon,
   CircleCheckIcon,
@@ -43,7 +44,7 @@ export function DeveloperDashboard() {
         title="Create your developer profile"
         description="Add your skills, projects and what you want to learn. Matching and nearby requests start from your profile."
         action={
-          <Button render={<a href="/profile" />}>Create your profile</Button>
+          <Button render={<Link href="/profile" />}>Create your profile</Button>
         }
       />
     );
@@ -128,7 +129,11 @@ function Dashboard({
                 ? `Finding requests within ${profile.location.radiusKm} km of your pin`
                 : "No area set yet. Set one to see nearby requests."}
             </p>
-            <Button render={<a href="/profile" />} variant="outline" size="sm">
+            <Button
+              render={<Link href="/profile" />}
+              variant="outline"
+              size="sm"
+            >
               Edit profile and area
             </Button>
           </div>
@@ -182,7 +187,7 @@ function Dashboard({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    render={<a href={`/map?focus=${request.id}`} />}
+                    render={<Link href={`/map?focus=${request.id}`} />}
                     variant="ghost"
                     size="sm"
                   >
@@ -213,7 +218,7 @@ function Dashboard({
             : undefined
         }
         action={
-          <Button render={<a href="/map" />} variant="ghost" size="sm">
+          <Button render={<Link href="/map" />} variant="ghost" size="sm">
             <CompassIcon aria-hidden="true" />
             Open the map
           </Button>
@@ -225,7 +230,9 @@ function Dashboard({
             title="Set your area"
             description="Drop a pin and choose a radius to see community requests near you."
             action={
-              <Button render={<a href="/profile#area" />}>Set your area</Button>
+              <Button render={<Link href="/profile#area" />}>
+                Set your area
+              </Button>
             }
           />
         ) : (
@@ -311,7 +318,7 @@ function Dashboard({
                   </p>
                 </div>
                 <Button
-                  render={<a href={`/opportunities/${opportunity.id}`} />}
+                  render={<Link href={`/opportunities/${opportunity.id}`} />}
                   variant="outline"
                   size="sm"
                 >
