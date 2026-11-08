@@ -22,6 +22,8 @@ neither key is needed to build or run the automated tests. Live calls are billab
 Model IDs are non-secret Worker variables with defaults, not required secrets.
 To override those defaults, set the model environment variables when starting
 the development server or building the Worker.
+Keep config defaults inline: Cloudflare's Vite plugin denies runtime access to
+config dependencies. Tests keep them aligned with `backend/hiring/models.ts`.
 Verify separately that the submission track accepts Gemini accessed through
 OpenRouter; this integration does not establish sponsor eligibility.
 

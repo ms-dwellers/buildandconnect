@@ -6,6 +6,7 @@ import {
   transcribeAudio,
   HiringProviderError,
   DEFAULT_GEMINI_MODEL,
+  DEFAULT_SCRIBE_MODEL,
 } from "../backend/hiring/providers.ts";
 import {
   confirmedBriefSchema,
@@ -30,6 +31,16 @@ test("Worker model settings have public defaults while API keys remain secrets",
   assert.match(config, /ELEVENLABS_STT_MODEL:\s*bindings\.text\(/);
   assert.match(config, /OPENROUTER_API_KEY:\s*bindings\.secret\(/);
   assert.match(config, /ELEVENLABS_API_KEY:\s*bindings\.secret\(/);
+});
+
+test("Worker config keeps runtime model modules out of Vite's denied config dependencies", () => {
+  const config = readFileSync(
+    new URL("../cloudflare.config.ts", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(config, /from\s+["'][^"']*backend\//);
+  assert.ok(config.includes(JSON.stringify(DEFAULT_GEMINI_MODEL)));
+  assert.ok(config.includes(JSON.stringify(DEFAULT_SCRIBE_MODEL)));
 });
 const brief = {
   ...emptyHiringBrief(),

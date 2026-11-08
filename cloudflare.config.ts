@@ -1,8 +1,4 @@
 import { bindings, defineConfig, defineWorker } from "cf/config";
-import {
-  DEFAULT_GEMINI_MODEL,
-  DEFAULT_SCRIBE_MODEL,
-} from "./backend/hiring/models.ts";
 
 export default defineConfig({
   worker: defineWorker({
@@ -24,12 +20,13 @@ export default defineConfig({
       CONVEX_BRIDGE_SECRET: bindings.secret(),
       SITE_URL: bindings.secret(),
       OPENROUTER_API_KEY: bindings.secret(),
+      // Vite denies config dependencies to runtime imports; keep defaults inline.
       OPENROUTER_MODEL: bindings.text(
-        process.env.OPENROUTER_MODEL || DEFAULT_GEMINI_MODEL,
+        process.env.OPENROUTER_MODEL || "google/gemini-3.8-flash",
       ),
       ELEVENLABS_API_KEY: bindings.secret(),
       ELEVENLABS_STT_MODEL: bindings.text(
-        process.env.ELEVENLABS_STT_MODEL || DEFAULT_SCRIBE_MODEL,
+        process.env.ELEVENLABS_STT_MODEL || "scribe_v2",
       ),
     },
   }),
