@@ -164,7 +164,8 @@ export function buildMonitor(materials: Materials, screen: THREE.Material) {
   const group = new THREE.Group();
   group.userData.id = "monitor";
   group.add(box(0.34, 0.02, 0.2, materials.bezel, 0, 0.73, 0));
-  group.add(box(0.07, 0.3, 0.04, materials.bezel, 0, 0.89, 0));
+  // The neck sits behind the panel so it never shows through the screen.
+  group.add(box(0.07, 0.3, 0.04, materials.bezel, 0, 0.89, -0.045));
   group.add(box(1.06, 0.69, 0.035, materials.bezel, 0, 1.15, 0, 0.02));
   const display = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.625), screen);
   display.position.set(0, 1.15, 0.019);
