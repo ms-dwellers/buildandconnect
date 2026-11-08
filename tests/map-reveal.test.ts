@@ -122,6 +122,12 @@ test("the approach phase is opt-in and leaves other pages on the plain mist", ()
   // The mist shader only knows the two mist phases.
   assert.match(journey, /phase === "covering" \|\| phase === "revealing"/);
   assert.match(journey, /CITY_NAME/);
+  const scene = readFileSync(
+    new URL("../components/landing/home-scene.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(scene, /durationMs: approachTiming\.dolly/);
+  assert.match(scene, /registerRef\.current\(null\)/);
 });
 
 test("the temporary button removal preserves a document-level Escape shortcut", () => {

@@ -60,8 +60,10 @@ try {
   assert.equal(home.status, 200);
   const html = await home.text();
   assert.match(html, /Build &amp; Connect/);
-  assert.match(html, /Build experience\./);
-  assert.match(html, /Make a difference\./);
+  assert.match(html, /Early-career developers,/);
+  assert.match(html, /meet the people who need them\./);
+  assert.match(html, /Calgary/);
+  assert.doesNotMatch(html, /\/sprites\//);
   assert.match(html, /Post a request/);
   assert.match(html, /Nearby map/);
   assert.match(html, /data-slot="button"/);

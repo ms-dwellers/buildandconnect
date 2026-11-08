@@ -3,7 +3,7 @@
 A hackathon app connecting early-career developers with non-technical people and
 companies through shared interests and social-impact projects.
 
-**Current state:** landing page, Mapbox nearby-request UI, `/api/health`, and a
+**Current state:** a Three.js landing scene, Mapbox nearby-request UI, `/api/health`, and a
 Hono backend with Better Auth (email/password, Google, GitHub), Convex persistence, Workers AI analysis, growth-oriented
 matching, recruiter discovery, opportunity-specific mutual interest, and exclusive
 local-request claims. See [the backend guide](docs/backend.md) for setup and API

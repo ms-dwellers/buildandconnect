@@ -62,28 +62,25 @@ percentages enforced on every component or the map.
 
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
-- The landing page uses open spacing, bold League Spartan headings, light paper
-  texture, and an edge-to-edge mint hero with a pixel-art landscape from the
-  supplied `public/sprites/` collection. Trees, roses, and grass sit on repeating
-  ground tiles above a teal waterfront. Keep
-  decorative artwork out of the accessibility tree; do not treat it as map data.
-  The header and hero fill at least the first viewport, without outer gutters or
-  rounded framing. The remaining sections stay scrollable below. Typography
-  adapts to viewport width and height; short screens can scroll rather than clip
-  the heading or actions.
-
-- `components/landing/hero-scene.tsx` owns the sprite composition. There is no
-  loading reveal or foreground curtain; the heading is available immediately.
-  Five native-size clouds drift behind the content in both directions, with
-  independent 180–300 second loops and staggered starting positions defined in
-  `lib/landing-clouds.ts`. Each cloud exits completely before wrapping to the
-  opposite side. Cloud artwork is never scaled, except horizontal reflection.
-  The “Pause clouds” control pauses all tracks without resetting their positions;
-  reduced motion keeps them stationary and hides the control. Animation works
-  without JavaScript; the unavailable pause control is hidden in that case.
-- All 22 supplied SVG files are copied unchanged with lowercase, hyphenated names.
-  macOS archive metadata is excluded. Unused variations and `tets.svg` are retained
-  in the asset folder but are not loaded by the homepage.
+- The landing page uses open spacing, bold League Spartan headings, and a white
+  hero whose heading, lead, and actions are server-rendered and available
+  immediately. Beneath them a lazily loaded Three.js scene
+  (`components/landing/home-scene.tsx`) shows two procedural chairs, a task chair
+  for the developer and a wooden chair for the person who needs one, angled
+  toward a monitor that plays a canvas-drawn campfire. Every colour comes from
+  `--palette-*` and `--scene-*` tokens read at runtime; no asset files are
+  loaded. The header and hero fill at least the first viewport; the remaining
+  sections scroll below. Typography adapts to viewport width and height.
+- The scene is decorative: the canvas and chair captions are `aria-hidden`, and
+  keyboard users use the real calls to action. Hovering a chair lifts it and
+  shows its caption; clicking the developer chair or the monitor starts the map
+  journey, and clicking the partner chair opens the request form. Reduced motion
+  renders one static frame, WebGL failure leaves the copy on white, and the
+  render loop pauses while the tab is hidden or the hero is off-screen.
+- When the map journey begins with the hero visible, the scene registers an
+  approach beat: the camera dollies into the monitor while its screen crossfades
+  to the city name, then the mist takes over. The former pixel-art sprite
+  collection has been removed.
 
 - No decorative pills. Ordinary labels are plain text. Badges are
   softly rectangular with a small radius, explicit line height, and enough padding

@@ -274,6 +274,14 @@
   --cloud: var(--palette-cream);
   --map-mist-light: #fbfcfa;
   --map-mist-shadow: #bcc9c8;
+  --scene-wood: #a97c50;
+  --scene-wood-edge: #7a5634;
+  --scene-metal: #5f726c;
+  --scene-metal-edge: #2d3b37;
+  --scene-bezel: #15241f;
+  --scene-shadow: #c9d6d1;
+  --scene-fabric: var(--palette-pine);
+  --scene-cushion: var(--palette-wheat);
 }
 
 .voice-studio {
@@ -336,14 +344,14 @@
 }
 
 @layer components {
-  .landing-paper {
-    background-image: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 3px,
-      --alpha(var(--primary) / 1.5%) 3px,
-      --alpha(var(--primary) / 1.5%) 4px
-    );
+  .landing-hero {
+    --home-scene-height: clamp(16rem, 52svh, 38rem);
+    min-height: calc(100svh - 6rem);
+    padding-block: clamp(2rem, 7svh, 6rem) var(--home-scene-height);
+  }
+
+  .landing-hero-heading {
+    font-size: clamp(2.25rem, min(5.6vw, 9svh), 5.25rem);
   }
 
   .landing-skip-link {
