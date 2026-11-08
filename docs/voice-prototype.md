@@ -8,26 +8,20 @@ Open `/wip-voice-ai` for the isolated autumn-aurora voice concept. It does not
 connect to ElevenLabs, record audio, or write to Convex. The surrounding
 application still performs its normal session check.
 
-The voice panel fills the first viewport edge to edge, including its voice-style
-and pace controls. Navigation and the transcript are below it. Short screens can
+Navigation remains at the top. The voice panel fills the rest of the first
+viewport edge to edge; the transcript is below it. Short screens can
 scroll rather than clip controls. This layout is scoped to the prototype; the
 embedded employer intake at `/hire` keeps its existing sizing.
 
 ## Try the experience
 
-- Choose a voice style and adjust the pace. There are no named personas.
+- The demo uses its default warm voice and unhurried pace; there is no settings bar.
 - Begin a conversation, or choose one of the three starting points.
 - Follow the scripted response, pause/resume, and type another thought.
 - End the session or clear it to return to the initial state.
-- Enable the microphone explicitly to make the waveform and aurora respond to
-  your voice volume. The browser asks for permission; the audio is analysed only
-  on your device, never recorded, transcribed, or uploaded. Louder speech speeds
-  up the aurora and waveform; quiet slows them to a gentle drift. Volume changes
-  the motion rate (0.25–4×), not the ribbon size or color. Speed ramps up quickly
-  and eases back down without restarting the animation.
-- Turning the microphone off, pausing or ending a session, clearing the
-  conversation, hiding the tab, or leaving the page stops all microphone tracks.
-  Resuming a paused session restarts a microphone that was previously enabled.
+- This simplified prototype does not request microphone access. The optional
+  microphone row and helper text have been removed; real recording remains in
+  the separate employer intake.
 - Enable the optional voice preview to hear an installed **local** device voice.
   If the browser has none, the transcript remains usable. No remote voice is used.
 - Pause the atmosphere to stop the shader. Reduced-motion preferences also stop
@@ -45,7 +39,7 @@ a CSS fallback if WebGL is unavailable. Colors are scoped semantic tokens in
 `app/globals.css`; other routes retain their existing theme.
 
 Run `bun run check`, `bun run build`, and `bun run smoke`. Browser checks should
-cover the session lifecycle, microphone denial and cancellation, loud/quiet
-reactivity, stopped microphone tracks, local-only voice fallback, keyboard
+cover the session lifecycle, absence of microphone requests, local-only voice fallback, keyboard
 controls, the 320px mobile layout, reduced motion, and disabled WebGL. Watch the Network panel:
-voice interactions must not send requests, and no ElevenLabs endpoint should load.
+voice interactions must not send audio or conversation data, and no ElevenLabs
+endpoint should load.

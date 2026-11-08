@@ -127,7 +127,7 @@ try {
   assert.equal(voice.status, 200);
   const voiceHtml = await voice.text();
   assert.match(voiceHtml, /Begin conversation/);
-  assert.match(voiceHtml, /Simulated conversation/);
+  assert.match(voiceHtml, /Local demo/);
   assert.match(voiceHtml, /noindex/);
 
   for (const page of [html, designHtml, mapHtml, debugHtml, voiceHtml]) {

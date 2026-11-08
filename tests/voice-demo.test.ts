@@ -39,7 +39,7 @@ test("voice prototype exposes session states and readable durations", () => {
   assert.equal(formatDuration(75), "01:15");
 });
 
-test("the voice panel is the unframed first viewport, with the transcript below", () => {
+test("navigation stays above the unframed voice panel, with the transcript below", () => {
   const source = readFileSync(
     new URL("../app/wip-voice-ai/voice-studio.tsx", import.meta.url),
     "utf8",
@@ -50,17 +50,30 @@ test("the voice panel is the unframed first viewport, with the transcript below"
   );
   const session = css.match(/\.voice-session\s*\{([^}]+)\}/)?.[1];
   assert.ok(session);
-  assert.match(session, /min-height: 100svh/);
+  assert.match(
+    session,
+    /min-height: calc\(100svh - var\(--voice-nav-height\)\)/,
+  );
   assert.doesNotMatch(session, /border:|border-radius:|box-shadow:/);
   assert.ok(
-    source.indexOf('className="voice-session"') <
-      source.indexOf('className="voice-nav"'),
+    source.indexOf('className="voice-nav"') <
+      source.indexOf('className="voice-session"'),
   );
   assert.ok(
-    source.indexOf('className="voice-nav"') <
+    source.indexOf('className="voice-session"') <
       source.indexOf('className="voice-conversation"'),
   );
   assert.match(source, /<h1 className="sr-only">Think out loud\.<\/h1>/);
   assert.match(css, /\.voice-session \.voice-stage/);
   assert.match(css, /\.voice-session \.voice-presence/);
+  assert.doesNotMatch(
+    source + css,
+    /voice-preferences|voice-choice-label|voice-pace-label|voice-mic-controls|voice-stage-footnote/,
+  );
+  assert.doesNotMatch(
+    source,
+    /useMicrophone|Enable microphone|Simulated conversation/,
+  );
+  assert.match(source, /DEFAULT_VOICE = voiceStyles\[0\]/);
+  assert.match(source, /DEFAULT_PACE = 35/);
 });

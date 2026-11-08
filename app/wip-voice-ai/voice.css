@@ -1,4 +1,5 @@
 .voice-studio {
+  --voice-nav-height: 88px;
   min-height: 100svh;
   background: var(--voice-paper);
   color: var(--voice-ink);
@@ -12,8 +13,8 @@
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  min-height: 88px;
-  padding: 1rem clamp(1.5rem, 4vw, 4.5rem);
+  height: var(--voice-nav-height);
+  padding: 0 clamp(1.5rem, 4vw, 4.5rem);
   border-bottom: 1px solid var(--voice-border);
 }
 
@@ -63,7 +64,7 @@
 }
 .voice-session {
   min-width: 0;
-  min-height: 100svh;
+  min-height: calc(100svh - var(--voice-nav-height));
   display: flex;
   flex-direction: column;
   background: var(--voice-card);
@@ -222,28 +223,6 @@
 .voice-mic-meter [data-slot="meter-indicator"] {
   transition: none;
 }
-.voice-mic-controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.25rem 0.6rem;
-  margin-top: 1rem;
-}
-.voice-mic-controls button {
-  font-size: 0.75rem;
-}
-.voice-mic-controls p,
-.voice-mic-error {
-  font-size: 0.625rem;
-  color: var(--voice-muted);
-}
-.voice-mic-error:not(:empty) {
-  margin-top: 0.65rem;
-  max-width: 28rem;
-  text-align: center;
-  color: var(--destructive-foreground);
-}
 .voice-controls {
   position: relative;
   display: flex;
@@ -267,84 +246,14 @@
 .voice-control-spacer {
   width: 48px;
 }
-.voice-stage-footnote {
-  margin-top: 1.1rem;
-  font-size: 0.625rem;
-  color: var(--voice-muted);
-  text-align: center;
-}
 
-.voice-preferences {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.1rem 2.2rem;
-  padding: 1.5rem 2rem 1.25rem;
-  border-top: 1px solid var(--voice-border);
-}
-.voice-setting {
-  min-width: 0;
-}
-.voice-setting > label {
-  display: flex;
-  gap: 0.4rem;
-  color: var(--voice-muted);
-  font-size: 0.6875rem;
-  font-weight: 400;
-  margin-bottom: 0.6rem;
-}
-.voice-setting > label svg {
-  width: 13px;
-  height: 13px;
-}
-.voice-select {
-  min-height: 36px;
-  width: 100%;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background: var(--voice-card);
-  border-color: var(--voice-border);
-  box-shadow: none;
-}
-.voice-setting > p {
-  margin-top: 0.4rem;
-  font-size: 0.625rem;
-  color: var(--voice-muted);
-}
-.voice-pace > div:first-child {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.1rem;
-}
-.voice-pace label {
-  font-size: 0.6875rem;
-  font-weight: 400;
-  color: var(--voice-muted);
-}
-.voice-pace > div > span {
-  font-size: 0.6875rem;
-}
-.voice-pace [data-slot="slider-control"] {
-  min-width: 0;
-  padding: 4px 0;
-}
-.voice-range-labels {
-  display: flex;
-  justify-content: space-between;
-  color: var(--voice-muted);
-  margin-top: 0.65rem;
-}
-.voice-range-labels span {
-  font-size: 0.625rem !important;
-}
 .voice-device-note {
-  grid-column: 1 / -1;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--voice-border);
+  max-width: 32rem;
+  margin-top: 0.75rem;
   color: var(--voice-muted);
   font-size: 0.625rem;
   line-height: 1.6;
+  text-align: center;
 }
 
 .voice-conversation {
@@ -570,10 +479,6 @@
     min-height: 470px;
     padding-inline: 1rem;
   }
-  .voice-preferences {
-    padding-inline: 1.4rem;
-    gap: 1rem;
-  }
   .voice-start {
     min-width: 188px;
   }
@@ -586,9 +491,11 @@
 }
 
 @media (max-width: 800px) {
+  .voice-studio {
+    --voice-nav-height: 72px;
+  }
   .voice-nav {
-    min-height: 72px;
-    padding: 1rem 1.25rem;
+    padding-inline: 1.25rem;
     gap: 0.75rem;
   }
   .voice-nav-end {
@@ -645,8 +552,5 @@
   .voice-start {
     min-width: 178px;
     padding-inline: 0.65rem;
-  }
-  .voice-preferences {
-    grid-template-columns: 1fr;
   }
 }

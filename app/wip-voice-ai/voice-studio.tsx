@@ -12,11 +12,8 @@ import {
   ArrowLeftIcon,
   ArrowUpIcon,
   ArrowUpRightIcon,
-  AudioLinesIcon,
   CheckIcon,
   MicIcon,
-  MicOffIcon,
-  LoaderCircleIcon,
   PauseIcon,
   PlayIcon,
   RotateCcwIcon,
@@ -29,16 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectItem,
-  SelectPopup,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Aurora } from "./aurora";
-import { useMicrophone } from "./use-microphone";
 import { Waveform } from "./waveform";
 import {
   formatDuration,
@@ -52,10 +40,11 @@ import {
   type VoicePhase,
 } from "./demo";
 
+const DEFAULT_VOICE = voiceStyles[0];
+const DEFAULT_PACE = 35;
+
 export function VoiceStudio() {
   const [phase, setPhase] = useState<VoicePhase>("ready");
-  const [voiceId, setVoiceId] = useState<string>("warm");
-  const [pace, setPace] = useState(35);
   const [sound, setSound] = useState(false);
   const [moving, setMoving] = useState(true);
   const [seconds, setSeconds] = useState(0);
@@ -68,12 +57,6 @@ export function VoiceStudio() {
   const speakingAudio = useRef(false);
   const transcript = useRef<HTMLDivElement>(null);
   const nextId = useRef(0);
-  const microphone = useMicrophone();
-  const resumeMicrophone = useRef(false);
-  const micOn = microphone.status === "on";
-  const micPending = microphone.status === "requesting";
-  const voice =
-    voiceStyles.find((item) => item.id === voiceId) ?? voiceStyles[0];
   const active = isSessionActive(phase);
   const canReply =
     phase === "ready" || phase === "listening" || phase === "ended";
@@ -104,40 +87,37 @@ export function VoiceStudio() {
     [],
   );
 
-  const previewSpeech = useCallback(
-    (text: string) => {
-      if (!soundRef.current) return false;
-      const synthesizer = window.speechSynthesis;
-      const localVoice = synthesizer
-        ?.getVoices()
-        .find((item) => item.localService && item.lang.startsWith("en"));
-      if (!synthesizer || !localVoice) {
-        setAudioNote(
-          "No local device voice is available. The demo still works through text.",
-        );
-        return false;
-      }
-      synthesizer.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = localVoice;
-      utterance.rate = voice.rate + (pace - 35) / 200;
-      utterance.pitch = voice.pitch;
-      utterance.onend = () => {
-        speakingAudio.current = false;
-        setPhase((current) => (current === "speaking" ? "listening" : current));
-      };
-      utterance.onerror = () => {
-        speakingAudio.current = false;
-        setAudioNote(
-          "The device voice stopped. You can keep going through text.",
-        );
-        setPhase((current) => (current === "speaking" ? "listening" : current));
-      };
-      synthesizer.speak(utterance);
-      return true;
-    },
-    [voice, pace],
-  );
+  const previewSpeech = useCallback((text: string) => {
+    if (!soundRef.current) return false;
+    const synthesizer = window.speechSynthesis;
+    const localVoice = synthesizer
+      ?.getVoices()
+      .find((item) => item.localService && item.lang.startsWith("en"));
+    if (!synthesizer || !localVoice) {
+      setAudioNote(
+        "No local device voice is available. The demo still works through text.",
+      );
+      return false;
+    }
+    synthesizer.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.voice = localVoice;
+    utterance.rate = DEFAULT_VOICE.rate;
+    utterance.pitch = DEFAULT_VOICE.pitch;
+    utterance.onend = () => {
+      speakingAudio.current = false;
+      setPhase((current) => (current === "speaking" ? "listening" : current));
+    };
+    utterance.onerror = () => {
+      speakingAudio.current = false;
+      setAudioNote(
+        "The device voice stopped. You can keep going through text.",
+      );
+      setPhase((current) => (current === "speaking" ? "listening" : current));
+    };
+    synthesizer.speak(utterance);
+    return true;
+  }, []);
 
   useEffect(() => {
     if (phase === "connecting" || phase === "thinking") {
@@ -159,11 +139,11 @@ export function VoiceStudio() {
       if (speakingAudio.current) return;
       const timer = setTimeout(
         () => setPhase("listening"),
-        6500 + (100 - pace) * 25,
+        6500 + (100 - DEFAULT_PACE) * 25,
       );
       return () => clearTimeout(timer);
     }
-  }, [phase, pace, previewSpeech]);
+  }, [phase, previewSpeech]);
 
   function begin() {
     window.speechSynthesis?.cancel();
@@ -195,28 +175,18 @@ export function VoiceStudio() {
     if (phase === "paused") {
       setPhase(previousPhase.current);
       if (sound) window.speechSynthesis?.resume();
-      if (resumeMicrophone.current) {
-        resumeMicrophone.current = false;
-        void microphone.enable();
-      }
     } else {
-      resumeMicrophone.current = micOn || micPending;
-      microphone.disable();
       previousPhase.current = phase;
       setPhase("paused");
       window.speechSynthesis?.pause();
     }
   }
   function end() {
-    resumeMicrophone.current = false;
-    microphone.disable();
     speakingAudio.current = false;
     window.speechSynthesis?.cancel();
     setPhase("ended");
   }
   function reset() {
-    resumeMicrophone.current = false;
-    microphone.disable();
     speakingAudio.current = false;
     window.speechSynthesis?.cancel();
     setPhase("ready");
@@ -233,11 +203,7 @@ export function VoiceStudio() {
     }
     setSound(!sound);
     soundRef.current = !sound;
-    setAudioNote(
-      !sound
-        ? "Uses a local device voice when available. No voice service is connected."
-        : "Voice preview is muted.",
-    );
+    setAudioNote("");
   }
 
   return (
@@ -245,6 +211,21 @@ export function VoiceStudio() {
       <a className="landing-skip-link" href="#voice-main">
         Skip to voice studio
       </a>
+      <header className="voice-nav">
+        <a href="/" className="voice-brand">
+          <BrandLogo />
+          <span>Build &amp; Connect</span>
+        </a>
+        <span className="voice-nav-divider" aria-hidden="true" />
+        <span className="voice-nav-title">Voice studio</span>
+        <div className="voice-nav-end">
+          <Badge variant="outline">Local demo</Badge>
+          <Button variant="ghost" render={<a href="/" />}>
+            <ArrowLeftIcon aria-hidden="true" />
+            Back home
+          </Button>
+        </div>
+      </header>
       <main id="voice-main" tabIndex={-1} className="voice-main">
         <h1 className="sr-only">Think out loud.</h1>
 
@@ -257,7 +238,6 @@ export function VoiceStudio() {
               <Aurora
                 moving={moving && phase !== "paused"}
                 speaking={phase === "speaking"}
-                microphone={micOn ? microphone.level : undefined}
               />
               <div className="voice-stage-top">
                 <span>
@@ -288,7 +268,7 @@ export function VoiceStudio() {
 
               <div className="voice-presence">
                 <div className="voice-presence-caption">
-                  <Waveform microphone={micOn ? microphone.level : undefined} />
+                  <Waveform />
                   <p className="voice-phase" role="status">
                     {phaseLabel(phase)}
                   </p>
@@ -348,124 +328,13 @@ export function VoiceStudio() {
                   <span className="voice-control-spacer" />
                 )}
               </div>
-              <div className="voice-mic-controls">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={phase === "paused"}
-                  aria-pressed={micOn || micPending}
-                  onClick={() => {
-                    if (micOn || micPending) microphone.disable();
-                    else void microphone.enable();
-                  }}
-                >
-                  {micPending ? (
-                    <LoaderCircleIcon aria-hidden="true" />
-                  ) : micOn ? (
-                    <MicOffIcon aria-hidden="true" />
-                  ) : (
-                    <MicIcon aria-hidden="true" />
-                  )}
-                  {micPending
-                    ? "Cancel microphone request"
-                    : micOn
-                      ? "Turn microphone off"
-                      : microphone.status === "error"
-                        ? "Retry microphone"
-                        : "Enable microphone"}
-                </Button>
-                <p role="status">
-                  {micPending
-                    ? "Waiting for microphone permission."
-                    : micOn
-                      ? "Microphone on · processed on this device"
-                      : phase === "paused"
-                        ? "Microphone off while paused."
-                        : "Optional · reacts to your voice volume"}
+              {audioNote && (
+                <p className="voice-device-note" role="status">
+                  {audioNote}
                 </p>
-              </div>
-              <p className="voice-mic-error" role="alert">
-                {microphone.error}
-              </p>
-              <p className="voice-stage-footnote">
-                Simulated conversation. Audio is never recorded or sent.
-              </p>
-            </div>
-
-            <div className="voice-preferences">
-              <div className="voice-setting">
-                <Label id="voice-choice-label">
-                  <AudioLinesIcon aria-hidden="true" />
-                  Voice style
-                </Label>
-                <Select
-                  value={voiceId}
-                  onValueChange={(value) => value && setVoiceId(value)}
-                  items={voiceStyles.map((item) => ({
-                    value: item.id,
-                    label: item.label,
-                  }))}
-                >
-                  <SelectTrigger
-                    aria-labelledby="voice-choice-label"
-                    className="voice-select"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectPopup>
-                    {voiceStyles.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.label} · {item.description}
-                      </SelectItem>
-                    ))}
-                  </SelectPopup>
-                </Select>
-                <p>{voice.description}</p>
-              </div>
-              <div className="voice-setting voice-pace">
-                <div>
-                  <Label id="voice-pace-label">Conversation pace</Label>
-                  <span>
-                    {pace < 25 ? "Slow" : pace > 65 ? "Natural" : "Unhurried"}
-                  </span>
-                </div>
-                <Slider
-                  aria-labelledby="voice-pace-label"
-                  value={pace}
-                  onValueChange={(value) =>
-                    setPace(Array.isArray(value) ? value[0] : value)
-                  }
-                  min={0}
-                  max={100}
-                  step={5}
-                />
-                <div className="voice-range-labels">
-                  <span>Take it slow</span>
-                  <span>Keep it flowing</span>
-                </div>
-              </div>
-              <p className="voice-device-note" role="status">
-                {audioNote ||
-                  "Sound is off. Enable the voice preview whenever you’re ready."}
-              </p>
+              )}
             </div>
           </section>
-
-          <header className="voice-nav">
-            <a href="/" className="voice-brand">
-              <BrandLogo />
-              <span>Build &amp; Connect</span>
-            </a>
-            <span className="voice-nav-divider" aria-hidden="true" />
-            <span className="voice-nav-title">Voice studio</span>
-            <div className="voice-nav-end">
-              <Badge variant="outline">Local demo</Badge>
-              <Button variant="ghost" render={<a href="/" />}>
-                <ArrowLeftIcon aria-hidden="true" />
-                Back home
-              </Button>
-            </div>
-          </header>
 
           <section
             className="voice-conversation"
@@ -567,9 +436,7 @@ export function VoiceStudio() {
             <span className="voice-footer-dot" />
             Voice prototype
           </span>
-          <p>
-            Scripted replies · microphone stays local · nothing recorded or sent
-          </p>
+          <p>Scripted replies · local voice preview</p>
         </footer>
       </main>
     </div>
