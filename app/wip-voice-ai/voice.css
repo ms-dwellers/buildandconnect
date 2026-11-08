@@ -54,38 +54,20 @@
 }
 
 .voice-main {
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 2.5rem clamp(1.5rem, 4vw, 4.5rem) 1.5rem;
-}
-.voice-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-.voice-heading h1 {
-  font-family: var(--app-font-display);
-  font-size: clamp(2.5rem, 4vw, 3.5rem);
-  line-height: 1.04;
-  font-weight: 400;
-  letter-spacing: -0.057em;
+  margin: 0;
+  padding: 0;
 }
 
 .voice-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 1.25rem;
-  align-items: stretch;
+  min-width: 0;
 }
 .voice-session {
   min-width: 0;
-  border: 1px solid var(--voice-border);
-  border-radius: 26px;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
   background: var(--voice-card);
   overflow: hidden;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--voice-ink) 3%, transparent);
 }
 .voice-stage {
   position: relative;
@@ -96,6 +78,10 @@
   padding: 1.25rem 1.5rem 1.5rem;
   overflow: hidden;
   isolation: isolate;
+}
+.voice-session .voice-stage {
+  flex: 1 0 auto;
+  min-height: clamp(24rem, 60svh, 34rem);
 }
 .voice-aurora {
   position: absolute;
@@ -194,6 +180,9 @@
 .voice-presence-caption {
   text-align: center;
   margin-top: 1rem;
+}
+.voice-session .voice-presence {
+  min-height: clamp(10rem, 28svh, 19.375rem);
 }
 .voice-presence-caption p {
   margin-top: 1.5rem;
@@ -360,6 +349,8 @@
 
 .voice-conversation {
   min-width: 0;
+  width: min(72rem, calc(100% - 3rem));
+  margin: 1.5rem auto;
   display: flex;
   flex-direction: column;
   border-radius: 26px;
@@ -526,6 +517,7 @@
   flex-wrap: wrap;
   gap: 0.75rem 1.5rem;
   margin-top: 1.5rem;
+  padding: 0 clamp(1.5rem, 4vw, 4.5rem) 1.5rem;
   font-size: 0.625rem;
   color: var(--voice-muted);
   line-height: 1.7;
@@ -574,12 +566,6 @@
 }
 
 @media (max-width: 1100px) {
-  .voice-main {
-    padding-top: 2.5rem;
-  }
-  .voice-workspace {
-    grid-template-columns: minmax(0, 1fr) 300px;
-  }
   .voice-stage {
     min-height: 470px;
     padding-inline: 1rem;
@@ -617,18 +603,6 @@
     font-size: 0.75rem;
     padding-inline: 0.4rem;
   }
-  .voice-main {
-    padding: 2rem 1.25rem 1.5rem;
-  }
-  .voice-heading {
-    margin-bottom: 1.75rem;
-  }
-  .voice-heading h1 {
-    font-size: clamp(2.4rem, 7.8vw, 3.8rem);
-  }
-  .voice-workspace {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .voice-stage {
     min-height: 465px;
   }
@@ -660,9 +634,6 @@
   .voice-nav-title,
   .voice-nav-divider {
     display: none;
-  }
-  .voice-main {
-    padding-inline: 0.85rem;
   }
   .voice-controls {
     gap: 0.5rem;

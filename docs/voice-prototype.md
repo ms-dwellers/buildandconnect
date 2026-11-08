@@ -8,6 +8,11 @@ Open `/wip-voice-ai` for the isolated autumn-aurora voice concept. It does not
 connect to ElevenLabs, record audio, or write to Convex. The surrounding
 application still performs its normal session check.
 
+The voice panel fills the first viewport edge to edge, including its voice-style
+and pace controls. Navigation and the transcript are below it. Short screens can
+scroll rather than clip controls. This layout is scoped to the prototype; the
+embedded employer intake at `/hire` keeps its existing sizing.
+
 ## Try the experience
 
 - Choose a voice style and adjust the pace. There are no named personas.

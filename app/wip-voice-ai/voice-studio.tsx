@@ -245,28 +245,8 @@ export function VoiceStudio() {
       <a className="landing-skip-link" href="#voice-main">
         Skip to voice studio
       </a>
-      <header className="voice-nav">
-        <a href="/" className="voice-brand">
-          <BrandLogo />
-          <span>Build &amp; Connect</span>
-        </a>
-        <span className="voice-nav-divider" aria-hidden="true" />
-        <span className="voice-nav-title">Voice studio</span>
-        <div className="voice-nav-end">
-          <Badge variant="outline">Local demo</Badge>
-          <Button variant="ghost" render={<a href="/" />}>
-            <ArrowLeftIcon aria-hidden="true" />
-            Back home
-          </Button>
-        </div>
-      </header>
-
       <main id="voice-main" tabIndex={-1} className="voice-main">
-        <div className="voice-heading">
-          <div>
-            <h1>Think out loud.</h1>
-          </div>
-        </div>
+        <h1 className="sr-only">Think out loud.</h1>
 
         <div className="voice-workspace">
           <section
@@ -470,6 +450,22 @@ export function VoiceStudio() {
               </p>
             </div>
           </section>
+
+          <header className="voice-nav">
+            <a href="/" className="voice-brand">
+              <BrandLogo />
+              <span>Build &amp; Connect</span>
+            </a>
+            <span className="voice-nav-divider" aria-hidden="true" />
+            <span className="voice-nav-title">Voice studio</span>
+            <div className="voice-nav-end">
+              <Badge variant="outline">Local demo</Badge>
+              <Button variant="ghost" render={<a href="/" />}>
+                <ArrowLeftIcon aria-hidden="true" />
+                Back home
+              </Button>
+            </div>
+          </header>
 
           <section
             className="voice-conversation"
