@@ -64,13 +64,15 @@ percentages enforced on every component or the map.
   or other heading prefixes. This applies to both the app and this gallery.
 - The landing page uses open spacing, bold League Spartan headings, and a white
   hero whose heading, lead, and actions are server-rendered and available
-  immediately. Beneath them a lazily loaded Three.js scene
-  (`components/landing/home-scene.tsx`) shows two procedural chairs, a task chair
-  for the developer and a wooden chair for the person who needs one, angled
-  toward a monitor that plays a canvas-drawn campfire. Every colour comes from
-  `--palette-*` and `--scene-*` tokens read at runtime; no asset files are
-  loaded. The header and hero fill at least the first viewport; the remaining
-  sections scroll below. Typography adapts to viewport width and height.
+  immediately. The focal point sits between the heading and the two calls to
+  action: a lazily loaded Three.js scene (`components/landing/home-scene.tsx`)
+  with two procedural chairs, a task chair for the developer and a wooden chair
+  for the person who needs one, angled toward a monitor that plays a
+  canvas-drawn campfire. The scene is centred in a box up to 72rem wide and the
+  camera frames the furniture to fill it. Every colour comes from `--palette-*`
+  and `--scene-*` tokens read at runtime; no asset files are loaded. The header
+  and hero fill at least the first viewport; the remaining sections scroll
+  below. Typography adapts to viewport width and height.
 - The scene is decorative: the canvas and chair captions are `aria-hidden`, and
   keyboard users use the real calls to action. Hovering a chair lifts it and
   shows its caption; clicking the developer chair or the monitor starts the map

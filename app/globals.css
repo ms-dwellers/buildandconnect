@@ -344,14 +344,26 @@
 }
 
 @layer components {
+  /* The chairs and monitor are the focal point: heading above, actions below. */
   .landing-hero {
-    --home-scene-height: clamp(16rem, 52svh, 38rem);
+    --home-scene-height: clamp(14rem, 42svh, 34rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1.25rem, 3.5svh, 2.5rem);
     min-height: calc(100svh - 6rem);
-    padding-block: clamp(2rem, 7svh, 6rem) var(--home-scene-height);
+    padding-block: clamp(1.25rem, 3.5svh, 3rem) clamp(1.5rem, 4svh, 3.5rem);
+  }
+
+  @media (min-width: 64rem) {
+    .landing-hero {
+      --home-scene-height: clamp(20rem, 52svh, 36rem);
+    }
   }
 
   .landing-hero-heading {
-    font-size: clamp(2.25rem, min(5.6vw, 9svh), 5.25rem);
+    font-size: clamp(2rem, min(4.6vw, 7svh), 4.25rem);
   }
 
   .landing-skip-link {
