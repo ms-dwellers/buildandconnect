@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  FieldMessage,
+  FormSection,
   TextField,
   TextAreaField,
   parseList,
@@ -22,6 +24,40 @@ import {
   type HiringBrief,
 } from "@/backend/hiring/schemas";
 import { useState } from "react";
+
+type Option = { value: string; label: string };
+
+function SelectField({
+  id,
+  name,
+  label,
+  defaultValue,
+  items,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  defaultValue: string;
+  items: Option[];
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Select name={name} defaultValue={defaultValue} items={items}>
+        <SelectTrigger id={id} className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectPopup>
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectPopup>
+      </Select>
+    </div>
+  );
+}
 
 export function BriefForm({
   brief,
@@ -74,19 +110,19 @@ export function BriefForm({
     setError("");
     onSubmit(result.data.brief);
   }
-  const arrangement = [
+  const arrangement: Option[] = [
     { value: "", label: "Not decided" },
     { value: "remote", label: "Remote" },
     { value: "hybrid", label: "Hybrid" },
     { value: "onsite", label: "Onsite" },
     { value: "flexible", label: "Flexible" },
   ];
-  const kinds = [
+  const kinds: Option[] = [
     { value: "", label: "Not decided" },
     { value: "paid", label: "Paid" },
     { value: "volunteer", label: "Volunteer" },
   ];
-  const periods = [
+  const periods: Option[] = [
     { value: "", label: "Not decided" },
     { value: "hour", label: "Per hour" },
     { value: "project", label: "Per project" },
@@ -95,143 +131,118 @@ export function BriefForm({
   ];
   return (
     <Form onSubmit={submit} className="space-y-5">
-      <fieldset disabled={pending || disabled} className="space-y-5">
-        <TextField
-          name="title"
-          label="Project title"
-          defaultValue={brief.title ?? ""}
-          required
-          maxLength={200}
-        />
-        <TextAreaField
-          name="description"
-          label="What needs to be built?"
-          defaultValue={brief.description ?? ""}
-          required
-          maxLength={6000}
-        />
-        <TextField
-          name="causes"
-          label="Causes and interests"
-          defaultValue={brief.causes.join(", ")}
-          placeholder="Digital inclusion, community"
-        />
-        <TextField
-          name="communitiesServed"
-          label="Who will this help?"
-          defaultValue={brief.communitiesServed.join(", ")}
-          placeholder="Older adults"
-        />
-        <TextField
-          name="technologies"
-          label="Technologies, if you have a preference"
-          defaultValue={brief.technologies.join(", ")}
-        />
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="hiring-arrangement">Work arrangement</Label>
-            <Select
+      <fieldset disabled={pending || disabled} className="space-y-8">
+        <FormSection title="The project">
+          <TextField
+            name="title"
+            label="Project title"
+            defaultValue={brief.title ?? ""}
+            required
+            maxLength={200}
+          />
+          <TextAreaField
+            name="description"
+            label="What needs to be built?"
+            defaultValue={brief.description ?? ""}
+            required
+            maxLength={6000}
+          />
+          <TextField
+            name="technologies"
+            label="Technologies, if you have a preference"
+            description="Preferences guide suggestions; they never exclude developers."
+            defaultValue={brief.technologies.join(", ")}
+          />
+        </FormSection>
+        <FormSection title="Who it helps">
+          <TextField
+            name="causes"
+            label="Causes and interests"
+            defaultValue={brief.causes.join(", ")}
+            placeholder="Digital inclusion, community"
+          />
+          <TextField
+            name="communitiesServed"
+            label="Who will this help?"
+            defaultValue={brief.communitiesServed.join(", ")}
+            placeholder="Older adults"
+          />
+        </FormSection>
+        <FormSection title="Time and place">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <SelectField
+              id="hiring-arrangement"
               name="workArrangement"
+              label="Work arrangement"
               defaultValue={brief.workArrangement ?? ""}
               items={arrangement}
-            >
-              <SelectTrigger id="hiring-arrangement" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectPopup>
-                {arrangement.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
+            />
+            <TextField
+              name="location"
+              label="City or area"
+              defaultValue={brief.location ?? ""}
+              maxLength={200}
+            />
+            <TextField
+              name="weeklyHours"
+              label="Hours per week"
+              type="number"
+              min={1}
+              max={80}
+              defaultValue={brief.weeklyHours ?? ""}
+            />
+            <TextField
+              name="timeline"
+              label="Timeline"
+              defaultValue={brief.timeline ?? ""}
+              maxLength={200}
+            />
           </div>
-          <TextField
-            name="location"
-            label="City or area"
-            defaultValue={brief.location ?? ""}
-            maxLength={200}
-          />
-          <TextField
-            name="weeklyHours"
-            label="Hours per week"
-            type="number"
-            min={1}
-            max={80}
-            defaultValue={brief.weeklyHours ?? ""}
-          />
-          <TextField
-            name="timeline"
-            label="Timeline"
-            defaultValue={brief.timeline ?? ""}
-            maxLength={200}
-          />
-          <div className="space-y-2">
-            <Label htmlFor="hiring-kind">Compensation</Label>
-            <Select
+        </FormSection>
+        <FormSection title="Compensation">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <SelectField
+              id="hiring-kind"
               name="kind"
+              label="Paid or volunteer"
               defaultValue={brief.compensation.kind ?? ""}
               items={kinds}
-            >
-              <SelectTrigger id="hiring-kind" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectPopup>
-                {kinds.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="hiring-period">Budget basis</Label>
-            <Select
+            />
+            <SelectField
+              id="hiring-period"
               name="period"
+              label="Budget basis"
               defaultValue={brief.compensation.period ?? ""}
               items={periods}
-            >
-              <SelectTrigger id="hiring-period" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectPopup>
-                {periods.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
+            />
+            <TextField
+              name="minimum"
+              label="Minimum budget"
+              type="number"
+              min={0}
+              max={1000000}
+              step="any"
+              defaultValue={brief.compensation.minimum ?? ""}
+            />
+            <TextField
+              name="maximum"
+              label="Maximum budget"
+              type="number"
+              min={0}
+              max={1000000}
+              step="any"
+              defaultValue={brief.compensation.maximum ?? ""}
+            />
+            <TextField
+              name="currency"
+              label="Currency code"
+              defaultValue={brief.compensation.currency ?? ""}
+              placeholder="CAD"
+              minLength={3}
+              maxLength={3}
+            />
           </div>
-          <TextField
-            name="minimum"
-            label="Minimum budget"
-            type="number"
-            min={0}
-            max={1000000}
-            step="any"
-            defaultValue={brief.compensation.minimum ?? ""}
-          />
-          <TextField
-            name="maximum"
-            label="Maximum budget"
-            type="number"
-            min={0}
-            max={1000000}
-            step="any"
-            defaultValue={brief.compensation.maximum ?? ""}
-          />
-          <TextField
-            name="currency"
-            label="Currency code"
-            defaultValue={brief.compensation.currency ?? ""}
-            placeholder="CAD"
-            minLength={3}
-            maxLength={3}
-          />
-        </div>
+        </FormSection>
       </fieldset>
       {!preview && (
         <>
@@ -247,9 +258,7 @@ export function BriefForm({
               developer suggestions.
             </Label>
           </div>
-          <p role="alert" className="text-sm text-destructive-foreground">
-            {error}
-          </p>
+          <FieldMessage>{error}</FieldMessage>
           <Button
             type="submit"
             disabled={!consent || disabled || submitDisabled}

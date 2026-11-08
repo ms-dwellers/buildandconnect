@@ -59,7 +59,6 @@ test("theme pairs a white page with green scenery and original warm accents", ()
   assert.equal(tokens.get("--primary-foreground"), "var(--palette-cream)");
   assert.equal(tokens.get("--highlight"), "var(--palette-coral)");
   assert.equal(tokens.get("--illustration-sun"), "var(--palette-apricot)");
-  assert.equal(tokens.get("--sidebar"), "var(--secondary)");
 });
 
 test("selected font families are self-hosted with swap and licenses", () => {

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ErrorAlert } from "@/components/app/require-role";
 import { TextField } from "@/components/forms/form-kit";
-import { ChoiceGroup } from "@/components/forms/opportunity-form";
+import { ChoiceGroup } from "@/components/forms/form-kit";
 import { toastManager } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import type { OwnProfile } from "@/lib/types";

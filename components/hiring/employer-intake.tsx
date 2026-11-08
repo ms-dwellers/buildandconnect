@@ -25,6 +25,8 @@ import {
   type IntakeResponse,
   type MatchingCriteria,
 } from "@/backend/hiring/schemas";
+import { FieldMessage } from "@/components/forms/form-kit";
+import { formatWeeklyHours } from "@/lib/format";
 import { BriefForm } from "./brief-form";
 import { useVoiceRecorder } from "./use-voice-recorder";
 
@@ -265,12 +267,9 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
                 Transcription is not available yet. You can type instead.
               </p>
             )}
-            <p
-              role="alert"
-              className="mt-2 text-sm text-destructive-foreground"
-            >
+            <FieldMessage className="mt-2">
               {recorder.error || microphone.error}
-            </p>
+            </FieldMessage>
           </section>
           <Card>
             <CardPanel className="space-y-5 p-5 sm:p-6">
@@ -402,8 +401,8 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
                       View profile & feedback
                     </Button>
                     <p className="text-sm text-muted-foreground">
-                      {match.profile.city} · {match.profile.weeklyHours}{" "}
-                      hours/week
+                      {match.profile.city} ·{" "}
+                      {formatWeeklyHours(match.profile.weeklyHours)}
                     </p>
                     {match.needsDiscussion.length > 0 && (
                       <div>

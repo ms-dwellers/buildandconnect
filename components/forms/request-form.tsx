@@ -12,6 +12,8 @@ import { ErrorAlert } from "@/components/app/require-role";
 import { api } from "@/lib/api";
 import type { RequestRecord } from "@/lib/types";
 import {
+  AnalysisStatus,
+  FieldMessage,
   FormSection,
   TextAreaField,
   TextField,
@@ -53,6 +55,7 @@ export function RequestForm({
       initial ? `/requests/${initial.id}` : "/requests",
       {
         method: initial ? "PUT" : "POST",
+        signal: AbortSignal.timeout(90_000),
         body: JSON.stringify({
           title: String(data.get("title")),
           description: String(data.get("description")),
@@ -75,7 +78,8 @@ export function RequestForm({
         : "It's now on the map for nearby developers.",
       type: "success",
     });
-    router.push("/dashboard");
+    // Land on the record itself, the same as a posted opportunity.
+    router.push(`/requests/${encodeURIComponent(result.data.id)}`);
   }
 
   return (
@@ -113,11 +117,7 @@ export function RequestForm({
                   setPlace(next.place);
               }}
             />
-            {errors.latitude && (
-              <p role="alert" className="text-sm text-destructive-foreground">
-                {errors.latitude}
-              </p>
-            )}
+            <FieldMessage>{errors.latitude}</FieldMessage>
             <TextField
               name="place"
               label="Place name"
@@ -143,6 +143,7 @@ export function RequestForm({
               Cancel
             </Button>
           </div>
+          <AnalysisStatus pending={pending} />
         </Form>
       </CardPanel>
     </Card>

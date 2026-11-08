@@ -43,6 +43,13 @@ function recall(): Remembered | null {
 
 async function loadSession(): Promise<Session> {
   try {
+    // Better Auth answers 200 with null for guests, so the common signed-out
+    // case never logs a failed request in the browser console.
+    const probe = await api<unknown>("/auth/get-session");
+    if (probe.ok && probe.data === null) {
+      remember(null);
+      return { status: "guest" };
+    }
     const result = await api<Me>("/me");
     if (result.ok) {
       remember({ name: result.data.user.name, role: result.data.role });

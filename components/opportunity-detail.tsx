@@ -1,5 +1,7 @@
 "use client";
 
+import { FieldMessage } from "@/components/forms/form-kit";
+import { formatWeeklyHours } from "@/lib/format";
 import { useMemo } from "react";
 import {
   HandshakeIcon,
@@ -213,7 +215,7 @@ function Summary({ opportunity }: { opportunity: OpportunityRecord }) {
           )}
         </dl>
         <p className="text-sm">
-          At least {opportunity.minimumWeeklyHours} hours/week ·{" "}
+          At least {formatWeeklyHours(opportunity.minimumWeeklyHours)} ·{" "}
           {opportunity.collaboration === "async"
             ? "Mostly asynchronous"
             : opportunity.collaboration === "sync"
@@ -534,11 +536,7 @@ function YourFit({
               </ul>
             </div>
           )}
-          {error && (
-            <p role="alert" className="text-sm">
-              {error}
-            </p>
-          )}
+          <FieldMessage>{error}</FieldMessage>
           {mine?.connected && (
             <div className="space-y-3">
               <p className="text-sm">

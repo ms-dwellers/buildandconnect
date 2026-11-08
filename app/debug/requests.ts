@@ -1,6 +1,7 @@
 import type {
   DeveloperProfile,
   OpportunityInput,
+  RequestInput,
 } from "../../backend/schemas.ts";
 
 export const sampleProfile: DeveloperProfile = {
@@ -36,6 +37,15 @@ export const sampleOpportunity: OpportunityInput = {
   interests: ["community", "sustainability"],
 };
 
+export const sampleRequest: RequestInput = {
+  title: "Fix our garden sign-up form",
+  description:
+    "Our community garden's volunteer sign-up form breaks on phones. We need someone to rebuild it as a simple, accessible page.",
+  place: "Bridgeland community hall",
+  latitude: 51.0535,
+  longitude: -114.0407,
+};
+
 export type RequestPreset = {
   id: string;
   group: string;
@@ -57,6 +67,15 @@ export const requests: RequestPreset[] = [
     method: "GET",
     path: "/api/health",
     caller: "Public",
+  },
+  {
+    id: "map",
+    group: "System",
+    title: "Public map feed",
+    method: "GET",
+    path: "/api/map",
+    caller: "Public",
+    note: "Pin precision depends on the viewer; developers see exact request places.",
   },
   {
     id: "me",
@@ -124,6 +143,57 @@ export const requests: RequestPreset[] = [
     note: "No AI call. Set discoverable to false to test opting out.",
   },
   {
+    id: "location",
+    group: "Developers",
+    title: "Set area and radius",
+    method: "PATCH",
+    path: "/api/developers/me/location",
+    caller: "Developer",
+    body: { latitude: 51.0447, longitude: -114.0719, radiusKm: 10 },
+    note: "No AI call. Nearby requests use this pin and radius.",
+  },
+  {
+    id: "preferences",
+    group: "Developers",
+    title: "Update work preferences",
+    method: "PATCH",
+    path: "/api/developers/me/preferences",
+    caller: "Developer",
+    body: {
+      professionalExperienceYears: 1,
+      compensationPreference: null,
+      workArrangementPreference: { preferred: "flexible", required: false },
+    },
+    note: "No AI call.",
+  },
+  {
+    id: "career-target",
+    group: "Developers",
+    title: "Read career target",
+    method: "GET",
+    path: "/api/developers/me/career-target",
+    caller: "Developer",
+    note: "Private to the developer; null until a target job is saved.",
+  },
+  {
+    id: "career-projects",
+    group: "Developers",
+    title: "Career project recommendations",
+    method: "GET",
+    path: "/api/developers/me/career-projects",
+    caller: "Developer",
+    query: ["limit"],
+  },
+  {
+    id: "developer-read",
+    group: "Developers",
+    title: "Read a developer",
+    method: "GET",
+    path: "/api/developers/:developerId",
+    caller: "Requester",
+    note: "Uses the developer ID below. Only consenting, discoverable profiles.",
+  },
+  {
     id: "developers",
     group: "Developers",
     title: "Browse developers",
@@ -152,6 +222,15 @@ export const requests: RequestPreset[] = [
     query: [...browse, "city", "kind"],
   },
   {
+    id: "opportunities-mine",
+    group: "Opportunities",
+    title: "Browse own opportunities",
+    method: "GET",
+    path: "/api/opportunities/mine",
+    caller: "Requester",
+    query: browse,
+  },
+  {
     id: "opportunity-read",
     group: "Opportunities",
     title: "Read opportunity",
@@ -176,6 +255,24 @@ export const requests: RequestPreset[] = [
     path: "/api/opportunities/:id/matches",
     caller: "Opportunity owner",
     query: ["limit"],
+  },
+  {
+    id: "opportunity-interests",
+    group: "Matching",
+    title: "List interest on an opportunity",
+    method: "GET",
+    path: "/api/opportunities/:id/interests",
+    caller: "Opportunity owner",
+    query: browse,
+  },
+  {
+    id: "request-match",
+    group: "Matching",
+    title: "Check own fit for a request",
+    method: "GET",
+    path: "/api/requests/:id/match",
+    caller: "Developer",
+    note: "Uses the ID below as the request ID.",
   },
   {
     id: "match",
@@ -206,6 +303,106 @@ export const requests: RequestPreset[] = [
     note: "Uses the developer ID below. Set interested to false to withdraw.",
   },
   {
+    id: "request-create",
+    group: "Requests",
+    title: "Post community request",
+    method: "POST",
+    path: "/api/requests",
+    caller: "Requester",
+    body: sampleRequest,
+    ai: true,
+  },
+  {
+    id: "requests",
+    group: "Requests",
+    title: "Browse own requests",
+    method: "GET",
+    path: "/api/requests",
+    caller: "Requester",
+    query: browse,
+  },
+  {
+    id: "requests-nearby",
+    group: "Requests",
+    title: "Nearby open requests",
+    method: "GET",
+    path: "/api/requests/nearby",
+    caller: "Developer",
+    query: ["limit"],
+    note: "Needs a saved area and radius.",
+  },
+  {
+    id: "requests-claimed",
+    group: "Requests",
+    title: "Requests I accepted",
+    method: "GET",
+    path: "/api/requests/claimed",
+    caller: "Developer",
+    query: browse,
+  },
+  {
+    id: "request-read",
+    group: "Requests",
+    title: "Read request",
+    method: "GET",
+    path: "/api/requests/:id",
+    caller: "Requester owner, or developer for open requests",
+    note: "Uses the ID below as the request ID.",
+  },
+  {
+    id: "request-status",
+    group: "Requests",
+    title: "Close request",
+    method: "PATCH",
+    path: "/api/requests/:id",
+    caller: "Requester owner",
+    body: { status: "closed" },
+  },
+  {
+    id: "request-accept",
+    group: "Requests",
+    title: "Accept request",
+    method: "POST",
+    path: "/api/requests/:id/accept",
+    caller: "Developer",
+    note: "Exclusive claim while the request is open; retry-safe for the same developer.",
+  },
+  {
+    id: "request-release",
+    group: "Requests",
+    title: "Release request",
+    method: "POST",
+    path: "/api/requests/:id/release",
+    caller: "Claimant or requester",
+  },
+  {
+    id: "project-drafts",
+    group: "Requests",
+    title: "List project drafts",
+    method: "GET",
+    path: "/api/project-drafts",
+    caller: "Requester",
+  },
+  {
+    id: "draft-publish",
+    group: "Requests",
+    title: "Publish a project draft",
+    method: "POST",
+    path: "/api/project-drafts/:id/publish",
+    caller: "Requester",
+    body: {},
+    note: "Uses the ID below as the draft ID. Publishing posts the opportunity.",
+  },
+  {
+    id: "hiring-status",
+    group: "Hiring",
+    title: "Check AI providers",
+    method: "GET",
+    path: "/api/hiring/status",
+    caller: "Requester",
+    note: "Booleans only; provider keys never leave Convex.",
+  },
+  {
     id: "interests",
     group: "Networking",
     title: "Read pending interests",
@@ -233,6 +430,11 @@ export function buildRequest(
   body: string,
 ) {
   let path = preset.path;
+  if (path.includes(":developerId")) {
+    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(developerId.trim()))
+      throw new Error("Enter a valid developer ID.");
+    path = path.replace(":developerId", encodeURIComponent(developerId.trim()));
+  }
   if (path.includes(":id")) {
     if (!/^[a-zA-Z0-9_-]{1,100}$/.test(opportunityId.trim()))
       throw new Error("Enter a valid opportunity ID.");

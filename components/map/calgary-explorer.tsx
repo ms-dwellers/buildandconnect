@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardPanel } from "@/components/ui/card";
+import { CITY_LABEL } from "@/lib/format";
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -143,7 +145,7 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
             </h1>
             <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
               <MapPinIcon aria-hidden="true" className="size-3.5" />
-              Calgary, Alberta
+              {CITY_LABEL}
             </p>
             {post && (
               <Button
@@ -267,7 +269,6 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                     <Button
                       variant="ghost"
                       className="h-auto w-full items-start justify-start gap-3 rounded-xl border border-transparent px-3 py-4 text-start whitespace-normal hover:bg-secondary/30 aria-pressed:border-primary/25 aria-pressed:bg-secondary/60"
-                      aria-label={`View ${job.title}`}
                       aria-pressed={selectedId === job.id}
                       onClick={() =>
                         selectJob(selectedId === job.id ? null : job.id)
@@ -375,28 +376,30 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
             )}
           />
           {placing && post && (
-            <div className="absolute start-1/2 top-20 z-10 w-[min(27rem,calc(100%-2rem))] -translate-x-1/2 space-y-3 rounded-xl border bg-card p-4 shadow-lg">
-              <div className="flex items-start justify-between gap-3">
-                <p role="status" className="text-sm font-medium">
-                  Choose where in Calgary on the map.
-                </p>
+            <Card className="absolute start-1/2 top-20 z-10 w-[min(27rem,calc(100%-2rem))] -translate-x-1/2 shadow-card">
+              <CardPanel className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p role="status" className="text-sm font-medium">
+                    Choose where in Calgary on the map.
+                  </p>
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    onClick={() => setPlacing(false)}
+                    aria-label="Cancel choosing a location"
+                  >
+                    <XIcon aria-hidden="true" />
+                  </Button>
+                </div>
                 <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  onClick={() => setPlacing(false)}
-                  aria-label="Cancel choosing a location"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => pickLocation(CALGARY_CENTER)}
                 >
-                  <XIcon aria-hidden="true" />
+                  Use downtown Calgary
                 </Button>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => pickLocation(CALGARY_CENTER)}
-              >
-                Use downtown Calgary
-              </Button>
-            </div>
+              </CardPanel>
+            </Card>
           )}
         </section>
       </main>

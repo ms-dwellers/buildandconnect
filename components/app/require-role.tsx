@@ -111,7 +111,7 @@ export function LoadingBlock({ rows = 3 }: { rows?: number }) {
   return (
     <div className="space-y-3">
       <MascotStatus state="loading">Loading…</MascotStatus>
-      <div className="space-y-3" aria-busy="true" aria-label="Loading">
+      <div className="space-y-3" aria-busy="true">
         {Array.from({ length: rows }, (_, index) => (
           <Skeleton key={index} className="h-24 w-full rounded-xl" />
         ))}

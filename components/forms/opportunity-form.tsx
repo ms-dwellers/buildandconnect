@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import { Radio, RadioGroup } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { toastManager } from "@/components/ui/toast";
 import { MapPinPicker, type Pin } from "@/components/MapPinPicker";
@@ -25,48 +24,15 @@ import {
   type ProjectDraftContent,
 } from "@/backend/project-drafts";
 import {
+  AnalysisStatus,
+  ChoiceGroup,
+  FieldMessage,
   FormSection,
   TextAreaField,
   TextField,
   issuesToErrors,
   parseList,
 } from "./form-kit";
-
-type Choice<T extends string> = { value: T; label: string };
-
-export function ChoiceGroup<T extends string>({
-  label,
-  value,
-  onChange,
-  choices,
-}: {
-  label: string;
-  value: T;
-  onChange: (value: T) => void;
-  choices: Choice<T>[];
-}) {
-  const id = `choice-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
-  return (
-    <div className="space-y-2.5">
-      <p id={id} className="text-sm font-medium">
-        {label}
-      </p>
-      <RadioGroup
-        aria-labelledby={id}
-        value={value}
-        onValueChange={(next) => onChange(next as T)}
-        className="flex flex-wrap gap-x-6 gap-y-3"
-      >
-        {choices.map((choice) => (
-          <Label key={choice.value} className="font-normal">
-            <Radio value={choice.value} />
-            {choice.label}
-          </Label>
-        ))}
-      </RadioGroup>
-    </div>
-  );
-}
 
 export function OpportunityForm({
   initial,
@@ -189,6 +155,7 @@ export function OpportunityForm({
       initial ? `/opportunities/${initial.id}` : "/opportunities",
       {
         method: initial ? "PUT" : "POST",
+        signal: AbortSignal.timeout(90_000),
         body: JSON.stringify(body),
         headers:
           initial?.revision !== undefined
@@ -380,14 +347,7 @@ export function OpportunityForm({
                     </Button>
                   </div>
                 )}
-                {errors.latitude && (
-                  <p
-                    role="alert"
-                    className="text-sm text-destructive-foreground"
-                  >
-                    {errors.latitude}
-                  </p>
-                )}
+                <FieldMessage>{errors.latitude}</FieldMessage>
               </div>
             </FormSection>
 
@@ -399,6 +359,7 @@ export function OpportunityForm({
                 message={failure}
               />
             )}
+            <AnalysisStatus pending={pending} />
             {actions ?? (
               <div className="flex flex-wrap gap-3">
                 <Button type="submit" loading={pending}>

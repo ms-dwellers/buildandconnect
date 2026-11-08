@@ -10,7 +10,10 @@ import {
   SearchIcon,
   Trash2Icon,
 } from "lucide-react";
-import { BrandLogo } from "@/components/brand-logo";
+import { AppHeader } from "@/components/app/app-shell";
+import { FieldMessage } from "@/components/forms/form-kit";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
@@ -205,19 +208,17 @@ export function DebugConsole() {
         Skip to console
       </Button>
       <div className="mx-auto max-w-[96rem] px-4 pb-12 sm:px-8">
-        <header className="flex min-h-20 flex-wrap items-center justify-between gap-3 border-b py-4">
-          <div className="flex items-center gap-3">
-            <BrandLogo />
-            <span className="font-semibold tracking-tight">
-              Build &amp; Connect
-            </span>
-            <span className="text-sm text-muted-foreground">QA console</span>
-          </div>
-          <Button render={<a href="/" />} variant="ghost">
-            <ArrowLeftIcon aria-hidden="true" />
-            Back to site
-          </Button>
-        </header>
+        <AppHeader
+          variant="tool"
+          label="QA console"
+          className="px-0 sm:px-0"
+          actions={
+            <Button render={<a href="/" />} variant="ghost">
+              <ArrowLeftIcon aria-hidden="true" />
+              Back to site
+            </Button>
+          }
+        />
         <main
           id="debug-main"
           tabIndex={-1}
@@ -261,20 +262,18 @@ export function DebugConsole() {
           </div>
 
           {api.account.state === "unavailable" && (
-            <div
-              role="alert"
-              className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm leading-6"
-            >
-              Account API unavailable. Check the Convex deployment, SITE_URL,
-              and bridge configuration.{" "}
-              <a
-                className="font-medium underline underline-offset-4"
-                href="#qa-setup"
-              >
-                View setup steps
-              </a>
-              .
-            </div>
+            <Alert variant="error">
+              <AlertDescription>
+                Account API unavailable. Check the Convex deployment and its
+                SITE_URL.{" "}
+                <a
+                  className="font-medium underline underline-offset-4"
+                  href="#qa-setup"
+                >
+                  View setup steps
+                </a>
+              </AlertDescription>
+            </Alert>
           )}
 
           <div className="grid items-start gap-6 lg:grid-cols-[19rem_minmax(0,1fr)]">
@@ -388,28 +387,26 @@ export function DebugConsole() {
                           )}
                         </div>
                       )}
-                      <div
-                        className="flex flex-wrap gap-2"
-                        role="group"
+                      <ToggleGroup
                         aria-label="Authentication mode"
+                        size="sm"
+                        value={[authMode]}
+                        disabled={api.busy}
+                        onValueChange={(next) => {
+                          const mode = next[0];
+                          if (mode !== "sign-in" && mode !== "sign-up") return;
+                          setAuthMode(mode);
+                          setPassword("");
+                          setAuthError("");
+                        }}
                       >
-                        {(["sign-in", "sign-up"] as const).map((mode) => (
-                          <Button
-                            key={mode}
-                            size="sm"
-                            variant={authMode === mode ? "secondary" : "ghost"}
-                            aria-pressed={authMode === mode}
-                            disabled={api.busy}
-                            onClick={() => {
-                              setAuthMode(mode);
-                              setPassword("");
-                              setAuthError("");
-                            }}
-                          >
-                            {mode === "sign-in" ? "Sign in" : "Create account"}
-                          </Button>
-                        ))}
-                      </div>
+                        <ToggleGroupItem value="sign-in">
+                          Sign in
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="sign-up">
+                          Create account
+                        </ToggleGroupItem>
+                      </ToggleGroup>
                       {authMode === "sign-up" && (
                         <div className="space-y-2">
                           <Label htmlFor="qa-name">Name</Label>
@@ -474,34 +471,24 @@ export function DebugConsole() {
                           <p className="text-sm font-medium" id="qa-role-label">
                             Account role (set once)
                           </p>
-                          <div
-                            role="group"
+                          <ToggleGroup
                             aria-labelledby="qa-role-label"
-                            className="flex flex-wrap gap-2"
+                            size="sm"
+                            value={[role]}
+                            disabled={api.busy}
+                            onValueChange={(next) => {
+                              if (typeof next[0] === "string") setRole(next[0]);
+                            }}
                           >
                             {["developer", "requester"].map((item) => (
-                              <Button
-                                key={item}
-                                size="sm"
-                                variant={
-                                  role === item ? "secondary" : "outline"
-                                }
-                                aria-pressed={role === item}
-                                onClick={() => setRole(item)}
-                                disabled={api.busy}
-                              >
+                              <ToggleGroupItem key={item} value={item}>
                                 {item}
-                              </Button>
+                              </ToggleGroupItem>
                             ))}
-                          </div>
+                          </ToggleGroup>
                         </div>
                       )}
-                      <p
-                        role="alert"
-                        className="text-sm text-destructive-foreground"
-                      >
-                        {authError}
-                      </p>
+                      <FieldMessage>{authError}</FieldMessage>
                       <Button
                         type="submit"
                         className="w-full"
@@ -605,7 +592,9 @@ export function DebugConsole() {
                         Request context
                       </legend>
                       <div className="space-y-2">
-                        <Label htmlFor="opportunity-id">Opportunity ID</Label>
+                        <Label htmlFor="opportunity-id">
+                          Opportunity, request or draft ID
+                        </Label>
                         <Input
                           id="opportunity-id"
                           value={opportunityId}
@@ -695,13 +684,7 @@ export function DebugConsole() {
                         configured. Without it, expect 503 and no saved data.
                       </p>
                     )}
-                    <p
-                      id="request-error"
-                      role="alert"
-                      className="text-sm text-destructive-foreground"
-                    >
-                      {api.error}
-                    </p>
+                    <FieldMessage id="request-error">{api.error}</FieldMessage>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <Button type="submit" loading={api.busy}>
                         <PlayIcon aria-hidden="true" />

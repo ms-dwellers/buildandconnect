@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRightIcon, ArrowRightIcon } from "lucide-react";
-import { BrandLogo } from "@/components/brand-logo";
-import { AccountLinks } from "@/components/app/account-links";
+import { AppHeader } from "@/components/app/app-shell";
 import { HomeScene } from "@/components/landing/home-scene";
 import { MapJourneyLink } from "@/components/map/map-journey";
 import { Button } from "@/components/ui/button";
@@ -16,22 +15,7 @@ export default function Home() {
       <a href="#main-content" className="landing-skip-link">
         Skip to content
       </a>
-      <header className="flex h-24 items-center justify-between gap-3 px-5 sm:px-10 lg:px-16">
-        <Link
-          href="/"
-          aria-label="Build & Connect home"
-          className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-        >
-          <BrandLogo />
-          <span className="hidden min-[420px]:inline">Build &amp; Connect</span>
-        </Link>
-        <nav aria-label="Main" className="flex items-center gap-3 sm:gap-6">
-          <MapJourneyLink variant="link" className="hidden px-0 sm:inline-flex">
-            Nearby map
-          </MapJourneyLink>
-          <AccountLinks />
-        </nav>
-      </header>
+      <AppHeader variant="landing" />
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           aria-labelledby="hero-heading"

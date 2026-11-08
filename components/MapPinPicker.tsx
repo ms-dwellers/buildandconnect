@@ -7,8 +7,10 @@ import { CircleAlertIcon, SearchIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FieldMessage } from "@/components/forms/form-kit";
 import { mapboxToken } from "@/lib/api";
 import { CALGARY_BOUNDS, CALGARY_CENTER } from "@/lib/calgary-area";
+import { CITY_MAP_STYLE } from "@/lib/calgary-map";
 
 export type Pin = {
   latitude: number;
@@ -50,7 +52,7 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
       map = new sdk.Map({
         container: containerRef.current,
         accessToken: token,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: CITY_MAP_STYLE,
         center: [start.longitude, start.latitude],
         zoom: latest.current.value ? 13 : 10.3,
       });
@@ -174,9 +176,17 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
       <Alert variant="warning">
         <CircleAlertIcon aria-hidden="true" />
         <AlertDescription>
-          Location picking needs a Mapbox public token. Set{" "}
-          <code>NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN</code> in{" "}
-          <code>.env.local</code>.
+          The map is unavailable right now, so a location cannot be chosen here.
+          You can still describe the place in words.
+          {process.env.NODE_ENV !== "production" && (
+            <>
+              {" "}
+              For development, set <code>
+                NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
+              </code>{" "}
+              in <code>.env.local</code>.
+            </>
+          )}
         </AlertDescription>
       </Alert>
     );
@@ -205,21 +215,13 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
           Search
         </Button>
       </div>
-      {searchError && (
-        <p role="alert" className="mb-2 text-sm text-destructive-foreground">
-          {searchError}
-        </p>
-      )}
+      <FieldMessage className="mb-2">{searchError}</FieldMessage>
       <div
         ref={containerRef}
         className="h-80 overflow-hidden rounded-xl border"
         aria-label="Map for choosing a location. Click to drop a pin."
       />
-      {mapError && (
-        <p role="alert" className="mt-2 text-sm text-destructive-foreground">
-          {mapError}
-        </p>
-      )}
+      <FieldMessage className="mt-2">{mapError}</FieldMessage>
       <p className="mt-2 text-xs text-muted-foreground">
         Search, or click the map to drop a pin.
       </p>
