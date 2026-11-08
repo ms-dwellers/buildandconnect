@@ -52,10 +52,14 @@ struct OpportunityEditorView: View {
     Form {
       AppSection("The project") {
         AppField(title: "Title") {
-          TextField("Title", text: $draft.title).accessibilityIdentifier("opportunity.title")
+          TextField("Title", text: $draft.title, prompt: Text("Title").foregroundStyle(Theme.muted))
+            .accessibilityIdentifier("opportunity.title")
         }
         AppField(title: "Description") {
-          TextField("Description", text: $draft.description, axis: .vertical).lineLimit(5...12)
+          TextField(
+            "Description", text: $draft.description,
+            prompt: Text("Description").foregroundStyle(Theme.muted), axis: .vertical
+          ).lineLimit(5...12)
             .accessibilityIdentifier("opportunity.description")
         }
         Text("At least 30 characters. Describe the work, technologies, and mentorship.").font(
@@ -66,11 +70,15 @@ struct OpportunityEditorView: View {
           options: [("volunteer", "Volunteer"), ("paid", "Paid")])
         if draft.kind == "paid" {
           AppField(title: "Compensation") {
-            TextField("Compensation", text: optionalText(\.compensation))
+            TextField(
+              "Compensation", text: optionalText(\.compensation),
+              prompt: Text("Compensation").foregroundStyle(Theme.muted))
           }
         }
         AppField(title: "Expected commitment") {
-          TextField("Expected commitment", text: optionalText(\.commitment))
+          TextField(
+            "Expected commitment", text: optionalText(\.commitment),
+            prompt: Text("Expected commitment").foregroundStyle(Theme.muted))
         }
       }
       Section {
@@ -88,14 +96,20 @@ struct OpportunityEditorView: View {
         ).font(Theme.caption)
       }
       Section {
-        AppField(title: "City") { TextField("City", text: $draft.city) }
+        AppField(title: "City") {
+          TextField("City", text: $draft.city, prompt: Text("City").foregroundStyle(Theme.muted))
+        }
         Toggle("Open to remote developers", isOn: $draft.remote)
         Button(
           draft.latitude == nil ? "Add map pin" : "Adjust map pin",
           systemImage: "mappin.and.ellipse"
         ) { choosingPin = true }
         if draft.latitude != nil {
-          AppField(title: "Place name") { TextField("Place name", text: optionalText(\.place)) }
+          AppField(title: "Place name") {
+            TextField(
+              "Place name", text: optionalText(\.place),
+              prompt: Text("Place name").foregroundStyle(Theme.muted))
+          }
           Button("Remove map pin", role: .destructive) {
             draft.latitude = nil
             draft.longitude = nil

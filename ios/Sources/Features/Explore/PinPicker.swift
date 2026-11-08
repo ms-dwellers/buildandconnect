@@ -113,7 +113,11 @@ struct PinPicker: View {
               )
               .keyboardType(.numbersAndPunctuation)
             }
-            AppField(title: "Place name") { TextField("Place name", text: $pin.place) }
+            AppField(title: "Place name") {
+              TextField(
+                "Place name", text: $pin.place,
+                prompt: Text("Place name").foregroundStyle(Theme.muted))
+            }
           }
           Section {
             Button("Use this pin") {

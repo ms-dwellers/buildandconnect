@@ -56,6 +56,7 @@ struct AppButtonStyle: ButtonStyle {
     let pressed = enabled && (configuration.isPressed || selected)
     let depth = raised && enabled && !pressed ? size.depth : 0
     configuration.label
+      .labelStyle(.titleAndIcon)
       .font(Theme.body(size == .large ? 16 : 14).weight(.semibold))
       .lineLimit(dynamicTypeSize.isAccessibilitySize && fullWidth ? nil : 1)
       .underline(variant == .link && (hovering || pressed))
@@ -304,8 +305,7 @@ struct AppSelect<Value: Hashable>: View {
                 }
               }.buttonStyle(
                 AppButtonStyle(
-                  variant: selection == options[index].0 ? .secondary : .ghost,
-                  fullWidth: true))
+                  variant: .ghost, fullWidth: true, selected: selection == options[index].0))
             }
           }
         }
@@ -432,7 +432,7 @@ struct AppDialog<Actions: View>: View {
       Text(title).font(Theme.title(26)).accessibilityAddTraits(.isHeader)
       Text(message).font(Theme.body(17)).foregroundStyle(Theme.muted)
       actions()
-    }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+    }.padding(24).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       .foregroundStyle(Theme.ink).presentationBackground(Theme.canvas)
       .presentationDetents([.medium]).presentationCornerRadius(20)
   }

@@ -143,7 +143,7 @@ struct AuthView: View {
           width: 20
         ).accessibilityHidden(true)
         content().textFieldStyle(.plain)
-      }.padding(.horizontal, 12).padding(.vertical, 8).frame(minHeight: 44)
+      }.padding(.horizontal, 12).frame(minHeight: 44)
         .modifier(AppInputSurface(focused: isFocused))
     }
   }

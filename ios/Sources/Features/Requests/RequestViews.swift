@@ -177,10 +177,14 @@ struct RequestEditorView: View {
     Form {
       AppSection("What do you need?") {
         AppField(title: "Title") {
-          TextField("Title", text: $draft.title).accessibilityIdentifier("request.title")
+          TextField("Title", text: $draft.title, prompt: Text("Title").foregroundStyle(Theme.muted))
+            .accessibilityIdentifier("request.title")
         }
         AppField(title: "Description") {
-          TextField("Description", text: $draft.description, axis: .vertical).lineLimit(5...12)
+          TextField(
+            "Description", text: $draft.description,
+            prompt: Text("Description").foregroundStyle(Theme.muted), axis: .vertical
+          ).lineLimit(5...12)
             .accessibilityIdentifier("request.description")
         }
         Text("Describe the work in at least 30 characters.").font(Theme.caption).foregroundStyle(
@@ -190,7 +194,10 @@ struct RequestEditorView: View {
         Button(selectedPin ? "Adjust map pin" : "Choose map pin", systemImage: "mappin.and.ellipse")
         { choosingPin = true }
         AppField(title: "Place name") {
-          TextField("Place name", text: $draft.place).accessibilityIdentifier("request.place")
+          TextField(
+            "Place name", text: $draft.place,
+            prompt: Text("Place name").foregroundStyle(Theme.muted)
+          ).accessibilityIdentifier("request.place")
         }
         Text(
           "Guests see an approximate area. Developers see your exact pin while the request is open. Choose a landmark, not a home address."

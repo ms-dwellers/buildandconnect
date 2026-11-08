@@ -81,6 +81,20 @@ Settings > General > AutoFill & Passwords > AutoFill Passwords and Passkeys.
 Otherwise iOS may intercept manual password input while attempting unsupported
 strong-password generation. Production password-manager support stays enabled.
 
+## Manual design previews
+
+After building and installing the Debug app on a simulator, open the real profile,
+request, account, and voice screens with fictional data:
+
+```sh
+SIMCTL_CHILD_BUILD_CONNECT_DESIGN_PREVIEW=1 xcrun simctl launch --terminate-running-process booted org.buildandconnect.iphone
+```
+
+`Sources/Core/DesignPreview.swift` intercepts application API requests in memory;
+mutations are rejected and no live account is needed. It is compiled only for
+Debug simulator builds. Launch without the environment variable to return to the
+normal app. This is a manual visual preview, not a test runner.
+
 ## Connected pathways
 
 - Guest welcome and Calgary browsing; authentication returns to a pending posting.
@@ -88,7 +102,7 @@ strong-password generation. Production password-manager support stays enabled.
   and server sign-out. Native credentials are signed bearer sessions in Keychain.
 - Single-button illustrated welcome, inline expanding authentication, and staged
   developer setup with protected drafts and optional private-area setup.
-- Map-first city ideas browsing, category markers, floating glass search tray,
+- Map-first city ideas browsing, category markers, floating opaque search tray,
   and expandable result/detail sheets. Pins represent postings, never people.
 - Developer profile, skills, project evidence, learning preferences, independent
   availability/discovery flags, and a private pin/radius editor.

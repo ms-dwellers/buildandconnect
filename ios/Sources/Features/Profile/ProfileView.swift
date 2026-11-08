@@ -84,9 +84,14 @@ struct ProfileView: View {
       }
       AppSection("About you") {
         AppField(title: "Bio") {
-          TextField("Bio", text: $draft.bio, axis: .vertical).lineLimit(3...8)
+          TextField(
+            "Bio", text: $draft.bio, prompt: Text("Bio").foregroundStyle(Theme.muted),
+            axis: .vertical
+          ).lineLimit(3...8)
         }
-        AppField(title: "City") { TextField("City", text: $draft.city) }
+        AppField(title: "City") {
+          TextField("City", text: $draft.city, prompt: Text("City").foregroundStyle(Theme.muted))
+        }
         AppStepper(
           title: "\(draft.weeklyHours) hours per week", value: $draft.weeklyHours, range: 1...80)
         AppSelect(
@@ -97,7 +102,10 @@ struct ProfileView: View {
         ForEach(draft.skills.indices, id: \.self) { index in
           VStack(alignment: .leading) {
             AppField(title: "Skill") {
-              TextField("Skill", text: $draft.skills[index].name).textInputAutocapitalization(
+              TextField(
+                "Skill", text: $draft.skills[index].name,
+                prompt: Text("Skill").foregroundStyle(Theme.muted)
+              ).textInputAutocapitalization(
                 .never
               )
               .autocorrectionDisabled()
@@ -118,11 +126,14 @@ struct ProfileView: View {
         ForEach(draft.projects.indices, id: \.self) { index in
           VStack(alignment: .leading, spacing: 12) {
             AppField(title: "Project title") {
-              TextField("Project title", text: $draft.projects[index].title)
+              TextField(
+                "Project title", text: $draft.projects[index].title,
+                prompt: Text("Project title").foregroundStyle(Theme.muted))
             }
             AppField(title: "Description") {
               TextField(
-                "Project description", text: $draft.projects[index].description, axis: .vertical
+                "Project description", text: $draft.projects[index].description,
+                prompt: Text("Project description").foregroundStyle(Theme.muted), axis: .vertical
               )
               .lineLimit(2...5)
             }

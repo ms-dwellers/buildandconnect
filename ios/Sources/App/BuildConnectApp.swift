@@ -19,7 +19,17 @@ struct BuildConnectApp: App {
   }
   var body: some Scene {
     WindowGroup {
-      RootView().environment(app).environment(app.api)
+      Group {
+        #if DEBUG && targetEnvironment(simulator)
+          if ProcessInfo.processInfo.environment["BUILD_CONNECT_DESIGN_PREVIEW"] == "1" {
+            DesignPreviewRoot()
+          } else {
+            RootView()
+          }
+        #else
+          RootView()
+        #endif
+      }.environment(app).environment(app.api)
         .font(Theme.body()).foregroundStyle(Theme.ink).tint(Theme.accentStrong)
         .preferredColorScheme(.light)
         .controlSize(.regular)

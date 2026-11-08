@@ -114,7 +114,9 @@ struct VoiceStudioView: View {
           }.paperCard()
         }
         if active {
-          TextField("Type a thought", text: $input, axis: .vertical)
+          TextField(
+            "Type a thought", text: $input,
+            prompt: Text("Type a thought").foregroundStyle(Theme.muted), axis: .vertical)
           Button("Send thought") {
             begin(input)
             input = ""
