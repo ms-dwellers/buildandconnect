@@ -36,7 +36,7 @@ OpenRouter; this integration does not establish sponsor eligibility.
    to ElevenLabs. **Discard recording**, leaving the page, or hiding the tab
    discards an unfinished recording. Recordings stop after 60 seconds and are
    limited to 2 MB. Transcribed text stays editable before it is sent anywhere else.
-3. **Send to Gemini** sends the written answer and conversation to OpenRouter.
+3. **Draft the brief** sends the written answer and conversation to OpenRouter.
    Gemini returns a structured draft and one follow-up question. Unknown details
    remain empty instead of being guessed.
 4. **Review project brief** opens editable fields for the work, causes,

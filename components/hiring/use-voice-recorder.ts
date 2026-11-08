@@ -7,7 +7,7 @@ import {
   MAX_RECORDING_SECONDS,
   recordingMimeType,
 } from "@/lib/voice-recording";
-import type { useMicrophone } from "@/app/wip-voice-ai/use-microphone";
+import type { useMicrophone } from "./voice/use-microphone";
 
 type Recording = {
   recorder: MediaRecorder;

@@ -173,7 +173,7 @@ export function CalgaryCanvas({
             <span className="map-key map-key-volunteer">V</span>Volunteer
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="map-key map-key-volunteer">R</span>Community
+            <span className="map-key map-key-community">R</span>Community
           </span>
           <span className="flex items-center gap-1.5 text-muted-foreground">
             <LayersIcon aria-hidden="true" className="size-3.5" />

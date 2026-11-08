@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowLeftIcon, ArrowUpRightIcon } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ export function DesignSystem() {
       <AnchoredToastProvider>
         <TooltipProvider>
           <Button
-            render={<a href="#design-content" />}
+            render={<Link href="#design-content" />}
             className="fixed start-4 top-4 z-50 -translate-y-24 focus-visible:translate-y-0"
           >
             Skip to content
@@ -35,7 +36,7 @@ export function DesignSystem() {
           <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur-sm">
             <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
               <Button
-                render={<a href="/" />}
+                render={<Link href="/" />}
                 variant="ghost"
                 className="gap-3 px-0 font-semibold"
               >
@@ -73,7 +74,7 @@ export function DesignSystem() {
                 {sections.map(([id, title]) => (
                   <Button
                     key={id}
-                    render={<a href={`#${id}`} />}
+                    render={<Link href={`#${id}`} />}
                     variant="ghost"
                     size="sm"
                     className="justify-start"
@@ -102,7 +103,11 @@ export function DesignSystem() {
                   Our colors, type, and components, all in one place.
                   Interactive examples use local state only; nothing is saved.
                 </p>
-                <Button render={<a href="/" />} variant="link" className="px-0">
+                <Button
+                  render={<Link href="/" />}
+                  variant="link"
+                  className="px-0"
+                >
                   <ArrowLeftIcon aria-hidden="true" />
                   Back to the app
                 </Button>

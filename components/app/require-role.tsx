@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { CircleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MapJourneyLink } from "@/components/map/map-journey";
 import { useSession } from "@/lib/session";
 import type { Me, Role } from "@/lib/types";
 import { ROLE_LABELS } from "./app-shell";
@@ -30,7 +32,7 @@ export function RequireRole({
     if (session.status === "guest")
       router.replace(`/sign-in?next=${encodeURIComponent(pathname)}`);
     else if (session.status === "member" && !session.role)
-      router.replace("/role");
+      router.replace(`/role?next=${encodeURIComponent(pathname)}`);
   }, [session, router, pathname]);
 
   if (session.status === "unavailable")
@@ -51,15 +53,22 @@ export function RequireRole({
           accounts
         </AlertTitle>
         <AlertDescription>
-          <p>Your account type is {ROLE_LABELS[session.role]}.</p>
-          <Button
-            render={<a href="/dashboard" />}
-            variant="outline"
-            size="sm"
-            className="mt-2"
-          >
-            Go to your dashboard
-          </Button>
+          <p>
+            You&apos;re signed in as a {ROLE_LABELS[session.role]}. Each account
+            has one type, so this action isn&apos;t available from yours.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button
+              render={<Link href="/dashboard" />}
+              variant="outline"
+              size="sm"
+            >
+              Go to your dashboard
+            </Button>
+            <MapJourneyLink variant="ghost" size="sm">
+              Browse the map
+            </MapJourneyLink>
+          </div>
         </AlertDescription>
       </Alert>
     );
@@ -98,7 +107,8 @@ export function ErrorAlert({
 
 export function LoadingBlock({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-3" aria-busy="true" aria-label="Loading">
+    <div className="space-y-3" role="status" aria-busy="true">
+      <span className="sr-only">Loading</span>
       {Array.from({ length: rows }, (_, index) => (
         <Skeleton key={index} className="h-24 w-full rounded-xl" />
       ))}

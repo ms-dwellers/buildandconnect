@@ -12,11 +12,26 @@ export async function api<T>(
   const headers = new Headers(init.headers);
   if (init.body && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json");
-  const response = await fetch(`/api${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`/api${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+    });
+  } catch (cause) {
+    const name = cause instanceof DOMException ? cause.name : "";
+    return {
+      ok: false,
+      status: 0,
+      error:
+        name === "AbortError"
+          ? "The request was cancelled."
+          : name === "TimeoutError"
+            ? "The request took too long. Try again."
+            : "You appear to be offline. Check your connection and try again.",
+    };
+  }
   const text = await response.text();
   // Convex errors use `error`; forwarded Better Auth errors use `message`.
   type Body = { error?: string; message?: string; issues?: ApiIssue[] } & T;

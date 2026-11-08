@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   BriefcaseBusinessIcon,
   HandshakeIcon,
@@ -39,7 +40,7 @@ export function RequesterOpportunities() {
 
   return (
     <div className="space-y-12">
-      <Button render={<a href="/wip-voice-ai" />}>
+      <Button render={<Link href="/wip-voice-ai" />} variant="outline">
         Describe a project with voice
       </Button>
       <Section
@@ -56,7 +57,7 @@ export function RequesterOpportunities() {
               title="No opportunities yet"
               description="Post a paid or volunteer project to see developers ranked by growth fit."
               action={
-                <Button render={<a href="/opportunities/new" />}>
+                <Button render={<Link href="/opportunities/new" />}>
                   <PlusIcon aria-hidden="true" />
                   Post an opportunity
                 </Button>
@@ -87,7 +88,7 @@ export function RequesterOpportunities() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    render={<a href={`/opportunities/${opportunity.id}`} />}
+                    render={<Link href={`/opportunities/${opportunity.id}`} />}
                     size="sm"
                   >
                     View candidates

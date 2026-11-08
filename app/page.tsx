@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowUpRightIcon, ArrowRightIcon } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { AccountLinks } from "@/components/app/account-links";
@@ -17,14 +18,14 @@ export default function Home() {
         Skip to content
       </a>
       <header className="flex h-24 items-center justify-between gap-3 px-5 sm:px-10 lg:px-16">
-        <a
+        <Link
           href="/"
           aria-label="Build & Connect home"
           className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
         >
           <BrandLogo />
           <span className="hidden min-[420px]:inline">Build &amp; Connect</span>
-        </a>
+        </Link>
         <nav aria-label="Main" className="flex items-center gap-3 sm:gap-6">
           <MapJourneyLink variant="link" className="hidden px-0 sm:inline-flex">
             Nearby map
@@ -80,7 +81,7 @@ export default function Home() {
               {forPartners.body}
             </p>
             <Button
-              render={<a href={homeCopy.ctas.post.href} />}
+              render={<Link href={homeCopy.ctas.post.href} />}
               variant="link"
               className="mt-5 px-0"
             >
@@ -102,7 +103,7 @@ export default function Home() {
                 {homeCopy.join}
               </h2>
               <Button
-                render={<a href="/sign-up" />}
+                render={<Link href="/sign-up" />}
                 variant="highlight"
                 size="lg"
                 className="shrink-0 self-start sm:self-auto"
@@ -118,7 +119,7 @@ export default function Home() {
         <p className="font-medium">A little closer. A little better.</p>
         <div className="flex flex-wrap items-center gap-5">
           <Button
-            render={<a href="/design-system" />}
+            render={<Link href="/design-system" />}
             variant="link"
             size="sm"
             className="px-0 text-muted-foreground"

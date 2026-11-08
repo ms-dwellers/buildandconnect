@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CircleCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/components/dashboards/parts";
@@ -37,7 +38,7 @@ export function ListingActions({
   if (job.source === "opportunity")
     return (
       <Button
-        render={<a href={`/opportunities/${job.id}`} />}
+        render={<Link href={`/opportunities/${job.id}`} />}
         size="sm"
         variant={job.viewerIsOwner ? "outline" : "default"}
         className="w-full"
@@ -55,7 +56,7 @@ export function ListingActions({
       <div className="flex gap-2">
         {job.status === "open" && (
           <Button
-            render={<a href={`/requests/${job.id}/edit`} />}
+            render={<Link href={`/requests/${job.id}/edit`} />}
             size="sm"
             variant="outline"
             className="flex-1"
@@ -64,7 +65,7 @@ export function ListingActions({
           </Button>
         )}
         <Button
-          render={<a href="/dashboard" />}
+          render={<Link href="/dashboard" />}
           size="sm"
           variant="outline"
           className="flex-1"
