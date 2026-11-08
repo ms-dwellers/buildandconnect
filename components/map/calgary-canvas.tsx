@@ -200,7 +200,7 @@ export function CalgaryCanvas({
       )}
       {(live || filters) && (
         <div
-          className={`absolute start-3 bottom-36 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2 rounded-xl border bg-card/95 p-2 text-xs shadow-card backdrop-blur-sm sm:start-5 sm:max-w-[calc(100%-5rem)] ${!live || warning ? "sm:bottom-24" : "sm:bottom-12"}`}
+          className={`absolute start-3 flex max-w-[calc(100%-4.75rem)] flex-wrap items-center gap-2 rounded-xl border bg-card/95 p-2 text-xs shadow-card backdrop-blur-sm sm:start-5 sm:max-w-[calc(100%-5rem)] ${!live || warning ? "bottom-24" : "bottom-12"}`}
         >
           {filters ?? (
             <div className="flex flex-wrap items-center gap-3 px-1">
@@ -219,7 +219,7 @@ export function CalgaryCanvas({
             <Button
               size="sm"
               variant="outline"
-              className="min-h-11 bg-card"
+              className="hidden min-h-11 bg-card sm:inline-flex"
               onClick={showCity}
             >
               <LayersIcon aria-hidden="true" />

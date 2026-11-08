@@ -223,6 +223,7 @@
   --palette-coral: #eb5757;
   --palette-flame: #ee962f;
   --palette-ember: #c26e0b;
+  --palette-moss: #c5c46a;
   --palette-mint: #cce0d9;
   --palette-teal: #8fb3ac;
   --palette-pine: #174c43;
@@ -367,7 +368,8 @@
   --button-destructive-edge: #7f1e27;
 
   /* Figma Color / Developer mode — burnt ember surfaces + fire chrome. */
-  --background: #4a2816;
+  /* A deeper canvas than the cards so sections separate without borders alone. */
+  --background: #3a2112;
   --foreground: #ffe8cc;
   --card: #5e3218;
   --card-foreground: var(--foreground);
@@ -387,8 +389,9 @@
   --destructive-foreground: #ffe8cc;
   --info: var(--palette-flame);
   --info-foreground: var(--palette-flame);
-  --success: #e8b888;
-  --success-foreground: #e8b888;
+  /* Moss is the second autumn colour, so status is not orange on orange. */
+  --success: var(--palette-moss);
+  --success-foreground: #d9d98f;
   --warning: var(--palette-apricot);
   --warning-foreground: #ffe8cc;
   --border: var(--button-pixel-outline);
@@ -405,29 +408,36 @@
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
   /*
-   * Autumn day city: soft gold urban fill; pastel peach greenspace and light
-   * brown landuse — never saturated apricot/red on forests or industrial belts.
-   * Marker community accent stays apricot; basemap chroma stays muted.
+   * Autumn evening city: the basemap sits a step below the ember chrome so the
+   * panels and the map read as one surface. Land is walnut, parks are moss,
+   * water is slate, and the cream pins are the brightest thing on screen.
+   * The 2D preview (--map-land/--map-block) follows the same palette.
    */
-  --map-land: #e2c08a;
-  --map-block: #ebc998;
-  --map-road: #faf3e4;
-  --map-park: #ebc8a0;
-  --map-industrial: #d4b892;
-  --map-commercial: #e6c4a0;
-  --map-education: #e8ccb0;
-  --map-medical: #e0c0a0;
-  --map-water: #8aada8;
-  --map-water-edge: #6d948f;
-  --map-arterial: #f4b05a;
-  --map-building: #e0b478;
-  --map-label: #5c4030;
+  --map-land: #74492a;
+  --map-block: #83552f;
+  --map-road: #b98b5e;
+  --map-park: #6f6c34;
+  --map-industrial: #6c4429;
+  --map-commercial: #7a4e2d;
+  --map-education: #7a5232;
+  --map-medical: #774c2e;
+  --map-water: #3f6461;
+  --map-water-edge: #557a76;
+  --map-arterial: #e39a48;
+  --map-building: #8f6844;
+  --map-label: #2a170c;
   --map-light-preset: day;
+  --map-theme: faded;
+  --map-pin-paid: #ffe8cc;
+  --map-pin-paid-ink: #1a0e08;
+  --map-pin-volunteer: var(--palette-moss);
+  --map-pin-ink: #1a0e08;
+  --map-pin-ring: #1a0e08;
   --cloud: #6e3a1c;
   --map-mist-light: #c48a48;
   --map-mist-shadow: #3a2414;
   --dashboard-paper: #5e3218;
-  --map-base: #e2c08a;
+  --map-base: #74492a;
   --map-community: #f0a345;
   /* Landing scene under firelight: warm key light, olive pines, dark shadows. */
   --scene-light: #ffe0bd;
@@ -452,6 +462,34 @@
   /* Fieldbook chrome was still pine from :root — remap so header/board match fire. */
   --fieldbook-dot: --alpha(var(--palette-apricot) / 22%);
   --fieldbook-line: --alpha(#1a0e08 / 72%);
+}
+
+.profile-banner {
+  background-color: var(--secondary);
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .profile-banner {
+  background-image:
+    radial-gradient(var(--fieldbook-dot) 1px, transparent 1px),
+    linear-gradient(115deg, #6e3416 0%, #a3541f 48%, #8a6a2c 78%, #5f5e2c 100%);
+  background-size:
+    16px 16px,
+    auto;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="account-avatar"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 2px 2px 0 0 var(--button-pixel-outline);
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .dashboard-disclosure {
+  border: var(--button-pixel) solid var(--button-pixel-outline);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
 }
 
 :is([data-theme="developer"], [data-theme-preview="developer"])

@@ -46,14 +46,17 @@ const reducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function markerPalette(styles: CSSStyleDeclaration): MapPalette {
-  const color = (name: string) => styles.getPropertyValue(name).trim();
+  const color = (name: string, fallback?: string) =>
+    styles.getPropertyValue(name).trim() ||
+    (fallback ? styles.getPropertyValue(fallback).trim() : "");
+  // Pin tokens let a theme keep markers brighter than its basemap.
   return {
-    primary: color("--primary"),
-    surface: color("--card"),
-    secondary: color("--secondary"),
+    primary: color("--map-pin-paid", "--primary"),
+    surface: color("--map-pin-ring", "--card"),
+    secondary: color("--map-pin-volunteer", "--secondary"),
     community: color("--map-community"),
-    foreground: color("--foreground"),
-    primaryForeground: color("--primary-foreground"),
+    foreground: color("--map-pin-ink", "--foreground"),
+    primaryForeground: color("--map-pin-paid-ink", "--primary-foreground"),
   };
 }
 

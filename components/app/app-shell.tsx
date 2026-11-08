@@ -223,6 +223,7 @@ function SiteNavigation() {
             >
               <span
                 aria-hidden="true"
+                data-slot="account-avatar"
                 className="flex size-9 items-center justify-center rounded-lg bg-secondary text-sm font-semibold"
               >
                 {member.user.name

@@ -82,6 +82,50 @@
   border-radius: 0 0 0.25rem 0.25rem;
 }
 
+/* Mapbox controls ship light grey chrome; match the developer pixel kit. */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .map-workspace
+  .mapboxgl-ctrl-group {
+  border: 2px solid var(--button-pixel-outline);
+  border-radius: 0;
+  box-shadow: var(--shadow-card);
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .map-workspace
+  .mapboxgl-ctrl-group
+  button
+  + button {
+  border-top-color: var(--button-pixel-outline);
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .map-workspace
+  .mapboxgl-ctrl-icon {
+  filter: invert(0.9) sepia(0.5) saturate(1.4);
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .map-workspace
+  .mapboxgl-ctrl-attrib {
+  background: --alpha(var(--card) / 82%);
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .map-workspace
+  .mapboxgl-ctrl-attrib
+  a {
+  color: inherit;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .map-workspace
+  .mapboxgl-ctrl-logo {
+  opacity: 0.55;
+}
+
 @media (pointer: coarse) {
   .map-workspace .mapboxgl-ctrl-group button {
     width: 44px;

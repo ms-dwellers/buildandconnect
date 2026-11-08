@@ -67,7 +67,7 @@ export function DeveloperProfileView({
   return (
     <div className="space-y-6 [overflow-wrap:anywhere]">
       <Card className="overflow-hidden">
-        <div className="h-20 border-b bg-secondary sm:h-28" />
+        <div className="profile-banner h-20 border-b sm:h-28" />
         <CardPanel className="relative space-y-5 p-6 sm:p-8">
           <div className="-mt-14 flex flex-wrap items-end justify-between gap-4">
             <div

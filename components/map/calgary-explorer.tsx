@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeftIcon,
   ArrowUpRightIcon,
   MapPinIcon,
   PlusIcon,
@@ -87,11 +88,32 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
   const detailHeading = useRef<HTMLHeadingElement>(null);
+  const projectPanel = useRef<HTMLElement>(null);
   const role = session.status === "member" ? session.role : null;
   const post = role ? POST_TARGET[role] : undefined;
+  // Below the desktop layout the side panel stacks under the map and already
+  // shows the selected project, so a floating popup would only cover it.
+  const [wide, setWide] = useState(true);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1024px)");
+    const update = () => setWide(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   const selectJob = useCallback((id: string | null) => {
     setSelectedId(id);
+    if (id && !window.matchMedia("(min-width: 1024px)").matches)
+      requestAnimationFrame(() =>
+        projectPanel.current?.scrollIntoView({
+          block: "start",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "instant"
+            : "smooth",
+        }),
+      );
   }, []);
   const visibleJobs = useMemo(
     () => filterCityJobs(jobs, query, filter),
@@ -129,12 +151,19 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
       <AppHeader />
       <main className="grid flex-1 gap-3 p-3 lg:min-h-0 lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-4 lg:overflow-hidden lg:p-4">
         <aside
-          className="order-2 flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-card lg:order-1"
+          ref={projectPanel}
+          className="order-2 flex min-h-0 scroll-mt-3 flex-col overflow-hidden rounded-2xl border bg-card shadow-card lg:order-1"
           aria-label="Calgary projects"
         >
           <div className="space-y-5 p-5 sm:p-6">
             {selectedJob && (
-              <Button variant="ghost" size="sm" onClick={() => selectJob(null)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="-ms-2.5"
+                onClick={() => selectJob(null)}
+              >
+                <ArrowLeftIcon aria-hidden="true" />
                 Back to all projects
               </Button>
             )}
@@ -156,7 +185,9 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
             </h1>
             <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
               <MapPinIcon aria-hidden="true" className="size-3.5" />
-              {CITY_LABEL}
+              {selectedJob
+                ? `${selectedJob.neighbourhood}, ${CITY_LABEL}`
+                : CITY_LABEL}
             </p>
             {post && !selectedJob && (
               <Button
@@ -195,7 +226,9 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between gap-3 px-5 pb-3 text-xs text-muted-foreground sm:px-6">
+          <div
+            className={`flex items-center justify-between gap-3 px-5 pb-3 text-xs text-muted-foreground sm:px-6 ${selectedJob ? "sr-only" : ""}`}
+          >
             <p role="status">
               {feed.data
                 ? `${visibleJobs.length} ${visibleJobs.length === 1 ? "project" : "projects"}${feed.data.truncated ? " shown" : " in Calgary"}`
@@ -227,27 +260,27 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
             {selectedJob ? (
               <li className="space-y-5 px-3 pb-4 text-sm">
                 <p className="font-medium">{selectedJob.organization}</p>
-                <p className="whitespace-pre-line leading-7">
-                  {selectedJob.description}
-                </p>
-                <dl className="space-y-3 border-y py-4">
+                <dl className="grid grid-cols-2 gap-4 border-y py-4">
                   <div>
                     <dt className="text-xs text-muted-foreground">
                       Compensation
                     </dt>
-                    <dd className="mt-1">{selectedJob.compensation}</dd>
+                    <dd className="mt-1 font-medium">
+                      {selectedJob.compensation}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted-foreground">
                       Commitment
                     </dt>
-                    <dd className="mt-1">{selectedJob.commitment}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-muted-foreground">Location</dt>
-                    <dd className="mt-1">{selectedJob.neighbourhood}</dd>
+                    <dd className="mt-1 font-medium">
+                      {selectedJob.commitment}
+                    </dd>
                   </div>
                 </dl>
+                <p className="whitespace-pre-line leading-7">
+                  {selectedJob.description}
+                </p>
                 {selectedJob.skills.length > 0 && (
                   <p>{selectedJob.skills.join(" · ")}</p>
                 )}
@@ -412,6 +445,7 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                 ))}
               </ToggleGroup>
             }
+            showMarkerDetails={wide}
             renderActions={(job) => (
               <ListingActions
                 job={job}

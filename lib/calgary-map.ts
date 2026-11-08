@@ -49,13 +49,15 @@ export type CityMapPalette = {
 };
 
 export type CityLightPreset = "day" | "dusk" | "dawn" | "night";
+export type CityMapTheme = "default" | "faded" | "monochrome";
 
 export function cityMapConfig(
   colors: CityMapPalette,
   lightPreset: CityLightPreset = "day",
+  theme: CityMapTheme = "default",
 ) {
   return {
-    theme: "default",
+    theme,
     lightPreset,
     font: "Manrope",
     show3dObjects: true,
@@ -79,6 +81,7 @@ export function cityMapConfig(
 }
 
 const LIGHT_PRESETS: CityLightPreset[] = ["day", "dusk", "dawn", "night"];
+const MAP_THEMES: CityMapTheme[] = ["default", "faded", "monochrome"];
 
 /** Mapbox Standard paints buildings black until colorBuildings is a real colour. */
 function cssColor(
@@ -97,6 +100,9 @@ export function cityMapConfigFromStyles(
     /["']/g,
     "",
   );
+  // Faded softens Standard's built-in landcover, which otherwise shows through
+  // as saturated pink and green farmland around the city.
+  const theme = cssColor(styles, "--map-theme", "default").replace(/["']/g, "");
   const greenspace = cssColor(styles, "--map-park", "#a4c2ad");
   const land = cssColor(styles, "--map-base", "#ececda");
   return cityMapConfig(
@@ -120,6 +126,7 @@ export function cityMapConfigFromStyles(
       labels: cssColor(styles, "--map-label", "#425f57"),
     },
     LIGHT_PRESETS.find((candidate) => candidate === preset) ?? "day",
+    MAP_THEMES.find((candidate) => candidate === theme) ?? "default",
   );
 }
 
