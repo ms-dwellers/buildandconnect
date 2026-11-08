@@ -124,6 +124,50 @@ test(
     const otherCompany = await signup("requester", "Other Requester");
     const junior = await signup("developer", "Junior Developer");
     const recruiter = await signup("requester", "Discovery Requester");
+    const staleSession = await signup("requester", "Expired Session Requester");
+    const tokenResponse = await request(
+      "/auth/convex/token",
+      "GET",
+      undefined,
+      staleSession.cookie,
+    );
+    assert.equal(tokenResponse.status, 200);
+    const { token: staleToken } = (await tokenResponse.json()) as {
+      token: string;
+    };
+    assert.equal(
+      (await request("/auth/sign-out", "POST", {}, staleSession.cookie)).status,
+      200,
+    );
+    const currentSessionWithStaleJwt = [
+      ...company.cookie
+        .split("; ")
+        .filter((cookie) => !cookie.split("=", 1)[0].endsWith("convex_jwt")),
+      `better-auth.convex_jwt=${staleToken}`,
+    ].join("; ");
+    const currentUser = await request(
+      "/me",
+      "GET",
+      undefined,
+      currentSessionWithStaleJwt,
+    );
+    assert.equal(currentUser.status, 200);
+    assert.equal(
+      ((await currentUser.json()) as { user: { id: string } }).user.id,
+      company.id,
+    );
+    assert.equal(
+      (
+        await request(
+          "/project-drafts/stale-token-probe",
+          "PUT",
+          {},
+          currentSessionWithStaleJwt,
+        )
+      ).status,
+      400,
+      "A stale JWT must not prevent authenticated draft validation",
+    );
     for (const removedRole of ["company", "recruiter"]) {
       assert.equal(
         (

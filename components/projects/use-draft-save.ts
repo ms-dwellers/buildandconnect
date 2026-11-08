@@ -18,6 +18,7 @@ export function useDraftSave(initial: ProjectDraftRecord) {
   const [status, setStatus] = useState("Saved privately");
   const [error, setError] = useState("");
   const [conflict, setConflict] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
 
   const flush = useCallback((): Promise<boolean> => {
     if (timer.current) clearTimeout(timer.current);
@@ -52,11 +53,17 @@ export function useDraftSave(initial: ProjectDraftRecord) {
           if (!response.ok) {
             conflicted.current = response.status === 409;
             setConflict(conflicted.current);
-            setError(response.error);
+            setAuthRequired(response.status === 401);
+            setError(
+              response.status === 401
+                ? "Your session ended. Your edits are still in this tab. Sign in in a new tab, then return here and retry saving."
+                : response.error,
+            );
             setStatus("Changes not saved");
             return false;
           }
           saved.current = response.data;
+          setAuthRequired(false);
         } catch {
           if (!controller.signal.aborted) {
             setError(
@@ -103,5 +110,5 @@ export function useDraftSave(initial: ProjectDraftRecord) {
       request.current?.abort();
     };
   }, []);
-  return { saved, change, flush, status, error, conflict };
+  return { saved, change, flush, status, error, conflict, authRequired };
 }

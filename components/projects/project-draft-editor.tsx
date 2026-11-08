@@ -19,6 +19,7 @@ import {
   type ProjectDraftRecord,
 } from "@/backend/project-drafts";
 import { api } from "@/lib/api";
+import { withNext } from "@/lib/navigation";
 import { useDraftSave } from "./use-draft-save";
 
 export function ProjectDraftEditor({ id }: { id: string }) {
@@ -176,9 +177,25 @@ function Editor({
         />
       ) : (
         save.error && (
-          <Button variant="outline" onClick={() => void save.flush()}>
-            Retry saving
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            {save.authRequired && (
+              <Button
+                variant="outline"
+                render={
+                  <a
+                    href={withNext("/sign-in", "/dashboard")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                Sign in in a new tab
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => void save.flush()}>
+              Retry saving
+            </Button>
+          </div>
         )
       )}
       <OpportunityForm
