@@ -30,7 +30,8 @@ export const SCENE = {
   },
 } as const;
 
-export const SCREEN_TEXTURE = { width: 320, height: 200 } as const;
+/** 16:10 like the monitor; large enough to stay sharp when it fills the viewport. */
+export const SCREEN_TEXTURE = { width: 1280, height: 800 } as const;
 
 export type Vec3 = readonly [number, number, number];
 export type Pose = { position: Vec3; target: Vec3 };
