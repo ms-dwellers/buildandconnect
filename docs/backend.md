@@ -433,6 +433,23 @@ considerations before confirmation. Claims remain atomic and exclusive.
 }
 ```
 
+### Direct profile skill editing
+
+`PATCH /api/developers/me/skills` changes only the signed-in developer's skills:
+
+- `{action:"add", name, level}` adds a normalized, unique skill.
+- `{action:"set-level", name, level, expectedLevel}` updates a self-rating.
+- `{action:"remove", name, expectedLevel}` removes that self-rating, not confirmed
+  project evidence. At least one listed skill remains; the limit is 30.
+
+Edits are atomic and preserve the rest of the profile. Stale levels conflict
+instead of overwriting another tab. The profile page saves these operations
+directly, without submitting the full profile or waiting for AI. Changes to skill
+names clear the old semantic vector and schedule a revision-guarded refresh;
+explicit skills remain available for matching even if inference is unavailable.
+Level-only changes retain an existing vector because levels are not embedding
+input. Full profile edits submit `If-Match` to guard concurrent skill updates.
+
 ### Project-backed skills
 
 - `GET /api/{opportunities|requests}/:id/skill-evidence`: owners see submissions
@@ -449,6 +466,12 @@ confirmed projects, titles and confirming requester names. This is never accepte
 as developer profile input. Self-ratings and portfolio work remain self-reported.
 No AI call is needed for submission or confirmation. A closed community request
 retains the assigned developer for recording work; closing alone awards no backing.
+
+Opportunity match responses include `canExpressInterest`, independently of the
+match score. Missing skills never set it to false. An optional `developerNote`
+(up to 1,000 characters) on the interest request lets developers explain a first
+contribution and learning support. Only the developer can write this note;
+requester responses preserve it. Connection responses expose it to participants.
 
 ## Verification
 

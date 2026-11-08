@@ -162,6 +162,11 @@ export function InterestSection({
                     ? interest.developerName
                     : interest.requesterName}
                 </p>
+                {viewer === "requester" && interest.developerNote && (
+                  <p className="max-w-2xl whitespace-pre-line text-sm leading-6">
+                    {interest.developerNote}
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {interest.connected && (

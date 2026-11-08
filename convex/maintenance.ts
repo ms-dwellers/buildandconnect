@@ -67,6 +67,33 @@ export const refreshDeveloperEmbeddings = internalAction({
   },
 });
 
+export const developerForEmbedding = internalQuery({
+  args: { id: v.id("developers") },
+  handler: (ctx, args) => ctx.db.get(args.id),
+});
+
+export const refreshDeveloperEmbedding = internalAction({
+  args: { id: v.id("developers"), expectedUpdatedAt: v.number() },
+  handler: async (ctx, args): Promise<{ updated: boolean }> => {
+    const row = await ctx.runQuery(internal.maintenance.developerForEmbedding, {
+      id: args.id,
+    });
+    if (!row || row.updatedAt !== args.expectedUpdatedAt)
+      return { updated: false };
+    const embedding = await analyzeDeveloper(fireworksAI(), row.profile);
+    const updated = await ctx.runMutation(
+      internal.maintenance.replaceDeveloperEmbedding,
+      {
+        id: row._id,
+        expectedUpdatedAt: row.updatedAt,
+        expectedModel: row.embeddingModel,
+        embedding,
+      },
+    );
+    return { updated };
+  },
+});
+
 // Operator-only cleanup for accounts created by the opt-in live verification suite.
 export const cleanupVerification = internalMutation({
   args: { userIds: v.array(v.string()) },

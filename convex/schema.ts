@@ -280,6 +280,7 @@ export default defineSchema({
     developerId: v.string(),
     companyInterested: v.boolean(),
     developerInterested: v.boolean(),
+    developerNote: v.optional(v.string()),
     firstCompanyInterestAt: v.union(v.number(), v.null()),
     updatedAt: v.number(),
   })

@@ -1,5 +1,6 @@
 import { ConvexError } from "convex/values";
 import { z, ZodError } from "zod";
+import { skillChangeSchema } from "../backend/profile-skills";
 import {
   skillEvidenceSubmissionSchema,
   practicedSkillsSchema,
@@ -543,6 +544,16 @@ export async function handleApi(
           }),
         );
       }
+      case "PATCH /developers/me/skills": {
+        requireRole("developer");
+        const change = skillChangeSchema.parse(await body(request));
+        return json(
+          await ctx.runMutation(internal.data.updateDeveloperSkills, {
+            sessionId,
+            change,
+          }),
+        );
+      }
       case "GET /developers":
         return json(
           await ctx.runQuery(internal.data.developers, {
@@ -698,6 +709,7 @@ export async function handleApi(
         .object({
           developerId: z.string().max(100).optional(),
           interested: z.boolean(),
+          developerNote: z.string().trim().max(1000).optional(),
         })
         .strict()
         .parse(await body(request));

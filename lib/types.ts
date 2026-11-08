@@ -113,6 +113,7 @@ export type NearbyRequest = {
 };
 
 export type Interest = {
+  developerNote?: string;
   id: string;
   opportunityId: string;
   developerId: string;

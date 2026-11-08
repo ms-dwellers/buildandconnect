@@ -1,4 +1,6 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
+import { applySkillChange, skillChangeSchema } from "../backend/profile-skills";
 import {
   internalQuery as query,
   internalMutation as mutation,
@@ -574,6 +576,43 @@ export const ownProfile = query({
   },
 });
 
+export const updateDeveloperSkills = mutation({
+  args: { sessionId, change: v.any() },
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    id: string;
+    skills: { name: string; level: number }[];
+    revision: number;
+  }> => {
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
+    const row = await findDeveloper(ctx, user.id);
+    if (!row) fail(404, "Create your developer profile first");
+    const change = skillChangeSchema.parse(args.change);
+    const result = applySkillChange(row.profile.skills, change);
+    if (!result.ok) fail(result.status, result.error);
+    if (JSON.stringify(result.skills) === JSON.stringify(row.profile.skills))
+      return { id: user.id, skills: result.skills, revision: row.updatedAt };
+    const revision = Math.max(Date.now(), row.updatedAt + 1);
+    await ctx.db.patch(row._id, {
+      profile: { ...row.profile, skills: result.skills },
+      ...(change.action !== "set-level"
+        ? { embedding: [], embeddingModel: "pending" }
+        : {}),
+      updatedAt: revision,
+    });
+    // Save immediately. Semantic enrichment must never block a skill edit.
+    if (change.action !== "set-level" || row.embeddingModel === "pending")
+      await ctx.scheduler.runAfter(
+        0,
+        internal.maintenance.refreshDeveloperEmbedding,
+        { id: row._id, expectedUpdatedAt: revision },
+      );
+    return { id: user.id, skills: result.skills, revision };
+  },
+});
+
 export const updateDeveloperPreferences = mutation({
   args: { sessionId, preferences: v.object(developerPreferences) },
   handler: async (ctx, args) => {
@@ -967,9 +1006,12 @@ export const ownMatch = query({
     if (!row || !profile) fail(404, "Opportunity or profile not found");
     const job = opportunityData(row);
     const dev = await developerData(ctx, profile);
+    const ineligibleReasons = eligibility(job, dev, "direct");
     return {
       data: scoreMatch(job, dev, "direct"),
-      ineligibleReasons: eligibility(job, dev, "direct"),
+      ineligibleReasons,
+      canExpressInterest:
+        job.status === "open" && ineligibleReasons.length === 0,
       status: job.status,
       version: MATCH_VERSION,
       weights: WEIGHTS,
@@ -983,12 +1025,18 @@ export const setInterest = mutation({
     id: v.string(),
     developerId: v.optional(v.string()),
     interested: v.boolean(),
+    developerNote: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const actor = await access(ctx, args.sessionId, ["requester", "developer"]);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
     const requester = actor.role === "requester";
+    if (requester && args.developerNote !== undefined)
+      fail(403, "Only the developer can write their contribution note");
+    const developerNote = args.developerNote?.trim();
+    if (developerNote !== undefined && developerNote.length > 1000)
+      fail(400, "Keep your contribution note within 1,000 characters");
     if (requester && row.ownerId !== actor.user.id)
       fail(403, "Only the opportunity owner can express requester interest");
     if (!requester && args.developerId && args.developerId !== actor.user.id)
@@ -1022,6 +1070,11 @@ export const setInterest = mutation({
       developerInterested: requester
         ? (old?.developerInterested ?? false)
         : args.interested,
+      ...(developerNote !== undefined
+        ? { developerNote }
+        : old?.developerNote !== undefined
+          ? { developerNote: old.developerNote }
+          : {}),
       firstCompanyInterestAt:
         old?.firstCompanyInterestAt ??
         (requester && args.interested ? Date.now() : null),
@@ -1082,6 +1135,7 @@ export const connections = query({
         requesterName: job.ownerName,
         requesterInterested: row.companyInterested,
         developerInterested: row.developerInterested,
+        developerNote: row.developerNote ?? "",
         connected: row.companyInterested && row.developerInterested,
       });
     }

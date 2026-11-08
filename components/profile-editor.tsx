@@ -40,6 +40,7 @@ import { useApi } from "@/lib/use-api";
 import type { DeveloperProfile, OwnProfile } from "@/lib/types";
 import { DeveloperPreferencesForm } from "@/components/developer-preferences-form";
 import { DeveloperProfileView } from "@/components/developer-profile";
+import { ProfileSkills } from "@/components/profile-skills";
 import { LearningGoals } from "@/components/learning-goals";
 import { Tabs, TabsList, TabsTab, TabsPanel } from "@/components/ui/tabs";
 
@@ -51,7 +52,6 @@ const LEVELS = [
   { value: "5", label: "5 · Expert" },
 ];
 
-type Skill = DeveloperProfile["skills"][number];
 type Project = { title: string; description: string; technologies: string };
 
 export function ProfileEditor({ next = null }: { next?: string | null }) {
@@ -95,36 +95,7 @@ function LoadProfile({ next }: { next: string | null }) {
         </Button>
       )}
       {profile.data && (
-        <div className="rounded-2xl border bg-secondary/30 p-5 sm:p-6">
-          <h2 className="text-xl font-semibold">
-            Make your work easy to trust
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Share what you built, what you contributed and what changed. Your
-            preview shows the same profile requesters can see when you turn
-            visibility on.
-          </p>
-          <ul className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-            <li>
-              {profile.data.projects.length ||
-              profile.data.skillEvidence?.some(
-                (skill) => skill.projects.length > 0,
-              )
-                ? "✓ Project evidence added"
-                : "Add your first project"}
-            </li>
-            <li>
-              {profile.data.wantsToLearn.length
-                ? "✓ Learning goals added"
-                : "Choose learning goals"}
-            </li>
-            <li>
-              {profile.data.discoverable
-                ? "✓ Visible to requesters"
-                : "Private: only you see this preview"}
-            </li>
-          </ul>
-        </div>
+        <ProfileSkills profile={profile.data} onSaved={profile.reload} />
       )}
       <Tabs
         value={tab}
@@ -160,12 +131,7 @@ function LoadProfile({ next }: { next: string | null }) {
             <DeveloperProfileView
               profile={profile.data}
               onEditSkills={() => {
-                setTab("edit");
-                requestAnimationFrame(() =>
-                  document
-                    .getElementById("profile-skills")
-                    ?.scrollIntoView({ block: "start", behavior: "instant" }),
-                );
+                document.getElementById("profile-add-skill")?.focus();
               }}
             />
           )}
@@ -202,9 +168,6 @@ function ProfileForm({
   onSaved: () => Promise<void>;
   returnToProject?: boolean;
 }) {
-  const [skills, setSkills] = useState<Skill[]>(
-    initial?.skills.length ? initial.skills : [{ name: "", level: 2 }],
-  );
   const [projects, setProjects] = useState<Project[]>(
     (initial?.projects ?? []).map((project) => ({
       ...project,
@@ -236,9 +199,7 @@ function ProfileForm({
     const profile: DeveloperProfile = {
       bio: String(data.get("bio")),
       city: String(data.get("city")),
-      skills: skills
-        .filter((skill) => skill.name.trim())
-        .map((skill) => ({ name: skill.name.trim(), level: skill.level })),
+      skills: initial?.skills ?? [],
       projects: projects
         .filter((project) => project.title.trim())
         .map((project) => ({
@@ -258,6 +219,10 @@ function ProfileForm({
     try {
       const result = await api("/developers/me", {
         method: "PUT",
+        headers:
+          initial?.revision === undefined
+            ? {}
+            : { "If-Match": String(initial.revision) },
         body: JSON.stringify(profile),
       });
       if (!result.ok) {
@@ -336,100 +301,6 @@ function ProfileForm({
               </div>
             </div>
           </FormSection>
-
-          <div id="profile-skills" className="scroll-mt-6">
-            <FormSection title="Skills">
-              <p className="text-sm leading-6 text-muted-foreground">
-                Add skills as you learn them. Levels are your own assessment;
-                requester-confirmed work adds separate project backing
-                automatically.
-              </p>
-              <ul className="grid w-full gap-x-8 gap-y-5 lg:grid-cols-2">
-                {skills.map((skill, index) => (
-                  <li
-                    key={index}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto]"
-                  >
-                    <div className="col-span-2 grid min-w-0 gap-2 sm:col-span-1">
-                      <Label htmlFor={`skill-${index}`}>Skill</Label>
-                      <Input
-                        id={`skill-${index}`}
-                        value={skill.name}
-                        maxLength={100}
-                        required={index === 0}
-                        placeholder="React"
-                        onChange={(event) =>
-                          setSkills((current) =>
-                            current.map((item, i) =>
-                              i === index
-                                ? { ...item, name: event.target.value }
-                                : item,
-                            ),
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="grid min-w-0 gap-2">
-                      <Label htmlFor={`skill-level-${index}`}>Level</Label>
-                      <Select
-                        items={LEVELS}
-                        value={String(skill.level)}
-                        onValueChange={(value) =>
-                          value &&
-                          setSkills((current) =>
-                            current.map((item, i) =>
-                              i === index
-                                ? { ...item, level: Number(value) }
-                                : item,
-                            ),
-                          )
-                        }
-                      >
-                        <SelectTrigger
-                          id={`skill-level-${index}`}
-                          className="w-full"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectPopup>
-                          {LEVELS.map((level) => (
-                            <SelectItem key={level.value} value={level.value}>
-                              {level.label}
-                            </SelectItem>
-                          ))}
-                        </SelectPopup>
-                      </Select>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={skills.length === 1}
-                      aria-label={`Remove skill ${skill.name || index + 1}`}
-                      onClick={() =>
-                        setSkills((current) =>
-                          current.filter((_, i) => i !== index),
-                        )
-                      }
-                    >
-                      <Trash2Icon aria-hidden="true" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-              <FieldMessage>{errors.skills}</FieldMessage>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={skills.length >= 30}
-                onClick={() =>
-                  setSkills((current) => [...current, { name: "", level: 2 }])
-                }
-              >
-                <PlusIcon aria-hidden="true" />
-                Add a skill
-              </Button>
-            </FormSection>
-          </div>
 
           <FormSection title="Projects">
             <p className="text-sm text-muted-foreground">

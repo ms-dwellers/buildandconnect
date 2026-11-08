@@ -2,7 +2,7 @@
 
 import { FieldMessage } from "@/components/forms/form-kit";
 import { formatWeeklyHours } from "@/lib/format";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   HandshakeIcon,
   MapPinIcon,
@@ -12,6 +12,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { StartChatButton } from "@/components/chat/start-chat-button";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardPanel } from "@/components/ui/card";
 import {
   ErrorAlert,
@@ -88,6 +90,9 @@ function Loaded({
           aria-label="Project commitment and response"
           className="space-y-6 lg:order-2"
         >
+          {role === "developer" && (
+            <YourFit opportunity={job} reloadOpportunity={opportunity.reload} />
+          )}
           <Card className="border-t-4 border-t-primary">
             <CardPanel className="space-y-4 p-6">
               <h2 className="text-xl font-semibold">The commitment</h2>
@@ -119,9 +124,6 @@ function Loaded({
               </a>
             </CardPanel>
           </Card>
-          {role === "developer" && (
-            <YourFit opportunity={job} reloadOpportunity={opportunity.reload} />
-          )}
         </aside>
         <div className="min-w-0 lg:order-1" id="project-scope" tabIndex={-1}>
           <Summary opportunity={job} />
@@ -363,6 +365,14 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
                         on scope, timing, and support before starting.
                       </p>
                     )}
+                    {current?.developerNote && (
+                      <div className="space-y-1 border-s-2 ps-3">
+                        <p className="text-xs font-medium">Contribution plan</p>
+                        <p className="whitespace-pre-line text-sm leading-6">
+                          {current.developerNote}
+                        </p>
+                      </div>
+                    )}
                     {interested && !current?.connected && (
                       <p className="text-sm">
                         Your interest is shared. Waiting for the developer’s
@@ -447,6 +457,7 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
 
 type OwnMatch = {
   data: DeveloperMatch | null;
+  canExpressInterest?: boolean;
   ineligibleReasons: string[];
   status: "open" | "closed";
 };
@@ -463,11 +474,18 @@ function YourFit({
   const { pending, run, error } = useMutation();
   const mine = [...interest.byDeveloper.values()][0];
   const interested = mine?.developerInterested ?? false;
+  const [developerNote, setDeveloperNote] = useState("");
   const toggle = async (next: boolean) => {
     await run(
       "interest",
       `/opportunities/${opportunity.id}/interest`,
-      { method: "PUT", body: JSON.stringify({ interested: next }) },
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          interested: next,
+          ...(next ? { developerNote: developerNote.trim() } : {}),
+        }),
+      },
       next ? "Interest sent to the requester" : "Interest withdrawn",
     );
     await Promise.all([interest.reload(), match.reload(), reloadOpportunity()]);
@@ -504,6 +522,9 @@ function YourFit({
     );
   if (!match.data) return <LoadingBlock rows={1} />;
   const fit = match.data;
+  const canExpressInterest =
+    fit.canExpressInterest ??
+    (fit.status === "open" && fit.ineligibleReasons.length === 0);
   return (
     <Section title="Your next step">
       <Card>
@@ -515,6 +536,13 @@ function YourFit({
               onRetry={() => void interest.reload()}
             />
           )}
+          {canExpressInterest && !interested && (
+            <p className="text-sm leading-6">
+              You do not need every listed skill to express interest. Start with
+              what you can contribute, and agree on the learning support you
+              need.
+            </p>
+          )}
           {fit.data ? (
             <>
               <div className="flex flex-wrap items-center gap-2">
@@ -525,50 +553,74 @@ function YourFit({
                   </Badge>
                 )}
               </div>
-              <p className="text-sm">{fit.data.explanation}</p>
+              <dl className="space-y-3 text-sm">
+                <div>
+                  <dt className="font-medium">What you bring</dt>
+                  <dd className="mt-1 text-muted-foreground">
+                    {fit.data.existingRelevantSkills.join(" · ") ||
+                      "A fresh perspective. Discuss your transferable experience."}
+                  </dd>
+                </div>
+                {fit.data.skillsToDevelop.length > 0 && (
+                  <div>
+                    <dt className="font-medium">
+                      Skills to build along the way
+                    </dt>
+                    <dd className="mt-1 text-muted-foreground">
+                      {fit.data.skillsToDevelop.join(" · ")}
+                    </dd>
+                  </div>
+                )}
+              </dl>
               {!!fit.data.considerations?.length && (
-                <div className="space-y-2 text-sm">
-                  <p className="font-medium">Discuss before starting</p>
+                <details className="space-y-2 text-sm">
+                  <summary className="cursor-pointer font-medium">
+                    Discuss before starting
+                  </summary>
                   <ul className="list-disc space-y-1 ps-5 text-muted-foreground">
                     {fit.data.considerations.map((reason) => (
                       <li key={reason}>{reason}</li>
                     ))}
                   </ul>
-                </div>
+                </details>
               )}
               <details className="border-t pt-3 text-sm">
                 <summary className="cursor-pointer font-medium">
                   Match details · {Math.round(fit.data.score)}%
                 </summary>
                 <div className="mt-4">
+                  <p className="mb-4 text-sm leading-6">
+                    {fit.data.explanation}
+                  </p>
                   <Scores scores={fit.data.scores} compact />
                 </div>
               </details>
             </>
           ) : (
-            <div className="space-y-2">
-              <p className="font-medium">
-                You're not eligible for this one yet
-              </p>
-              <ul className="list-disc ps-5 text-sm text-muted-foreground">
-                {fit.ineligibleReasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-              <Button
-                variant="outline"
-                render={
-                  <a
-                    href={withNext(
-                      "/profile",
-                      `/opportunities/${opportunity.id}`,
-                    )}
-                  />
-                }
-              >
-                Review profile visibility
-              </Button>
-            </div>
+            !canExpressInterest &&
+            fit.status === "open" && (
+              <div className="space-y-2">
+                <p className="font-medium">Review your profile visibility</p>
+                <ul className="list-disc ps-5 text-sm text-muted-foreground">
+                  {fit.ineligibleReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+                <Button
+                  variant="outline"
+                  render={
+                    <a
+                      href={withNext(
+                        "/profile",
+                        `/opportunities/${opportunity.id}`,
+                      )}
+                    />
+                  }
+                >
+                  Review profile visibility
+                </Button>
+              </div>
+            )
           )}
           <FieldMessage>{error}</FieldMessage>
           {mine?.connected && (
@@ -592,8 +644,36 @@ function YourFit({
               This opportunity is closed to new interest.
             </p>
           )}
-          {(fit.data || interested) && (
-            <div className="flex flex-wrap items-center gap-3 border-t pt-4">
+          {(canExpressInterest || interested) && (
+            <div className="space-y-4 border-t pt-4">
+              {!interested && (
+                <div className="grid gap-2">
+                  <Label htmlFor={`contribution-${opportunity.id}`}>
+                    Your contribution plan (optional)
+                  </Label>
+                  <Textarea
+                    id={`contribution-${opportunity.id}`}
+                    value={developerNote}
+                    onChange={(event) => setDeveloperNote(event.target.value)}
+                    maxLength={1000}
+                    rows={3}
+                    placeholder="I can build the first screen with React. I'd like support learning the database side."
+                    disabled={pending === "interest"}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Tell the requester where you can help and what you want to
+                    learn. This is not a claim of skills you do not yet have.
+                  </p>
+                </div>
+              )}
+              {interested && mine?.developerNote && (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium">Your contribution plan</p>
+                  <p className="whitespace-pre-line text-sm leading-6">
+                    {mine.developerNote}
+                  </p>
+                </div>
+              )}
               <ConfirmButton
                 confirmVariant={interested ? "destructive" : "default"}
                 variant={interested ? "outline" : "default"}
