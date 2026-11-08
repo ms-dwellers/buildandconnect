@@ -124,6 +124,10 @@ test("the city theme uses semantic colors and retains real 3D objects in dayligh
     land: "paper",
     water: "teal",
     greenspace: "sage",
+    industrial: "clay",
+    commercial: "peach",
+    education: "sand",
+    medical: "mist",
     roads: "cream",
     motorways: "wheat",
     buildings: "stone",
@@ -137,6 +141,8 @@ test("the city theme uses semantic colors and retains real 3D objects in dayligh
   assert.equal(config.colorLand, colors.land);
   assert.equal(config.colorWater, colors.water);
   assert.equal(config.colorGreenspace, colors.greenspace);
+  assert.equal(config.colorIndustrial, colors.industrial);
+  assert.equal(config.colorCommercial, colors.commercial);
   assert.equal(config.colorBuildings, colors.buildings);
   assert.equal(config.colorPlaceLabels, colors.labels);
   assert.equal(cityMapConfig(colors, "dusk").lightPreset, "dusk");
@@ -149,7 +155,11 @@ test("map styles read the light preset token from the active theme", () => {
         {
           "--map-base": "#e2c08a",
           "--map-water": "#8aada8",
-          "--map-park": "#f0a345",
+          "--map-park": "#ebc8a0",
+          "--map-industrial": "#d4b892",
+          "--map-commercial": "#e6c4a0",
+          "--map-education": "#e8ccb0",
+          "--map-medical": "#e0c0a0",
           "--map-road": "#faf3e4",
           "--map-arterial": "#f4b05a",
           "--map-building": "#e0b478",
@@ -164,7 +174,9 @@ test("map styles read the light preset token from the active theme", () => {
   assert.equal(config.colorLand, "#e2c08a");
   assert.equal(config.colorBuildings, "#e0b478");
   assert.equal(config.colorRoads, "#faf3e4");
-  assert.equal(config.colorGreenspace, "#f0a345");
+  assert.equal(config.colorGreenspace, "#ebc8a0");
+  assert.equal(config.colorIndustrial, "#d4b892");
+  assert.equal(config.colorCommercial, "#e6c4a0");
 });
 
 test("empty building tokens fall back instead of leaving Mapbox black defaults", () => {

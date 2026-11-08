@@ -269,6 +269,10 @@
   --map-block: #c4d8c8;
   --map-road: var(--palette-cream);
   --map-park: #a4c2ad;
+  --map-industrial: #b7c9b8;
+  --map-commercial: #c4d4c6;
+  --map-education: #c9d8c8;
+  --map-medical: #c2d4cc;
   --map-water: var(--palette-teal);
   --map-water-edge: #719b92;
   --map-arterial: #dfc999;
@@ -401,13 +405,18 @@
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
   /*
-   * Autumn day city: golden land and clear apricot canopy — orange, not rust.
-   * Red-brown landcover read as horror; keep chroma in the apricot/wheat band.
+   * Autumn day city: soft gold urban fill; pastel peach greenspace and light
+   * brown landuse — never saturated apricot/red on forests or industrial belts.
+   * Marker community accent stays apricot; basemap chroma stays muted.
    */
   --map-land: #e2c08a;
   --map-block: #ebc998;
   --map-road: #faf3e4;
-  --map-park: #f0a345;
+  --map-park: #ebc8a0;
+  --map-industrial: #d4b892;
+  --map-commercial: #e6c4a0;
+  --map-education: #e8ccb0;
+  --map-medical: #e0c0a0;
   --map-water: #8aada8;
   --map-water-edge: #6d948f;
   --map-arterial: #f4b05a;

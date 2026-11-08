@@ -37,6 +37,11 @@ export type CityMapPalette = {
   land: string;
   water: string;
   greenspace: string;
+  /** Soft fills for Mapbox Standard landuse belts (industrial defaults read red). */
+  industrial: string;
+  commercial: string;
+  education: string;
+  medical: string;
   roads: string;
   motorways: string;
   buildings: string;
@@ -60,6 +65,10 @@ export function cityMapConfig(
     colorLand: colors.land,
     colorWater: colors.water,
     colorGreenspace: colors.greenspace,
+    colorIndustrial: colors.industrial,
+    colorCommercial: colors.commercial,
+    colorEducation: colors.education,
+    colorMedical: colors.medical,
     colorRoads: colors.roads,
     colorMotorways: colors.motorways,
     colorTrunks: colors.motorways,
@@ -88,11 +97,18 @@ export function cityMapConfigFromStyles(
     /["']/g,
     "",
   );
+  const greenspace = cssColor(styles, "--map-park", "#a4c2ad");
+  const land = cssColor(styles, "--map-base", "#ececda");
   return cityMapConfig(
     {
-      land: cssColor(styles, "--map-base", "#ececda"),
+      land,
       water: cssColor(styles, "--map-water", "#8fb3ac"),
-      greenspace: cssColor(styles, "--map-park", "#a4c2ad"),
+      greenspace,
+      // Fall back toward greenspace/land so missing tokens never leave Mapbox reds.
+      industrial: cssColor(styles, "--map-industrial", greenspace),
+      commercial: cssColor(styles, "--map-commercial", land),
+      education: cssColor(styles, "--map-education", land),
+      medical: cssColor(styles, "--map-medical", greenspace),
       roads: cssColor(styles, "--map-road", "#f8f7de"),
       motorways: cssColor(styles, "--map-arterial", "#dfc999"),
       // Prefer the dedicated building token; fall back to block fill, never "".
