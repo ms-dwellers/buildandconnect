@@ -101,21 +101,25 @@ struct PinPicker: View {
             }
           }
           Section("Selected location") {
-            TextField(
-              "Latitude", value: $pin.latitude, format: .number.precision(.fractionLength(6))
-            )
-            .keyboardType(.numbersAndPunctuation)
-            TextField(
-              "Longitude", value: $pin.longitude, format: .number.precision(.fractionLength(6))
-            )
-            .keyboardType(.numbersAndPunctuation)
-            TextField("Place name", text: $pin.place)
+            AppField(title: "Latitude") {
+              TextField(
+                "Latitude", value: $pin.latitude, format: .number.precision(.fractionLength(6))
+              )
+              .keyboardType(.numbersAndPunctuation)
+            }
+            AppField(title: "Longitude") {
+              TextField(
+                "Longitude", value: $pin.longitude, format: .number.precision(.fractionLength(6))
+              )
+              .keyboardType(.numbersAndPunctuation)
+            }
+            AppField(title: "Place name") { TextField("Place name", text: $pin.place) }
           }
           Section {
             Button("Use this pin") {
               onSelect(pin)
               dismiss()
-            }.buttonStyle(RaisedButtonStyle())
+            }.buttonStyle(AppButtonStyle.primary)
               .listRowBackground(Color.clear)
               .disabled(
                 !pin.latitude.isFinite || !pin.longitude.isFinite
@@ -124,8 +128,10 @@ struct PinPicker: View {
               .accessibilityIdentifier("pin.confirm")
           }
         }.pageBackground()
-      }.pageBackground().navigationTitle("Choose a location").navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+      }.pageBackground().appNavigationTitle("Choose a location")
+        .toolbar {
+          AppToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+        }
         .onAppear {
           MapConfiguration.configure()
           pin = Pin(latitude: latitude, longitude: longitude)

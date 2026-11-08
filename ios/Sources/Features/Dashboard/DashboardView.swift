@@ -66,7 +66,7 @@ struct DeveloperHomeView: View {
             title: "Create your developer profile", symbol: "person.crop.circle",
             message: "Add skills and learning goals to find your fit.")
           NavigationLink("Create profile", value: Route.setupProfile).buttonStyle(
-            RaisedButtonStyle())
+            AppButtonStyle.primary)
         } else if let error = profile.error {
           FailureView(error: error) { await load() }
         }
@@ -81,7 +81,7 @@ struct DeveloperHomeView: View {
           Text("Nearby requests").font(Theme.title(27))
           if developer.location == nil {
             NavigationLink("Set your private area", value: Route.area).buttonStyle(
-              RaisedButtonStyle())
+              AppButtonStyle.primary)
           } else {
             if let error = nearby.error { FailureView(error: error) { await loadNearby() } }
             ForEach(nearby.value?.data ?? []) { request in
@@ -111,7 +111,7 @@ struct DeveloperHomeView: View {
           EmptyState(title: "No open opportunities", symbol: "briefcase")
         }
       }.padding(20)
-    }.pageBackground().navigationTitle("My work").navigationBarTitleDisplayMode(.inline)
+    }.pageBackground().appNavigationTitle("My work")
       .task(id: app.revision) { await load() }.refreshable { await load() }
   }
   private func load() async {
@@ -140,13 +140,13 @@ struct RequesterHomeView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
         FeatureBanner(title: "Small ideas.\nReal possibilities.", symbol: "lightbulb.fill")
-        NavigationLink("Post a request", value: Route.newRequest).buttonStyle(RaisedButtonStyle())
-        Picker("Status", selection: $status) {
-          Text("All").tag("all")
-          Text("Open").tag("open")
-          Text("Claimed").tag("claimed")
-          Text("Closed").tag("closed")
-        }.pickerStyle(.segmented)
+        NavigationLink("Post a request", value: Route.newRequest).buttonStyle(
+          AppButtonStyle.primary)
+        AppSegmentedControl(
+          title: "Status", selection: $status,
+          options: [
+            ("all", "All"), ("open", "Open"), ("claimed", "Claimed"), ("closed", "Closed"),
+          ])
         PageList(store: requests, load: load) { request in
           if status == "all" || request.status == status { RequestRow(request: request) }
         }
@@ -156,7 +156,7 @@ struct RequesterHomeView: View {
             message: "Post a local problem and pin where help is needed.")
         }
       }.padding(20)
-    }.pageBackground().navigationTitle("My requests").navigationBarTitleDisplayMode(.inline)
+    }.pageBackground().appNavigationTitle("My requests")
       .task(id: app.revision) { await load(true) }.refreshable { await load(true) }
   }
   private func load(_ reset: Bool) async { await requests.load(api, "/requests", reset: reset) }
@@ -172,12 +172,12 @@ struct CompanyHomeView: View {
       VStack(alignment: .leading, spacing: 20) {
         FeatureBanner(title: "Build with\nthe right people.", symbol: "person.2.fill")
         NavigationLink("Post an opportunity", value: Route.newOpportunity).buttonStyle(
-          RaisedButtonStyle())
-        Picker("Status", selection: $status) {
-          Text("All").tag("all")
-          Text("Open").tag("open")
-          Text("Closed").tag("closed")
-        }.pickerStyle(.segmented)
+          AppButtonStyle.primary)
+        AppSegmentedControl(
+          title: "Status", selection: $status,
+          options: [
+            ("all", "All"), ("open", "Open"), ("closed", "Closed"),
+          ])
         PageList(store: opportunities, load: load) { opportunity in
           if status == "all" || opportunity.status == status {
             OpportunityRow(opportunity: opportunity)
@@ -190,7 +190,7 @@ struct CompanyHomeView: View {
         }
         NavigationLink("Browse discoverable developers") { DiscoveryView() }
       }.padding(20)
-    }.pageBackground().navigationTitle("Opportunities").navigationBarTitleDisplayMode(.inline)
+    }.pageBackground().appNavigationTitle("Opportunities")
       .task(id: app.revision) { await load(true) }.refreshable { await load(true) }
   }
   private func load(_ reset: Bool) async {
@@ -233,7 +233,7 @@ struct DiscoveryView: View {
           EmptyState(title: "No discoverable developers yet", symbol: "person.2")
         }
       }.padding(20)
-    }.pageBackground().navigationTitle("Developers").navigationBarTitleDisplayMode(.inline).task(
+    }.pageBackground().appNavigationTitle("Developers").task(
       id: app.revision
     ) { await load(true) }
     .refreshable {

@@ -1,14 +1,31 @@
 import SwiftUI
+import UIKit
 
 @main
 struct BuildConnectApp: App {
   @State private var app = AppModel()
+  init() {
+    let navigation = UINavigationBarAppearance()
+    navigation.configureWithOpaqueBackground()
+    navigation.backgroundColor = UIColor(Theme.canvas)
+    navigation.titleTextAttributes = [
+      .foregroundColor: UIColor(Theme.ink),
+      .font: UIFont(name: "LeagueSpartan-SemiBold", size: 18)
+        ?? UIFont.systemFont(ofSize: 18, weight: .semibold),
+    ]
+    UINavigationBar.appearance().standardAppearance = navigation
+    UINavigationBar.appearance().scrollEdgeAppearance = navigation
+    UINavigationBar.appearance().compactAppearance = navigation
+  }
   var body: some Scene {
     WindowGroup {
       RootView().environment(app).environment(app.api)
         .font(Theme.body()).foregroundStyle(Theme.ink).tint(Theme.accentStrong)
         .preferredColorScheme(.light)
-        .controlSize(.large)
+        .controlSize(.regular)
+        .buttonStyle(AppButtonStyle())
+        .textFieldStyle(AppTextFieldStyle())
+        .toggleStyle(AppSwitchStyle())
         .onOpenURL { app.open($0) }
     }
   }
@@ -231,13 +248,12 @@ struct RootView: View {
       }.background(Theme.softAccent).presentationDragIndicator(.visible).preferredColorScheme(
         .light)
     }
-    .alert(
-      "Account",
+    .sheet(
       isPresented: Binding(get: { app.notice != nil }, set: { if !$0 { app.notice = nil } })
     ) {
-      Button("Dismiss", role: .cancel) { app.notice = nil }
-    } message: {
-      Text(app.notice ?? "")
+      AppDialog(title: "Account", message: app.notice ?? "") {
+        Button("Dismiss") { app.notice = nil }.buttonStyle(AppButtonStyle.primary)
+      }
     }
   }
 
@@ -267,11 +283,44 @@ struct RootView: View {
           .tabItem { Label("Account", systemImage: "person.crop.circle") }.tag(AppTab.account)
       }
     }.id(app.identity)
-      .toolbarBackground(
-        app.selectedTab == .explore ? Theme.mapSurface : Theme.canvas, for: .tabBar
-      )
-      .toolbarColorScheme(.light, for: .tabBar)
+      .toolbar(.hidden, for: .tabBar)
+      .safeAreaInset(edge: .bottom, spacing: 0) { appTabBar }
       .tint(Theme.accentStrong)
+  }
+
+  private var appTabBar: some View {
+    VStack(spacing: 0) {
+      Rectangle().fill(Theme.border).frame(height: 1)
+      HStack(spacing: 4) {
+        tabButton("Explore", symbol: "map", tab: .explore)
+        if app.signedIn { tabButton(homeTitle, symbol: "square.stack.3d.up", tab: .home) }
+        if app.role == .developer || app.role == .company {
+          tabButton("Connections", symbol: "person.2", tab: .connections)
+        }
+        if app.role == .developer {
+          tabButton("Profile", symbol: "person.crop.circle", tab: .profile)
+        } else if app.signedIn {
+          tabButton("Account", symbol: "person.crop.circle", tab: .account)
+        }
+      }.padding(.horizontal, 12).padding(.vertical, 8)
+    }.background(Theme.canvas)
+      .accessibilityElement(children: .contain).accessibilityLabel("Main navigation")
+  }
+
+  private func tabButton(_ title: String, symbol: String, tab: AppTab) -> some View {
+    Button {
+      app.selectedTab = tab
+    } label: {
+      VStack(spacing: 5) {
+        Image(systemName: app.selectedTab == tab ? symbol + ".fill" : symbol)
+          .font(.system(size: 21, weight: .medium))
+        Text(title).font(Theme.body(12).weight(app.selectedTab == tab ? .semibold : .regular))
+      }.frame(maxWidth: .infinity, minHeight: 48)
+        .foregroundStyle(app.selectedTab == tab ? Theme.accentStrong : Theme.muted)
+    }.buttonStyle(.plain)
+      .accessibilityLabel(title)
+      .accessibilityAddTraits(app.selectedTab == tab ? .isSelected : [])
+      .accessibilityIdentifier("tab.\(title)")
   }
 
   private var homeTitle: String {
@@ -291,19 +340,31 @@ struct AppNavigation<Content: View>: View {
     NavigationStack(path: $path) {
       content().toolbarBackground(Theme.canvas, for: .navigationBar)
         .navigationDestination(for: Route.self) { route in
-          switch route {
-          case .opportunity(let id): OpportunityDetailView(id: id)
-          case .request(let id): RequestDetailView(id: id)
-          case .developer(let id): DeveloperDetailView(id: id)
-          case .profile: ProfileView()
-          case .setupProfile: DeveloperOnboardingView()
-          case .area: AreaEditorView()
-          case .newRequest: RequestEditorView()
-          case .newOpportunity: OpportunityEditorView()
-          case .editRequest(let id): RequestEditorView(id: id)
-          case .editOpportunity(let id): OpportunityEditorView(id: id)
-          case .map(let id): ExploreView(focus: id)
-          case .account: AccountView()
+          Group {
+            switch route {
+            case .opportunity(let id): OpportunityDetailView(id: id)
+            case .request(let id): RequestDetailView(id: id)
+            case .developer(let id): DeveloperDetailView(id: id)
+            case .profile: ProfileView()
+            case .setupProfile: DeveloperOnboardingView()
+            case .area: AreaEditorView()
+            case .newRequest: RequestEditorView()
+            case .newOpportunity: OpportunityEditorView()
+            case .editRequest(let id): RequestEditorView(id: id)
+            case .editOpportunity(let id): OpportunityEditorView(id: id)
+            case .map(let id): ExploreView(focus: id)
+            case .account: AccountView()
+            }
+          }
+          .navigationBarBackButtonHidden()
+          .toolbar {
+            AppToolbarItem(placement: .topBarLeading) {
+              Button {
+                if !path.isEmpty { path.removeLast() }
+              } label: {
+                Label("Back", systemImage: "chevron.left")
+              }.buttonStyle(AppButtonStyle(variant: .ghost))
+            }
           }
         }
     }

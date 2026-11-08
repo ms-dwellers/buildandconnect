@@ -37,7 +37,7 @@ struct OpportunityDetailView: View {
           }.padding(20)
         }.pageBackground().task(id: app.revision) { await load() }.refreshable { await load() }
       }
-    }.navigationTitle("Opportunity").navigationBarTitleDisplayMode(.inline)
+    }.appNavigationTitle("Opportunity")
   }
 
   private func summary(_ item: Opportunity) -> some View {
@@ -62,7 +62,8 @@ struct OpportunityDetailView: View {
   }
 
   @ViewBuilder private func ownerActions(_ item: Opportunity) -> some View {
-    NavigationLink("Edit opportunity", value: Route.editOpportunity(id)).buttonStyle(.bordered)
+    NavigationLink("Edit opportunity", value: Route.editOpportunity(id)).buttonStyle(
+      AppButtonStyle())
     ConfirmAction(
       label: item.status == "open" ? "Close opportunity" : "Reopen opportunity",
       consequence: item.status == "open"
@@ -112,7 +113,7 @@ struct OpportunityDetailView: View {
     Text("Your fit").font(Theme.title(27))
     if (ownMatch.error as? APIError)?.status == 404 {
       NavigationLink("Create profile to see your fit", value: Route.setupProfile).buttonStyle(
-        RaisedButtonStyle())
+        AppButtonStyle.primary)
     } else if let error = ownMatch.error {
       FailureView(error: error) { await load() }
     }
@@ -149,7 +150,7 @@ struct OpportunityDetailView: View {
       }
     } else if canExpress && interests.loaded && interests.error == nil {
       Button("I'm interested") { Task { await toggleInterest(developerId, true) } }
-        .buttonStyle(RaisedButtonStyle()).disabled(action.busy)
+        .buttonStyle(AppButtonStyle.primary).disabled(action.busy)
     }
   }
 

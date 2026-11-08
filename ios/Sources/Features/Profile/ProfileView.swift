@@ -6,7 +6,7 @@ struct TagField: View {
   @State private var text = ""
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
-      Text(title).font(Theme.body(15).weight(.medium))
+      Text(title).font(Theme.metadata)
       TextField(
         title, text: $text,
         prompt: Text("Separate entries with commas").foregroundStyle(Theme.muted), axis: .vertical
@@ -56,7 +56,7 @@ struct ProfileView: View {
       } else {
         editor
       }
-    }.navigationTitle("Profile").pageBackground()
+    }.appNavigationTitle("Profile").pageBackground()
       .task(id: draft) {
         guard initialized, profile.value == nil, !saved else { return }
         do {
@@ -69,7 +69,7 @@ struct ProfileView: View {
         }
       }
       .toolbar {
-        ToolbarItem(placement: .topBarTrailing) {
+        AppToolbarItem(placement: .topBarTrailing) {
           NavigationLink(value: Route.account) {
             Image(systemName: "gearshape").accessibilityLabel("Account")
           }
@@ -83,21 +83,28 @@ struct ProfileView: View {
         Section { FailureView(error: error) { await load() } }
       }
       Section("About you") {
-        TextField("Bio", text: $draft.bio, axis: .vertical).lineLimit(3...8)
-        TextField("City", text: $draft.city)
-        Stepper("\(draft.weeklyHours) hours per week", value: $draft.weeklyHours, in: 1...80)
-        Picker("Experience", selection: $draft.experienceLevel) {
-          ForEach(1...5, id: \.self) { Text("\($0) of 5").tag($0) }
+        AppField(title: "Bio") {
+          TextField("Bio", text: $draft.bio, axis: .vertical).lineLimit(3...8)
         }
+        AppField(title: "City") { TextField("City", text: $draft.city) }
+        AppStepper(
+          title: "\(draft.weeklyHours) hours per week", value: $draft.weeklyHours, range: 1...80)
+        AppSelect(
+          title: "Experience", selection: $draft.experienceLevel,
+          options: (1...5).map { ($0, "\($0) of 5") })
       }
       Section {
         ForEach(draft.skills.indices, id: \.self) { index in
           VStack(alignment: .leading) {
-            TextField("Skill", text: $draft.skills[index].name).textInputAutocapitalization(.never)
+            AppField(title: "Skill") {
+              TextField("Skill", text: $draft.skills[index].name).textInputAutocapitalization(
+                .never
+              )
               .autocorrectionDisabled()
-            Stepper(
-              "Level \(draft.skills[index].level) of 5", value: $draft.skills[index].level,
-              in: 1...5)
+            }
+            AppStepper(
+              title: "Level \(draft.skills[index].level) of 5",
+              value: $draft.skills[index].level, range: 1...5)
           }
         }.onDelete { draft.skills.remove(atOffsets: $0) }
         Button("Add skill", systemImage: "plus") { draft.skills.append(Skill()) }.disabled(
@@ -110,10 +117,15 @@ struct ProfileView: View {
       Section("Projects") {
         ForEach(draft.projects.indices, id: \.self) { index in
           VStack(alignment: .leading, spacing: 12) {
-            TextField("Project title", text: $draft.projects[index].title)
-            TextField(
-              "Project description", text: $draft.projects[index].description, axis: .vertical
-            ).lineLimit(2...5)
+            AppField(title: "Project title") {
+              TextField("Project title", text: $draft.projects[index].title)
+            }
+            AppField(title: "Description") {
+              TextField(
+                "Project description", text: $draft.projects[index].description, axis: .vertical
+              )
+              .lineLimit(2...5)
+            }
             TagField(
               title: "Technologies, separated by commas",
               values: $draft.projects[index].technologies)
@@ -165,7 +177,7 @@ struct ProfileView: View {
       if let draftWarning { Section { Text(draftWarning).foregroundStyle(Theme.error) } }
       Section {
         Button(action.busy ? "Saving…" : "Save profile") { Task { await save() } }
-          .buttonStyle(RaisedButtonStyle()).listRowBackground(Color.clear)
+          .buttonStyle(AppButtonStyle.primary).listRowBackground(Color.clear)
           .disabled(action.busy || !consent || draft.bio.count < 10 || draft.skills.isEmpty)
           .accessibilityIdentifier("profile.save")
         if saved {
@@ -241,13 +253,11 @@ struct ProfileView: View {
 struct CollaborationPicker: View {
   @Binding var value: String
   var body: some View {
-    LabeledContent("Collaboration") {
-      Picker("Collaboration", selection: $value) {
-        Text("Flexible").tag("flexible")
-        Text("Mostly async").tag("async")
-        Text("Live sessions").tag("sync")
-      }.labelsHidden()
-    }
+    AppSelect(
+      title: "Collaboration", selection: $value,
+      options: [
+        ("flexible", "Flexible"), ("async", "Mostly async"), ("sync", "Live sessions"),
+      ])
   }
 }
 
@@ -291,10 +301,10 @@ struct AreaEditorView: View {
               dismiss()
             }
           }
-        }.buttonStyle(RaisedButtonStyle()).listRowBackground(Color.clear)
+        }.buttonStyle(AppButtonStyle.primary).listRowBackground(Color.clear)
           .disabled(!selected || profile.value == nil || action.busy)
       }
-    }.pageBackground().navigationTitle("Private area").task { await load() }
+    }.pageBackground().appNavigationTitle("Private area").task { await load() }
       .sheet(isPresented: $picker) {
         PinPicker(latitude: area.latitude, longitude: area.longitude, radiusKm: area.radiusKm) {
           pin in
@@ -350,7 +360,7 @@ struct DeveloperDetailView: View {
           ProgressView()
         }
       }.padding(20)
-    }.pageBackground().navigationTitle("Developer").navigationBarTitleDisplayMode(.inline)
+    }.pageBackground().appNavigationTitle("Developer")
       .task(id: app.revision) { await load() }.refreshable { await load() }
   }
   private func load() async {

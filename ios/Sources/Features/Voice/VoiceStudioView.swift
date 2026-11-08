@@ -94,17 +94,17 @@ struct VoiceStudioView: View {
           "Scripted replies, not live AI. Audio levels stay on this device; nothing is recorded, transcribed, or uploaded."
         )
         .font(.footnote).foregroundStyle(Theme.muted)
-        Picker("Voice style", selection: $style) {
-          Text("Calm").tag("calm")
-          Text("Bright").tag("bright")
-          Text("Grounded").tag("grounded")
-        }.pickerStyle(.segmented)
+        AppSegmentedControl(
+          title: "Voice style", selection: $style,
+          options: [
+            ("calm", "Calm"), ("bright", "Bright"), ("grounded", "Grounded"),
+          ])
         LabeledContent("Pace", value: pace.formatted(.number.precision(.fractionLength(1))) + "×")
         Slider(value: $pace, in: 0.7...1.3, step: 0.1).accessibilityLabel("Voice preview pace")
         Toggle("Preview with a local device voice", isOn: $preview)
         if messages.isEmpty {
           ForEach(["Find a project", "Explore my skills", "Share an idea"], id: \.self) { prompt in
-            Button(prompt) { begin(prompt) }.buttonStyle(.bordered)
+            Button(prompt) { begin(prompt) }.buttonStyle(AppButtonStyle())
           }
         }
         ForEach(messages) { message in
@@ -114,22 +114,22 @@ struct VoiceStudioView: View {
           }.paperCard()
         }
         if active {
-          TextField("Type a thought", text: $input, axis: .vertical).textFieldStyle(.roundedBorder)
+          TextField("Type a thought", text: $input, axis: .vertical)
           Button("Send thought") {
             begin(input)
             input = ""
-          }.buttonStyle(RaisedButtonStyle())
+          }.buttonStyle(AppButtonStyle.primary)
             .disabled(paused || input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
           HStack {
             Button(paused ? "Resume" : "Pause") {
               paused.toggle()
               if paused { stopAudio() }
-            }.buttonStyle(.bordered)
+            }.buttonStyle(AppButtonStyle())
             Button("End session") {
               active = false
               paused = false
               stopAudio()
-            }.buttonStyle(.bordered)
+            }.buttonStyle(AppButtonStyle())
           }
           Button(
             microphone.active ? "Turn microphone off" : "Enable microphone",
@@ -150,7 +150,7 @@ struct VoiceStudioView: View {
           stopAudio()
         }
       }.padding(20)
-    }.pageBackground().navigationTitle("Voice studio").navigationBarTitleDisplayMode(.inline)
+    }.pageBackground().appNavigationTitle("Voice studio")
       .onDisappear { stopAudio() }
       .onChange(of: scenePhase) { _, phase in
         if phase != .active {

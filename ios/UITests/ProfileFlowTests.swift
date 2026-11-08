@@ -40,7 +40,7 @@ final class ProfileFlowTests: XCTestCase {
     password.tap()
     password.typeText(context.developer.password)
     app.buttons["auth.submit"].tap()
-    XCTAssertTrue(app.tabBars.buttons["Profile"].waitForExistence(timeout: 15))
+    XCTAssertTrue(app.buttons["tab.Profile"].waitForExistence(timeout: 15))
     return app
   }
 
@@ -75,7 +75,7 @@ final class ProfileFlowTests: XCTestCase {
             x: -CGFloat(image.width) * fraction, y: -CGFloat(image.height) * 0.5,
             width: CGFloat(image.width), height: CGFloat(image.height)))
       }
-      for (actual, expected) in zip(pixel.prefix(3), [244, 243, 238]) {
+      for (actual, expected) in zip(pixel.prefix(3), [255, 255, 255]) {
         XCTAssertEqual(Double(actual), Double(expected), accuracy: 3, "Canvas must fill both edges")
       }
     }
@@ -84,7 +84,7 @@ final class ProfileFlowTests: XCTestCase {
   @MainActor func testLoadingFillsScreenThenShowsProfile() async throws {
     let app = try await signIn()
     try await nextProfileResponse(delayMs: 15000)
-    app.tabBars.buttons["Profile"].tap()
+    app.buttons["tab.Profile"].tap()
     XCTAssertTrue(app.staticTexts["Loading your profile"].waitForExistence(timeout: 3))
     try captureAndCheckCanvas("Profile loading", app: app)
     XCTAssertTrue(app.buttons["Edit profile and preferences"].waitForExistence(timeout: 25))
@@ -94,7 +94,7 @@ final class ProfileFlowTests: XCTestCase {
   @MainActor func testFailureCanRetry() async throws {
     let app = try await signIn()
     try await nextProfileResponse(status: 503)
-    app.tabBars.buttons["Profile"].tap()
+    app.buttons["tab.Profile"].tap()
     XCTAssertTrue(app.buttons["Try again"].waitForExistence(timeout: 10))
     try captureAndCheckCanvas("Profile load error", app: app)
     app.buttons["Try again"].tap()
@@ -104,7 +104,7 @@ final class ProfileFlowTests: XCTestCase {
   @MainActor func testReturningDuringLoadDoesNotLeaveProfileStuck() async throws {
     let app = try await signIn()
     try await nextProfileResponse(delayMs: 15000)
-    app.tabBars.buttons["Profile"].tap()
+    app.buttons["tab.Profile"].tap()
     XCTAssertTrue(app.staticTexts["Loading your profile"].waitForExistence(timeout: 3))
     XCUIDevice.shared.press(.home)
     app.activate()

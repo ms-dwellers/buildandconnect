@@ -76,7 +76,7 @@ struct DeveloperOnboardingView: View {
           ? "Saving…" : step == 2 ? "Save my profile" : step == 3 ? "Save my area" : "Continue"
       ) {
         Task { await advance() }
-      }.buttonStyle(RaisedButtonStyle()).disabled(!canContinue || action.busy)
+      }.buttonStyle(AppButtonStyle.primary).disabled(!canContinue || action.busy)
         .accessibilityIdentifier("onboarding.continue")
       HStack {
         if step > 0 && !profileSaved { Button("Back") { step -= 1 }.frame(minHeight: 44) }
@@ -94,7 +94,7 @@ struct DeveloperOnboardingView: View {
         Label("About you", systemImage: "person.crop.rectangle").font(
           Theme.body(20).weight(.semibold))
         VStack(alignment: .leading, spacing: 8) {
-          Text("Bio").font(Theme.body(15).weight(.medium))
+          Text("Bio").font(Theme.metadata)
           TextField(
             "Bio", text: $draft.bio,
             prompt: Text("What would you like to build?").foregroundStyle(Theme.muted),
@@ -106,21 +106,18 @@ struct DeveloperOnboardingView: View {
           Text("At least 10 characters.").font(Theme.body(14)).foregroundStyle(Theme.muted)
         }
         VStack(alignment: .leading, spacing: 8) {
-          Text("City").font(Theme.body(15).weight(.medium))
+          Text("City").font(Theme.metadata)
           TextField("City", text: $draft.city, prompt: Text("Calgary").foregroundStyle(Theme.muted))
             .accessibilityLabel("City")
         }
         Divider()
-        Stepper("\(draft.weeklyHours) hours a week", value: $draft.weeklyHours, in: 1...80)
-        LabeledContent("Experience") {
-          Picker("Experience", selection: $draft.experienceLevel) {
-            Text("Beginner").tag(1)
-            Text("Comfortable").tag(2)
-            Text("Capable").tag(3)
-            Text("Strong").tag(4)
-            Text("Expert").tag(5)
-          }.labelsHidden()
-        }
+        AppStepper(
+          title: "\(draft.weeklyHours) hours a week", value: $draft.weeklyHours, range: 1...80)
+        AppSelect(
+          title: "Experience", selection: $draft.experienceLevel,
+          options: [
+            (1, "Beginner"), (2, "Comfortable"), (3, "Capable"), (4, "Strong"), (5, "Expert"),
+          ])
       }.paperCard()
     case 1:
       VStack(alignment: .leading, spacing: 18) {
@@ -143,10 +140,9 @@ struct DeveloperOnboardingView: View {
                 .accessibilityLabel("Remove skill \(index + 1)")
               }
             }
-            Stepper(
-              "Level \(draft.skills[index].level) of 5", value: $draft.skills[index].level,
-              in: 1...5
-            ).font(Theme.body(15))
+            AppStepper(
+              title: "Level \(draft.skills[index].level) of 5",
+              value: $draft.skills[index].level, range: 1...5)
           }
           Divider()
         }
@@ -158,13 +154,13 @@ struct DeveloperOnboardingView: View {
         Text("Optional. A class project or something you made for fun counts.").foregroundStyle(
           Theme.muted)
         ForEach(draft.projects.indices, id: \.self) { index in
-          Text("Project title").font(Theme.body(15).weight(.medium))
+          Text("Project title").font(Theme.metadata)
           TextField(
             "Project title", text: $draft.projects[index].title,
             prompt: Text("A community calendar").foregroundStyle(Theme.muted)
           ).accessibilityLabel(
             "Project title")
-          Text("Description").font(Theme.body(15).weight(.medium))
+          Text("Description").font(Theme.metadata)
           TextField(
             "Project description", text: $draft.projects[index].description,
             prompt: Text("What did you build?").foregroundStyle(Theme.muted), axis: .vertical

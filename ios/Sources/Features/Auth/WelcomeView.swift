@@ -17,10 +17,11 @@ struct WelcomeView: View {
             BrandLockup().padding(.horizontal, 24).padding(.top, 14)
             if !expanded && !compactWelcome {
               VStack(alignment: .leading, spacing: 10) {
-                Text("Big ideas.\nLocal energy.").font(Theme.title(52)).tracking(-1.5).lineSpacing(
-                  -2
-                )
-                .accessibilityAddTraits(.isHeader)
+                Text("Build experience.\nMake a difference.").font(Theme.title(45)).tracking(-1.5)
+                  .lineSpacing(
+                    -2
+                  )
+                  .accessibilityAddTraits(.isHeader)
                 Text("Find your people. Build your thing.").font(Theme.body(19)).foregroundStyle(
                   Theme.ink)
               }.padding(.horizontal, 28).frame(
@@ -43,7 +44,7 @@ struct WelcomeView: View {
             VStack(alignment: .leading, spacing: 20) {
               Text(
                 compactWelcome
-                  ? "Big ideas. Local energy." : "Make your next move."
+                  ? "Build experience. Make a difference." : "Build something good."
               ).font(Theme.title(33))
               Text("Real projects. Good people. A little spark to get you started.")
                 .font(Theme.body(18)).foregroundStyle(Theme.muted).lineSpacing(3)
@@ -62,12 +63,12 @@ struct WelcomeView: View {
                   Spacer()
                   Image(systemName: "arrow.right")
                 }
-              }.buttonStyle(RaisedButtonStyle()).accessibilityIdentifier("welcome.signin")
+              }.buttonStyle(AppButtonStyle.highlight).accessibilityIdentifier("welcome.signin")
             }.padding(.horizontal, 28).padding(.top, 24).padding(.bottom, 22)
               .frame(minHeight: geometry.size.height * 0.37, alignment: .top)
               .background(
                 Theme.canvas,
-                in: UnevenRoundedRectangle(topLeadingRadius: 30, topTrailingRadius: 30)
+                in: UnevenRoundedRectangle(topLeadingRadius: 20, topTrailingRadius: 20)
               )
               .padding(.top, -10)
           }

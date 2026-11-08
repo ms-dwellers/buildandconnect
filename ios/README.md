@@ -1,8 +1,17 @@
 # iPhone app
 
 Native SwiftUI client for the Convex HTTP API, Better Auth, Workers AI,
-and Mapbox. Minimum iOS 18; native Liquid Glass controls are used on iOS 26 and
-later. No application database or server credential is bundled with the app.
+and Mapbox. Minimum iOS 18. No application database or server credential is bundled
+with the app.
+
+The web design system is the visual source of truth: `app/globals.css`,
+`components/ui/`, and `/design-system`. Native equivalents live in
+`Sources/Core/Design.swift` and `Sources/Core/Controls.swift`. Colors follow
+`feat/polish-sprint`'s white surfaces with pine, mint, coral, and supporting cream,
+without merging that branch. Controls use bordered opaque surfaces, 10-point button corners,
+and 3–4-point press travel. Primary, highlight, secondary, outline, ghost, and link
+actions use the same hierarchy as the web. Navigation stays flat; app controls and
+dialogs do not use Liquid Glass. System permission prompts remain OS-owned.
 
 ## Build and run
 

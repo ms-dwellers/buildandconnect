@@ -12,12 +12,11 @@ struct ConnectionsView: View {
         FeatureBanner(title: "Good people.\nShared ambition.", symbol: "person.2.fill")
         Text("A connection forms when both sides are interested in an opportunity.")
           .foregroundStyle(Theme.muted)
-        Picker("Interest", selection: $filter) {
-          Text("All").tag("all")
-          Text("Received").tag("received")
-          Text("Sent").tag("sent")
-          Text("Connected").tag("connected")
-        }.pickerStyle(.segmented)
+        AppSegmentedControl(
+          title: "Interest", selection: $filter,
+          options: [
+            ("all", "All"), ("received", "Received"), ("sent", "Sent"), ("connected", "Connected"),
+          ])
         PageList(store: interests, load: load) { interest in
           if matchesFilter(interest) { InterestCard(interest: interest) { await load(true) } }
         }
@@ -28,15 +27,15 @@ struct ConnectionsView: View {
           )
           if filter == "all" {
             Button("Explore opportunities") { app.selectedTab = .explore }.buttonStyle(
-              RaisedButtonStyle())
+              AppButtonStyle.primary)
           } else {
-            Button("Show all interest") { filter = "all" }.buttonStyle(.bordered)
+            Button("Show all interest") { filter = "all" }.buttonStyle(AppButtonStyle())
           }
         }
         Text("Contact details and messaging are not available.")
           .font(.footnote).foregroundStyle(Theme.muted)
       }.padding(20)
-    }.pageBackground().navigationTitle("Connections").navigationBarTitleDisplayMode(.inline)
+    }.pageBackground().appNavigationTitle("Connections")
       .task(id: app.revision) { await load(true) }.refreshable { await load(true) }
       .task(id: scenePhase) {
         guard scenePhase == .active else { return }
@@ -72,10 +71,10 @@ struct InterestCard: View {
         text: interest.connected
           ? "Connected" : interest.theirs(app.role) ? "Interest received" : "Waiting for a reply")
       NavigationLink("Open opportunity", value: Route.opportunity(interest.opportunityId))
-        .buttonStyle(.bordered)
+        .buttonStyle(AppButtonStyle())
       if app.role == .company {
         NavigationLink("View consenting profile", value: Route.developer(interest.developerId))
-          .buttonStyle(.bordered)
+          .buttonStyle(AppButtonStyle())
       }
       if interest.mine(app.role) {
         ConfirmAction(

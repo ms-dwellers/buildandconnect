@@ -31,12 +31,12 @@ struct OpportunityEditorView: View {
         VStack(spacing: 20) {
           EmptyState(title: "Opportunity posted", symbol: "checkmark.circle")
           NavigationLink("View candidates", value: Route.opportunity(createdID)).buttonStyle(
-            RaisedButtonStyle())
+            AppButtonStyle.primary)
         }.padding(20)
       } else {
         form
       }
-    }.pageBackground().navigationTitle(id == nil ? "Post an opportunity" : "Edit opportunity")
+    }.pageBackground().appNavigationTitle(id == nil ? "Post an opportunity" : "Edit opportunity")
       .navigationBarTitleDisplayMode(.inline)
       .task(id: draft) { await preserveDraft() }
       .sheet(isPresented: $choosingPin) {
@@ -51,25 +51,34 @@ struct OpportunityEditorView: View {
   private var form: some View {
     Form {
       Section("The project") {
-        TextField("Title", text: $draft.title).accessibilityIdentifier("opportunity.title")
-        TextField("Description", text: $draft.description, axis: .vertical).lineLimit(5...12)
-          .accessibilityIdentifier("opportunity.description")
+        AppField(title: "Title") {
+          TextField("Title", text: $draft.title).accessibilityIdentifier("opportunity.title")
+        }
+        AppField(title: "Description") {
+          TextField("Description", text: $draft.description, axis: .vertical).lineLimit(5...12)
+            .accessibilityIdentifier("opportunity.description")
+        }
         Text("At least 30 characters. Describe the work, technologies, and mentorship.").font(
           .footnote
         ).foregroundStyle(Theme.muted)
-        Picker("Opportunity type", selection: $draft.kind) {
-          Text("Volunteer").tag("volunteer")
-          Text("Paid").tag("paid")
+        AppSelect(
+          title: "Opportunity type", selection: $draft.kind,
+          options: [("volunteer", "Volunteer"), ("paid", "Paid")])
+        if draft.kind == "paid" {
+          AppField(title: "Compensation") {
+            TextField("Compensation", text: optionalText(\.compensation))
+          }
         }
-        if draft.kind == "paid" { TextField("Compensation", text: optionalText(\.compensation)) }
-        TextField("Expected commitment", text: optionalText(\.commitment))
+        AppField(title: "Expected commitment") {
+          TextField("Expected commitment", text: optionalText(\.commitment))
+        }
       }
       Section {
         TagField(title: "Essential technologies", values: $draft.essentialTechnologies)
         TagField(title: "Causes and interests", values: $draft.interests)
-        Stepper(
-          "\(draft.minimumWeeklyHours)+ hours per week", value: $draft.minimumWeeklyHours,
-          in: 1...80)
+        AppStepper(
+          title: "\(draft.minimumWeeklyHours)+ hours per week",
+          value: $draft.minimumWeeklyHours, range: 1...80)
         CollaborationPicker(value: $draft.collaboration)
       } header: {
         Text("Who it suits")
@@ -79,14 +88,14 @@ struct OpportunityEditorView: View {
         )
       }
       Section {
-        TextField("City", text: $draft.city)
+        AppField(title: "City") { TextField("City", text: $draft.city) }
         Toggle("Open to remote developers", isOn: $draft.remote)
         Button(
           draft.latitude == nil ? "Add map pin" : "Adjust map pin",
           systemImage: "mappin.and.ellipse"
         ) { choosingPin = true }
         if draft.latitude != nil {
-          TextField("Place name", text: optionalText(\.place))
+          AppField(title: "Place name") { TextField("Place name", text: optionalText(\.place)) }
           Button("Remove map pin", role: .destructive) {
             draft.latitude = nil
             draft.longitude = nil
@@ -119,20 +128,22 @@ struct OpportunityEditorView: View {
         Button(
           action.busy ? "Analyzing and saving…" : id == nil ? "Post opportunity" : "Save changes"
         ) { Task { await save() } }
-        .buttonStyle(RaisedButtonStyle()).listRowBackground(Color.clear)
+        .buttonStyle(AppButtonStyle.primary).listRowBackground(Color.clear)
         .disabled(action.busy || !consent || draft.title.isEmpty || draft.description.count < 30)
         .accessibilityIdentifier("opportunity.save")
         Button("Discard changes", role: .destructive) { confirmDiscard = true }
       }
     }.pageBackground().disabled(action.busy)
-      .confirmationDialog(
-        "Discard changes?", isPresented: $confirmDiscard, titleVisibility: .visible
-      ) {
-        Button("Discard changes", role: .destructive) {
-          DraftCache.remove(key: draftKey)
-          dismiss()
+      .sheet(isPresented: $confirmDiscard) {
+        AppDialog(title: "Discard changes?", message: "Your unsaved edits will be removed.") {
+          Button("Discard changes", role: .destructive) {
+            DraftCache.remove(key: draftKey)
+            confirmDiscard = false
+            dismiss()
+          }.buttonStyle(AppButtonStyle(variant: .destructive, fullWidth: true))
+          Button("Keep editing") { confirmDiscard = false }.buttonStyle(
+            AppButtonStyle(fullWidth: true))
         }
-        Button("Keep editing", role: .cancel) {}
       }
   }
   private func optionalText(_ path: WritableKeyPath<OpportunityInput, String?>) -> Binding<String> {

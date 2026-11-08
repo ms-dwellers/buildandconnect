@@ -2,26 +2,38 @@ import SwiftUI
 
 enum Theme {
   static let canvas = Color("LaunchCanvas")
-  static let card = color(0xFCFCF8)
-  static let ink = color(0x1B352C)
-  static let muted = color(0x637069)
-  static let accent = color(0xC7DEC6)
-  static let accentStrong = color(0x315E48)
-  static let softAccent = color(0xE4EBDD)
-  static let highlight = color(0xDDE7D5)
-  static let border = color(0xD7DDD2)
-  static let shadow = color(0x1A342A)
-  static let success = color(0x31604E)
-  static let successSurface = color(0xE0EBDD)
-  static let error = color(0xA33D3D)
-  static let errorSurface = color(0xF4E4DF)
-  static let mapLand = color(0x72D6A0)
-  static let mapSurface = color(0xFFFFFF)
-  static let mapBuildings = color(0xE5EBEE)
-  static let mapGreenspace = color(0xF7FAFC)
-  static let mapWater = color(0x75C8F2)
-  static let mapRoads = color(0xFFFFFF)
-  static let mapHighways = color(0x97ACBA)
+  static let cream = color(0xF8F7DE)
+  static let card = canvas
+  static let ink = color(0x123D37)
+  static let muted = color(0x254139)
+  static let accent = color(0xA9C8BD)
+  static let accentStrong = color(0x174C43)
+  static let softAccent = color(0xCCE0D9)
+  static let highlight = color(0xEB5757)
+  static let highlightText = color(0x10221D)
+  static let wheat = color(0xF6DFB3)
+  static let apricot = color(0xF0A345)
+  static let border = accentStrong.opacity(0.2)
+  static let inputBorder = color(0x3E5C53)
+  static let shadow = accentStrong
+  static let success = accentStrong
+  static let successSurface = accentStrong.opacity(0.08)
+  static let error = color(0x701A22)
+  static let destructive = color(0xB52D35)
+  static let errorSurface = destructive.opacity(0.08)
+  static let primaryEdge = color(0x103E35)
+  static let primaryHover = color(0x286556)
+  static let highlightEdge = color(0xB84141)
+  static let secondaryEdge = color(0x99713B)
+  static let outlineEdge = color(0x7E9E91)
+  static let destructiveEdge = color(0x7F1E27)
+  static let mapLand = color(0xD7E5D8)
+  static let mapSurface = canvas
+  static let mapBuildings = color(0xC4D8C8)
+  static let mapGreenspace = color(0xA4C2AD)
+  static let mapWater = color(0x8FB3AC)
+  static let mapRoads = cream
+  static let mapHighways = color(0xDFC999)
   static let mapText = ink
   static let mapMuted = muted
 
@@ -39,29 +51,23 @@ enum Theme {
   static let metadata = Font.custom("DMMono-Regular", size: 12, relativeTo: .caption)
 }
 
-struct RaisedButtonStyle: ButtonStyle {
-  @Environment(\.isEnabled) private var enabled
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(Theme.body().weight(.semibold))
-      .frame(maxWidth: .infinity, minHeight: 54)
-      .padding(.horizontal, 20)
-      .foregroundStyle(Theme.card)
-      .background(Theme.accentStrong, in: RoundedRectangle(cornerRadius: 18))
-      .shadow(color: Theme.ink, radius: 0, y: configuration.isPressed && enabled ? 0 : 3)
-      .offset(y: configuration.isPressed && enabled ? 3 : 0)
-      .opacity(enabled ? 1 : 0.5)
-      .animation(reduceMotion ? nil : .easeOut(duration: 0.1), value: configuration.isPressed)
-  }
-}
-
 extension View {
+  func appNavigationTitle(_ title: String) -> some View {
+    self.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        AppToolbarItem(placement: .principal) {
+          Text(title).font(Theme.body(18).weight(.semibold)).foregroundStyle(Theme.ink)
+        }
+      }
+  }
   func paperCard() -> some View {
-    self.padding(22).frame(maxWidth: .infinity, alignment: .leading)
-      .background(Theme.card, in: RoundedRectangle(cornerRadius: 24))
-      .overlay(RoundedRectangle(cornerRadius: 24).stroke(Theme.border.opacity(0.8)))
-      .shadow(color: Theme.shadow.opacity(0.06), radius: 12, y: 6)
+    self.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+      .background {
+        RoundedRectangle(cornerRadius: 20).fill(Theme.card)
+          .shadow(color: Theme.shadow.opacity(0.08), radius: 0, y: 2)
+          .shadow(color: Theme.shadow.opacity(0.04), radius: 7, y: 5)
+      }
+      .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border))
   }
   func pageBackground() -> some View {
     self.scrollContentBackground(.hidden).scrollDismissesKeyboard(.interactively)
@@ -69,31 +75,13 @@ extension View {
       .background(Theme.canvas)
       .listRowSeparatorTint(Theme.border)
   }
-  func mapControlSurface(cornerRadius: CGFloat = 24, mapOverlay: Bool = false) -> some View {
-    modifier(LiquidSurface(cornerRadius: cornerRadius, mapOverlay: mapOverlay))
-  }
-}
-
-private struct LiquidSurface: ViewModifier {
-  let cornerRadius: CGFloat
-  let mapOverlay: Bool
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-  @ViewBuilder func body(content: Content) -> some View {
-    if mapOverlay {
-      content.foregroundStyle(Theme.mapText)
-        .background(Theme.mapSurface, in: RoundedRectangle(cornerRadius: cornerRadius))
-        .overlay(
-          RoundedRectangle(cornerRadius: cornerRadius).stroke(Theme.border)
-        )
-        .shadow(color: Theme.shadow.opacity(0.10), radius: 16, y: 8)
-    } else if reduceTransparency {
-      content.background(Theme.card, in: RoundedRectangle(cornerRadius: cornerRadius))
-    } else if #available(iOS 26, *) {
-      content.glassEffect(
-        .regular.tint(Theme.card.opacity(0.75)), in: RoundedRectangle(cornerRadius: cornerRadius))
-    } else {
-      content.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+  func controlSurface(cornerRadius: CGFloat = 12) -> some View {
+    self.background {
+      RoundedRectangle(cornerRadius: cornerRadius).fill(Theme.card)
+        .shadow(color: Theme.shadow.opacity(0.08), radius: 0, y: 2)
+        .shadow(color: Theme.shadow.opacity(0.04), radius: 7, y: 5)
     }
+    .overlay(RoundedRectangle(cornerRadius: cornerRadius).stroke(Theme.border))
   }
 }
 
@@ -109,7 +97,7 @@ struct StatusBadge: View {
         positive
           ? Theme.successSurface
           : text.lowercased() == "claimed" ? Theme.highlight : Theme.softAccent,
-        in: RoundedRectangle(cornerRadius: 8))
+        in: RoundedRectangle(cornerRadius: 5))
   }
 }
 
@@ -125,7 +113,7 @@ struct FailureView: View {
           Text("\(issue.field): \(issue.message)").font(.footnote).foregroundStyle(Theme.error)
         }
       }
-      if let retry { Button("Try again") { Task { await retry() } }.buttonStyle(.bordered) }
+      if let retry { Button("Try again") { Task { await retry() } }.buttonStyle(AppButtonStyle()) }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(16)
@@ -142,7 +130,7 @@ struct EmptyState: View {
     VStack(alignment: .leading, spacing: 12) {
       Image(systemName: symbol).font(.system(size: 25, weight: .medium))
         .foregroundStyle(Theme.accentStrong).frame(width: 52, height: 52)
-        .background(Theme.softAccent, in: RoundedRectangle(cornerRadius: 16))
+        .background(Theme.softAccent, in: RoundedRectangle(cornerRadius: 12))
         .accessibilityHidden(true)
       Text(title).font(Theme.title(24))
       if let message { Text(message).foregroundStyle(Theme.muted) }
@@ -160,7 +148,7 @@ struct PageList<Item: Decodable & Identifiable, Content: View>: View where Item.
     if store.loading {
       ProgressView().frame(maxWidth: .infinity).padding()
     } else if store.nextCursor != nil {
-      Button("Load more") { Task { await load(false) } }.buttonStyle(.bordered)
+      Button("Load more") { Task { await load(false) } }.buttonStyle(AppButtonStyle())
     }
   }
 }
@@ -178,12 +166,18 @@ struct ConfirmAction: View {
     } label: {
       Text(label).frame(minHeight: 44)
     }
+    .buttonStyle(AppButtonStyle(variant: destructive ? .destructive : .outline))
     .disabled(disabled)
-    .confirmationDialog(label + "?", isPresented: $confirming, titleVisibility: .visible) {
-      Button(label, role: destructive ? .destructive : nil) { Task { await action() } }
-      Button("Cancel", role: .cancel) {}
-    } message: {
-      Text(consequence)
+    .sheet(isPresented: $confirming) {
+      AppDialog(title: label + "?", message: consequence) {
+        Button(label, role: destructive ? .destructive : nil) {
+          confirming = false
+          Task { await action() }
+        }.buttonStyle(
+          AppButtonStyle(variant: destructive ? .destructive : .primary, fullWidth: true))
+        Button("Cancel", role: .cancel) { confirming = false }
+          .buttonStyle(AppButtonStyle(fullWidth: true))
+      }
     }
   }
 }
@@ -191,6 +185,6 @@ struct ConfirmAction: View {
 struct GardenScene: View {
   var body: some View {
     HeroLandscape(compact: true).frame(height: 220)
-      .clipShape(RoundedRectangle(cornerRadius: 24)).accessibilityHidden(true)
+      .clipShape(RoundedRectangle(cornerRadius: 20)).accessibilityHidden(true)
   }
 }

@@ -22,7 +22,7 @@ struct OwnProfileView: View {
           .font(Theme.body(15)).foregroundStyle(Theme.muted)
           Text(developer.bio).font(Theme.body(19)).lineSpacing(4)
           NavigationLink("Edit profile and preferences", value: Route.profile).buttonStyle(
-            RaisedButtonStyle())
+            AppButtonStyle.primary)
           VStack(alignment: .leading, spacing: 16) {
             Text("Skills & interests").font(Theme.title(26))
             ForEach(developer.skills) { skill in
@@ -61,16 +61,16 @@ struct OwnProfileView: View {
             title: "A little experience.\nA lot to offer.",
             subtitle: "Share what you know and what you'd like to learn.")
           NavigationLink("Create your profile") { DeveloperOnboardingView() }.buttonStyle(
-            RaisedButtonStyle())
+            AppButtonStyle.primary)
         } else if let error = profile.error {
           FailureView(error: error) { await load() }
         } else {
           ProgressView("Loading your profile")
         }
       }.padding(20)
-    }.pageBackground().navigationTitle("Your profile").navigationBarTitleDisplayMode(.inline)
+    }.pageBackground().appNavigationTitle("Your profile")
       .toolbar {
-        ToolbarItem(placement: .topBarTrailing) {
+        AppToolbarItem(placement: .topBarTrailing) {
           NavigationLink(value: Route.account) {
             Image(systemName: "gearshape").accessibilityLabel("Account settings")
           }
@@ -83,8 +83,8 @@ struct OwnProfileView: View {
       Text(value).font(Theme.title(29)).monospacedDigit().foregroundStyle(Theme.accentStrong)
       Text(title).font(Theme.body(12)).foregroundStyle(Theme.muted)
     }.frame(maxWidth: .infinity).padding(.vertical, 16)
-      .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
-      .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.border))
+      .background(Theme.card, in: RoundedRectangle(cornerRadius: 12))
+      .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border))
   }
   private func load() async { await profile.load(api, "/developers/me") }
 }

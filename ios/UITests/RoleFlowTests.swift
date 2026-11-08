@@ -62,7 +62,7 @@ final class RoleFlowTests: XCTestCase {
       password.typeText(account.password)
     }
     app.buttons["auth.submit"].tap()
-    let destination = app.tabBars.buttons[workspace]
+    let destination = app.buttons["tab.\(workspace)"]
     XCTAssertTrue(destination.waitForExistence(timeout: 15))
     destination.tap()
     return app
@@ -139,7 +139,7 @@ final class RoleFlowTests: XCTestCase {
     reveal(interested, in: app)
     interested.tap()
     XCTAssertTrue(app.buttons["Withdraw interest"].waitForExistence(timeout: 10))
-    app.tabBars.buttons["Connections"].tap()
+    app.buttons["tab.Connections"].tap()
     XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 10))
     capture("Mutual connection", app: app)
   }
@@ -179,8 +179,8 @@ final class RoleFlowTests: XCTestCase {
   @MainActor func testRequesterPostsFromMapAndReturnsToItsPin() async throws {
     let context = try await context()
     let app = signIn(context.requester, workspace: "Requests")
-    XCTAssertTrue(app.tabBars.buttons["Explore"].waitForExistence(timeout: 15))
-    app.tabBars.buttons["Explore"].tap()
+    XCTAssertTrue(app.buttons["tab.Explore"].waitForExistence(timeout: 15))
+    app.buttons["tab.Explore"].tap()
     if !app.staticTexts["The live map is not configured. Project lists remain available."].exists {
       XCTAssertTrue(app.staticTexts["City overview"].waitForExistence(timeout: 25))
     }

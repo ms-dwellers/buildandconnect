@@ -126,7 +126,7 @@ struct ExploreView: View {
           HStack(spacing: 10) {
             if !dynamicTypeSize.isAccessibilitySize { BrandLockup(compact: true) }
             Text("Calgary").font(Theme.title(24)).lineLimit(1).minimumScaleFactor(0.65)
-          }.padding(.horizontal, 14).padding(.vertical, 10).mapControlSurface(mapOverlay: true)
+          }.padding(.horizontal, 14).padding(.vertical, 10).controlSurface()
           Spacer(minLength: 0)
           Button {
             selected = nil
@@ -135,7 +135,7 @@ struct ExploreView: View {
             Image(systemName: "arrow.up.left.and.arrow.down.right").font(
               .system(size: 20, weight: .medium)
             ).frame(width: 54, height: 54)
-          }.mapControlSurface(mapOverlay: true).accessibilityLabel("All Calgary")
+          }.buttonStyle(AppButtonStyle(size: .icon)).accessibilityLabel("All Calgary")
             .accessibilityValue(
               is3D ? "3D view" : "City overview")
           if app.role == .requester || app.role == .company {
@@ -144,7 +144,7 @@ struct ExploreView: View {
             } label: {
               Image(systemName: "plus").font(.system(size: 20, weight: .medium)).frame(
                 width: 54, height: 54)
-            }.mapControlSurface(mapOverlay: true).accessibilityLabel("Post").accessibilityHint(
+            }.buttonStyle(AppButtonStyle(size: .icon)).accessibilityLabel("Post").accessibilityHint(
               "Add an idea to the city map")
           } else if !app.signedIn {
             Button {
@@ -152,7 +152,7 @@ struct ExploreView: View {
             } label: {
               Image(systemName: "person.crop.circle").font(.system(size: 20, weight: .medium))
                 .frame(width: 54, height: 54)
-            }.mapControlSurface(mapOverlay: true).accessibilityLabel("Sign in")
+            }.buttonStyle(AppButtonStyle(size: .icon)).accessibilityLabel("Sign in")
           }
         }
         Spacer()
@@ -174,7 +174,8 @@ struct ExploreView: View {
             } label: {
               Image(systemName: "chevron.up").font(.system(size: 18, weight: .medium)).frame(
                 width: 44, height: 44)
-            }.accessibilityLabel("Show city ideas")
+            }.buttonStyle(AppButtonStyle(variant: .ghost, size: .icon))
+              .accessibilityLabel("Show city ideas")
           }
           Button {
             openResults()
@@ -188,7 +189,8 @@ struct ExploreView: View {
               Spacer(minLength: 0)
             }.font(Theme.body(17)).foregroundStyle(Theme.mapMuted)
               .padding(.horizontal, 16).frame(minHeight: 52)
-              .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 16))
+              .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
+              .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.inputBorder))
           }.buttonStyle(.plain).accessibilityLabel("Search city ideas")
           categoryFilters
           Button {
@@ -202,11 +204,10 @@ struct ExploreView: View {
                   : "\(listings.count) \(listings.count == 1 ? "idea" : "ideas")")
               Spacer()
               Image(systemName: "arrow.right").font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Theme.ink).frame(width: 38, height: 38)
-                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12))
             }.font(Theme.body(16)).frame(minHeight: 44)
-          }.accessibilityIdentifier("explore.results")
-        }.padding(20).mapControlSurface(cornerRadius: 28, mapOverlay: true)
+          }.buttonStyle(AppButtonStyle(variant: .ghost, fullWidth: true))
+            .accessibilityIdentifier("explore.results")
+        }.padding(20).controlSurface(cornerRadius: 20)
           .onGeometryChange(for: CGFloat.self) { geometry in
             geometry.size.height
           } action: {
@@ -215,7 +216,7 @@ struct ExploreView: View {
       }.padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 12)
       if cloudVisible && !MapConfiguration.token.isEmpty && !reduceMotion {
         VStack(spacing: 14) {
-          SparkShape().fill(Theme.accent).frame(width: 88, height: 88).accessibilityHidden(true)
+          Image("HeroCloud2").resizable().scaledToFit().frame(width: 220).accessibilityHidden(true)
           Text("Calgary.").font(Theme.title(40))
           Button("Skip animation") { cloudVisible = false }
         }.foregroundStyle(Theme.mapText).tint(Theme.accent)
@@ -263,7 +264,7 @@ struct ExploreView: View {
                   TextField(
                     "Search city ideas", text: $query,
                     prompt: Text("Search ideas, skills, places").foregroundStyle(Theme.muted)
-                  ).submitLabel(.search)
+                  ).textFieldStyle(.plain).submitLabel(.search)
                     .accessibilityLabel("Search city ideas").accessibilityIdentifier(
                       "explore.search")
                   if !query.isEmpty {
@@ -274,8 +275,9 @@ struct ExploreView: View {
                     }
                     .accessibilityLabel("Clear search")
                   }
-                }.padding(.horizontal, 16).frame(minHeight: 54)
-                  .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
+                }.padding(.horizontal, 12).frame(minHeight: 44)
+                  .background(Theme.card, in: RoundedRectangle(cornerRadius: 12))
+                  .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.inputBorder))
                 categoryFilters
                 Text("\(listings.count) \(listings.count == 1 ? "idea" : "ideas")").font(
                   Theme.metadata
@@ -313,13 +315,13 @@ struct ExploreView: View {
                 present(.signIn(route))
               }.padding(.horizontal, 20).padding(.vertical, 12).background(Theme.canvas)
             }
-          }.pageBackground().navigationTitle(selected == nil ? "Ideas for Calgary" : "City idea")
+          }.pageBackground().appNavigationTitle(selected == nil ? "Ideas for Calgary" : "City idea")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-              ToolbarItem(placement: .topBarTrailing) { Button("Done") { showingSheet = false } }
+              AppToolbarItem(placement: .topBarTrailing) { Button("Done") { showingSheet = false } }
             }
         }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
-          .presentationBackground(Theme.canvas).presentationCornerRadius(30)
+          .presentationBackground(Theme.canvas).presentationCornerRadius(20)
           .presentationBackgroundInteraction(.enabled(upThrough: .medium))
           .preferredColorScheme(.light)
       }
@@ -347,21 +349,19 @@ struct ExploreView: View {
               OpportunityEditorView(initialPin: pin)
             }
           }.toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Done") { postPin = nil } }
+            AppToolbarItem(placement: .cancellationAction) { Button("Done") { postPin = nil } }
           }
         }.preferredColorScheme(.light)
       }
   }
 
   private var categoryFilters: some View {
-    Picker("Idea category", selection: $filter) {
-      Text("All").tag("all")
-      Text("Community").tag("request")
-      Text("Volunteer").tag("volunteer")
-      Text("Paid").tag("paid")
-    }
-    .pickerStyle(.segmented)
-    .frame(minHeight: 44)
+    AppSegmentedControl(
+      title: "Idea category", selection: $filter,
+      options: [
+        ("all", "All"), ("request", "Community"), ("volunteer", "Volunteer"), ("paid", "Paid"),
+      ]
+    )
     .accessibilityIdentifier("explore.category")
   }
   private func openResults() {
@@ -503,14 +503,14 @@ private struct ListingAction: View {
   var body: some View {
     Group {
       if !app.signedIn {
-        Button("Sign in to respond") { authenticate(route) }.buttonStyle(RaisedButtonStyle())
+        Button("Sign in to respond") { authenticate(route) }.buttonStyle(AppButtonStyle.primary)
       } else if listing.source == "opportunity" || listing.viewerIsOwner || app.role == .developer {
         NavigationLink(
           listing.viewerIsOwner
             ? "Manage posting" : app.role == .developer ? "Review and respond" : "View details",
           value: route
         )
-        .buttonStyle(RaisedButtonStyle())
+        .buttonStyle(AppButtonStyle.primary)
       } else {
         Text("Developer accounts can pick up community ideas.").font(.footnote).foregroundStyle(
           Theme.muted)

@@ -25,9 +25,9 @@ struct AuthView: View {
         Spacer(minLength: 4)
         Button(action: close) {
           Image(systemName: "xmark").font(.system(size: 14, weight: .semibold))
-            .frame(width: 44, height: 44).background(
-              Theme.softAccent, in: RoundedRectangle(cornerRadius: 14))
-        }.accessibilityLabel("Close sign in")
+            .frame(width: 24, height: 24)
+        }.buttonStyle(AppButtonStyle(variant: .ghost, size: .icon))
+          .accessibilityLabel("Close sign in")
       }
       VStack(spacing: 15) {
         if mode == .signUp {
@@ -83,7 +83,7 @@ struct AuthView: View {
           Text(action.busy ? "Connecting…" : mode == .signUp ? "Create account" : "Sign in")
           if !action.busy { Image(systemName: "arrow.right") }
         }
-      }.buttonStyle(RaisedButtonStyle()).disabled(action.busy)
+      }.buttonStyle(AppButtonStyle.primary).disabled(action.busy)
         .accessibilityIdentifier("auth.submit")
       VStack(spacing: 18) {
         Button(mode == .signIn ? "Create an account" : "Sign in instead") {
@@ -108,18 +108,18 @@ struct AuthView: View {
         }
         .font(Theme.body(14)).foregroundStyle(Theme.muted)
       }.frame(maxWidth: .infinity)
-    }.padding(24).background(Theme.card, in: RoundedRectangle(cornerRadius: 30))
-      .overlay(RoundedRectangle(cornerRadius: 30).stroke(Theme.border))
-      .shadow(color: Theme.shadow.opacity(0.09), radius: 18, y: 8)
+    }.paperCard()
       .onAppear { mode = initialMode }
       .onChange(of: focused) { _, field in if field != nil { passwordFocused = false } }
       .onDisappear { if !app.signedIn { cancelPending() } }
-      .alert("Password recovery", isPresented: $showRecovery) {
-        Button("Dismiss", role: .cancel) {}
-      } message: {
-        Text(
-          "Password-reset email is not configured on this service yet. No reset email has been sent."
-        )
+      .sheet(isPresented: $showRecovery) {
+        AppDialog(
+          title: "Password recovery",
+          message:
+            "Password-reset email is not configured on this service yet. No reset email has been sent."
+        ) {
+          Button("Dismiss") { showRecovery = false }.buttonStyle(AppButtonStyle.primary)
+        }
       }
   }
   private var exploreButton: some View {
@@ -136,15 +136,15 @@ struct AuthView: View {
     _ title: String, symbol: String, @ViewBuilder content: () -> Content
   ) -> some View {
     VStack(alignment: .leading, spacing: 7) {
-      Text(title).font(Theme.body(15).weight(.medium))
+      Text(title).font(Theme.metadata)
       HStack(spacing: 12) {
         Image(systemName: symbol).font(.system(size: 18)).foregroundStyle(Theme.muted).frame(
           width: 20
         ).accessibilityHidden(true)
-        content()
-      }.padding(.horizontal, 15).padding(.vertical, 8).frame(minHeight: 54)
-        .background(Theme.canvas.opacity(0.5), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border))
+        content().textFieldStyle(.plain)
+      }.padding(.horizontal, 12).padding(.vertical, 8).frame(minHeight: 44)
+        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.inputBorder))
     }
   }
   private func cancelPending() {
@@ -230,7 +230,7 @@ struct RoleSelectionView: View {
         EditorialHeading(
           title: "What brings you here?",
           subtitle: "Every good idea starts with someone. Choose how you'd like to take part.")
-        ForEach(Role.allCases) { role in
+        ForEach([Role.developer, .requester]) { role in
           Button {
             selected = role
           } label: {
@@ -246,7 +246,7 @@ struct RoleSelectionView: View {
               Spacer(minLength: 0)
               Image(systemName: selected == role ? "checkmark.circle.fill" : "circle")
             }.paperCard().overlay(
-              RoundedRectangle(cornerRadius: 24).stroke(
+              RoundedRectangle(cornerRadius: 20).stroke(
                 selected == role ? Theme.accentStrong : .clear, lineWidth: 2))
           }.buttonStyle(.plain).accessibilityIdentifier("role.\(role.rawValue)")
             .accessibilityAddTraits(selected == role ? .isSelected : [])
@@ -259,7 +259,7 @@ struct RoleSelectionView: View {
         Text("Your account type can't be changed later.").font(Theme.body(14)).foregroundStyle(
           Theme.muted)
         Button(action.busy ? "Saving…" : "Continue") { Task { await choose() } }
-          .buttonStyle(RaisedButtonStyle()).disabled(selected == nil || action.busy)
+          .buttonStyle(AppButtonStyle.primary).disabled(selected == nil || action.busy)
           .accessibilityIdentifier("role.continue")
         Button("Sign out") { Task { await app.signOut() } }.frame(minHeight: 44).disabled(
           action.busy)
@@ -294,7 +294,7 @@ struct AuthenticationRequired: View {
   var body: some View {
     VStack(spacing: 20) {
       EmptyState(title: "Sign in to continue", symbol: "person.crop.circle")
-      Button("Sign in") { app.authenticate(for: route) }.buttonStyle(RaisedButtonStyle())
+      Button("Sign in") { app.authenticate(for: route) }.buttonStyle(AppButtonStyle.primary)
     }.padding(20).frame(maxHeight: .infinity).pageBackground()
   }
 }
@@ -307,7 +307,7 @@ struct WrongRoleView: View {
       EmptyState(
         title: "Different account type", symbol: "person.crop.circle.badge.exclamationmark",
         message: message)
-      Button("Explore projects") { app.selectedTab = .explore }.buttonStyle(RaisedButtonStyle())
+      Button("Explore projects") { app.selectedTab = .explore }.buttonStyle(AppButtonStyle.primary)
     }.padding(20).pageBackground()
   }
 }
@@ -356,6 +356,6 @@ struct AccountView: View {
           }
         }.disabled(signingOut).accessibilityIdentifier("account.signOut")
       }
-    }.pageBackground().navigationTitle("Account")
+    }.pageBackground().appNavigationTitle("Account")
   }
 }

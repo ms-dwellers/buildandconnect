@@ -42,13 +42,13 @@ struct RequestDetailView: View {
           }.padding(20)
         }.pageBackground().task(id: app.revision) { await load() }.refreshable { await load() }
       }
-    }.navigationTitle("Community request").navigationBarTitleDisplayMode(.inline)
+    }.appNavigationTitle("Community request")
   }
 
   @ViewBuilder private func actions(_ item: CommunityRequest) -> some View {
     if item.ownerId == app.member?.user.id {
       if item.status == "open" {
-        NavigationLink("Edit request", value: Route.editRequest(id)).buttonStyle(.bordered)
+        NavigationLink("Edit request", value: Route.editRequest(id)).buttonStyle(AppButtonStyle())
       }
       if item.status == "claimed" {
         ConfirmAction(
@@ -80,13 +80,13 @@ struct RequestDetailView: View {
         if (profile.error as? APIError)?.status == 404 {
           NavigationLink("Create a profile to pick up ideas", value: Route.setupProfile)
             .buttonStyle(
-              RaisedButtonStyle())
+              AppButtonStyle.primary)
         } else if let error = profile.error {
           FailureView(error: error) { await load() }
         } else if let developer = profile.value {
           if developer.location == nil {
             NavigationLink("Set your area to pick up ideas", value: Route.area).buttonStyle(
-              RaisedButtonStyle())
+              AppButtonStyle.primary)
           } else {
             ConfirmAction(
               label: "Pick up this idea",
@@ -95,7 +95,7 @@ struct RequestDetailView: View {
               disabled: action.busy
             ) {
               await mutate("/requests/\(id)/accept")
-            }.buttonStyle(RaisedButtonStyle())
+            }.buttonStyle(AppButtonStyle.primary)
           }
         }
       }
@@ -154,12 +154,12 @@ struct RequestEditorView: View {
         VStack(spacing: 20) {
           EmptyState(title: "Request posted", symbol: "checkmark.circle")
           NavigationLink("View request", value: Route.request(createdID)).buttonStyle(
-            RaisedButtonStyle())
+            AppButtonStyle.primary)
         }.padding(20)
       } else {
         form
       }
-    }.pageBackground().navigationTitle(id == nil ? "Post a request" : "Edit request")
+    }.pageBackground().appNavigationTitle(id == nil ? "Post a request" : "Edit request")
       .navigationBarTitleDisplayMode(.inline)
       .task(id: draft) { await preserveDraft() }
       .sheet(isPresented: $choosingPin) {
@@ -174,16 +174,22 @@ struct RequestEditorView: View {
   private var form: some View {
     Form {
       Section("What do you need?") {
-        TextField("Title", text: $draft.title).accessibilityIdentifier("request.title")
-        TextField("Description", text: $draft.description, axis: .vertical).lineLimit(5...12)
-          .accessibilityIdentifier("request.description")
+        AppField(title: "Title") {
+          TextField("Title", text: $draft.title).accessibilityIdentifier("request.title")
+        }
+        AppField(title: "Description") {
+          TextField("Description", text: $draft.description, axis: .vertical).lineLimit(5...12)
+            .accessibilityIdentifier("request.description")
+        }
         Text("Describe the work in at least 30 characters.").font(.footnote).foregroundStyle(
           Theme.muted)
       }
       Section {
         Button(selectedPin ? "Adjust map pin" : "Choose map pin", systemImage: "mappin.and.ellipse")
         { choosingPin = true }
-        TextField("Place name", text: $draft.place).accessibilityIdentifier("request.place")
+        AppField(title: "Place name") {
+          TextField("Place name", text: $draft.place).accessibilityIdentifier("request.place")
+        }
         Text(
           "Guests see an approximate area. Developers see your exact pin while the request is open. Choose a landmark, not a home address."
         )
@@ -209,7 +215,7 @@ struct RequestEditorView: View {
       Section {
         Button(action.busy ? "Analyzing and saving…" : id == nil ? "Post request" : "Save changes")
         { Task { await save() } }
-        .buttonStyle(RaisedButtonStyle()).listRowBackground(Color.clear)
+        .buttonStyle(AppButtonStyle.primary).listRowBackground(Color.clear)
         .disabled(
           action.busy || !consent || !selectedPin || draft.title.isEmpty || draft.place.isEmpty
             || draft.description.count < 30
@@ -218,14 +224,16 @@ struct RequestEditorView: View {
         Button("Discard changes", role: .destructive) { confirmDiscard = true }
       }
     }.pageBackground().disabled(action.busy)
-      .confirmationDialog(
-        "Discard changes?", isPresented: $confirmDiscard, titleVisibility: .visible
-      ) {
-        Button("Discard changes", role: .destructive) {
-          DraftCache.remove(key: draftKey)
-          dismiss()
+      .sheet(isPresented: $confirmDiscard) {
+        AppDialog(title: "Discard changes?", message: "Your unsaved edits will be removed.") {
+          Button("Discard changes", role: .destructive) {
+            DraftCache.remove(key: draftKey)
+            confirmDiscard = false
+            dismiss()
+          }.buttonStyle(AppButtonStyle(variant: .destructive, fullWidth: true))
+          Button("Keep editing") { confirmDiscard = false }.buttonStyle(
+            AppButtonStyle(fullWidth: true))
         }
-        Button("Keep editing", role: .cancel) {}
       }
   }
   private func load() async {

@@ -40,8 +40,9 @@ the only account roles; do not reintroduce Company or Recruiter account types.
 - iPhone: native SwiftUI in `ios/`; build, test, and formatting commands are in
   `ios/README.md` and `package.json`. Xcode is required only for iOS tasks, never web
   development. Edit `ios/project.yml`, not generated Xcode projects or Info.plist.
-- `ios/Sources/Core/Design.swift` owns native colors and shared surface/button
-  styles. The web's green palette does not apply to iOS.
+- Native UI follows the web design system in `app/globals.css` and `components/ui/`.
+  `ios/Sources/Core/Design.swift` and `Controls.swift` own its SwiftUI equivalents.
+  Use opaque surfaces and tactile controls, not Liquid Glass.
 - Current scope includes growth-oriented matching and opportunity-specific mutual
   interest. Do not invent payment or messaging flows without product direction.
 
