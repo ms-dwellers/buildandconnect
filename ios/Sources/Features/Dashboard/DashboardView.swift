@@ -43,7 +43,7 @@ struct RequestRow: View {
         StatusBadge(text: request.status)
         IdeaRowContent(title: request.title, detail: request.place, category: .community)
         Text(request.description).lineLimit(2)
-        if let name = request.claimantName { Text("Accepted by \(name)").font(.footnote) }
+        if let name = request.claimantName { Text("Accepted by \(name)").font(Theme.caption) }
       }.paperCard()
     }.buttonStyle(.plain)
   }
@@ -101,7 +101,7 @@ struct DeveloperHomeView: View {
             }
             if let result = nearby.value, result.total > result.data.count {
               Text("Showing \(result.data.count) of \(result.total) ranked requests.").font(
-                .footnote)
+                Theme.caption)
             }
           }
         }

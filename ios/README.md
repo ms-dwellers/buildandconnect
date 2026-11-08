@@ -12,6 +12,9 @@ without merging that branch. Controls use bordered opaque surfaces, 10-point but
 and 3–4-point press travel. Primary, highlight, secondary, outline, ghost, and link
 actions use the same hierarchy as the web. Navigation stays flat; app controls and
 dialogs do not use Liquid Glass. System permission prompts remain OS-owned.
+Shared inputs include focus rings, labeled form sections, whole-row switches,
+and opaque sliders with native accessibility. Filter groups keep labels intact
+and move whole buttons to another row when needed.
 
 ## Build and run
 

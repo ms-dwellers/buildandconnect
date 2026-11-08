@@ -49,6 +49,8 @@ enum Theme {
     .custom("LeagueSpartan-Regular", size: size, relativeTo: .body)
   }
   static let metadata = Font.custom("DMMono-Regular", size: 12, relativeTo: .caption)
+  static let caption = Font.custom("LeagueSpartan-Regular", size: 13, relativeTo: .footnote)
+  static let subheading = Font.custom("LeagueSpartan-SemiBold", size: 17, relativeTo: .headline)
 }
 
 extension View {
@@ -110,7 +112,7 @@ struct FailureView: View {
         .foregroundStyle(Theme.error).accessibilityAddTraits(.updatesFrequently)
       if let apiError = error as? APIError {
         ForEach(Array(apiError.issues.enumerated()), id: \.offset) { _, issue in
-          Text("\(issue.field): \(issue.message)").font(.footnote).foregroundStyle(Theme.error)
+          Text("\(issue.field): \(issue.message)").font(Theme.caption).foregroundStyle(Theme.error)
         }
       }
       if let retry { Button("Try again") { Task { await retry() } }.buttonStyle(AppButtonStyle()) }

@@ -70,7 +70,7 @@ struct DeveloperOnboardingView: View {
   private var actionDock: some View {
     VStack(spacing: 10) {
       if let error = action.error { FailureView(error: error) }
-      if let draftWarning { Text(draftWarning).font(.footnote).foregroundStyle(Theme.error) }
+      if let draftWarning { Text(draftWarning).font(Theme.caption).foregroundStyle(Theme.error) }
       Button(
         action.busy
           ? "Saving…" : step == 2 ? "Save my profile" : step == 3 ? "Save my area" : "Continue"
@@ -204,8 +204,7 @@ struct DeveloperOnboardingView: View {
         ) { choosingPin = true }
         .frame(minHeight: 44)
         LabeledContent("Search radius", value: "\(Int(radius)) km")
-        Slider(value: $radius, in: 1...100, step: 1).accessibilityLabel(
-          "Search radius in kilometres")
+        AppSlider(value: $radius, bounds: 1...100, step: 1, label: "Search radius in kilometres")
       }.paperCard()
     }
   }

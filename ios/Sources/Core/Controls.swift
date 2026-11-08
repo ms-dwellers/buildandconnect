@@ -1,9 +1,9 @@
 import SwiftUI
+import UIKit
 
 /// Native equivalents of components/ui/button.tsx and app/globals.css.
 struct AppButtonStyle: ButtonStyle {
   enum Variant { case primary, highlight, secondary, outline, ghost, link, destructive }
-  enum GroupPosition { case first, middle, last }
   enum Size {
     case regular, large, icon, small
     var height: CGFloat { self == .large ? 48 : 44 }
@@ -13,7 +13,6 @@ struct AppButtonStyle: ButtonStyle {
   var size: Size = .regular
   var fullWidth = false
   var selected = false
-  var groupPosition: GroupPosition?
   static var primary: Self { .init(variant: .primary, size: .large, fullWidth: true) }
   static var highlight: Self { .init(variant: .highlight, size: .large, fullWidth: true) }
   @Environment(\.isEnabled) private var enabled
@@ -23,13 +22,7 @@ struct AppButtonStyle: ButtonStyle {
   @State private var hovering = false
 
   private var raised: Bool { variant != .ghost && variant != .link }
-  private var shape: UnevenRoundedRectangle {
-    let leading: CGFloat = groupPosition == nil || groupPosition == .first ? 10 : 0
-    let trailing: CGFloat = groupPosition == nil || groupPosition == .last ? 10 : 0
-    return UnevenRoundedRectangle(
-      topLeadingRadius: leading, bottomLeadingRadius: leading,
-      bottomTrailingRadius: trailing, topTrailingRadius: trailing)
-  }
+  private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 10) }
   private var foreground: Color {
     switch variant {
     case .primary: Theme.cream
@@ -110,12 +103,39 @@ struct AppField<Content: View>: View {
   }
 }
 
+struct AppSection<Content: View>: View {
+  let title: String
+  @ViewBuilder let content: () -> Content
+
+  init(_ title: String, @ViewBuilder content: @escaping () -> Content) {
+    self.title = title
+    self.content = content
+  }
+
+  var body: some View {
+    Section {
+      content()
+    } header: {
+      Text(title).font(Theme.metadata).foregroundStyle(Theme.muted).textCase(nil)
+    }
+  }
+}
+
 private struct AppFieldSurface: ViewModifier {
   @FocusState private var focused: Bool
-  @Environment(\.isEnabled) private var enabled
+  nonisolated init() {}
   func body(content: Content) -> some View {
     content.focused($focused).font(Theme.body(16)).padding(.horizontal, 12).padding(.vertical, 10)
       .frame(minHeight: 44)
+      .modifier(AppInputSurface(focused: focused))
+  }
+}
+
+struct AppInputSurface: ViewModifier {
+  var focused = false
+  @Environment(\.isEnabled) private var enabled
+  func body(content: Content) -> some View {
+    content
       .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
       .overlay(
         RoundedRectangle(cornerRadius: 12).stroke(focused ? Theme.accentStrong : Theme.inputBorder)
@@ -134,12 +154,12 @@ struct AppSwitchStyle: ToggleStyle {
   @Environment(\.isEnabled) private var enabled
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   func makeBody(configuration: Configuration) -> some View {
-    HStack(spacing: 16) {
-      configuration.label.font(Theme.body(16))
-      Spacer(minLength: 0)
-      Button {
-        configuration.isOn.toggle()
-      } label: {
+    Button {
+      configuration.isOn.toggle()
+    } label: {
+      HStack(spacing: 16) {
+        configuration.label.font(Theme.body(16)).multilineTextAlignment(.leading)
+        Spacer(minLength: 0)
         RoundedRectangle(cornerRadius: 11)
           .fill(configuration.isOn ? Theme.accentStrong : Theme.inputBorder)
           .frame(width: 38, height: 22)
@@ -147,13 +167,13 @@ struct AppSwitchStyle: ToggleStyle {
             Circle().fill(Theme.canvas).frame(width: 20, height: 20).padding(1)
           }
           .frame(width: 44, height: 44)
-      }.buttonStyle(.plain)
-    }
-    .opacity(enabled ? 1 : 0.64)
-    .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isOn)
-    .accessibilityRepresentation {
-      Toggle(isOn: configuration.$isOn) { configuration.label }.toggleStyle(.switch)
-    }
+      }.contentShape(Rectangle())
+    }.buttonStyle(.plain)
+      .opacity(enabled ? 1 : 0.64)
+      .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isOn)
+      .accessibilityRepresentation {
+        Toggle(isOn: configuration.$isOn) { configuration.label }.toggleStyle(.switch)
+      }
   }
 }
 
@@ -304,6 +324,87 @@ struct AppStepper: View {
       }
       .buttonStyle(AppButtonStyle(size: .icon)).disabled(value >= range.upperBound)
       .accessibilityLabel("Increase \(title)")
+    }
+  }
+}
+
+/// Keep native slider input and accessibility with the web's opaque track and thumb.
+struct AppSlider: UIViewRepresentable {
+  @Binding var value: Double
+  let bounds: ClosedRange<Double>
+  let step: Double
+  let label: String
+
+  func makeUIView(context: Context) -> NativeSlider {
+    let slider = NativeSlider()
+    for (minimum, color) in [(true, Theme.accentStrong), (false, Theme.inputBorder)] {
+      let image = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { _ in
+        UIColor(color).setFill()
+        UIBezierPath(roundedRect: CGRect(x: 0, y: 0, width: 4, height: 4), cornerRadius: 2).fill()
+      }.resizableImage(withCapInsets: UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2))
+      if minimum {
+        slider.setMinimumTrackImage(image, for: .normal)
+      } else {
+        slider.setMaximumTrackImage(image, for: .normal)
+      }
+    }
+    for (state, size) in [(UIControl.State.normal, CGFloat(20)), (.highlighted, CGFloat(24))] {
+      let image = UIGraphicsImageRenderer(size: CGSize(width: size, height: size)).image { _ in
+        let circle = UIBezierPath(ovalIn: CGRect(x: 0.5, y: 0.5, width: size - 1, height: size - 1))
+        UIColor(Theme.card).setFill()
+        circle.fill()
+        UIColor(Theme.inputBorder).setStroke()
+        circle.stroke()
+      }
+      slider.setThumbImage(image, for: state)
+    }
+    slider.addTarget(
+      context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
+    return slider
+  }
+
+  func updateUIView(_ slider: NativeSlider, context: Context) {
+    context.coordinator.parent = self
+    slider.minimumValue = Float(bounds.lowerBound)
+    slider.maximumValue = Float(bounds.upperBound)
+    slider.value = Float(value)
+    slider.increment = Float(step)
+    slider.isEnabled = context.environment.isEnabled
+    slider.alpha = slider.isEnabled ? 1 : 0.64
+    slider.accessibilityLabel = label
+    slider.accessibilityValue = value.formatted(.number.precision(.fractionLength(0...2)))
+  }
+
+  func sizeThatFits(_ proposal: ProposedViewSize, uiView: NativeSlider, context: Context) -> CGSize?
+  {
+    CGSize(width: proposal.width ?? 200, height: 44)
+  }
+
+  func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+  final class NativeSlider: UISlider {
+    var increment: Float = 1
+    override func accessibilityIncrement() { adjust(by: increment) }
+    override func accessibilityDecrement() { adjust(by: -increment) }
+    private func adjust(by delta: Float) {
+      guard isEnabled else { return }
+      value = min(maximumValue, max(minimumValue, value + delta))
+      sendActions(for: .valueChanged)
+    }
+  }
+
+  @MainActor
+  final class Coordinator: NSObject {
+    var parent: AppSlider
+    init(_ parent: AppSlider) { self.parent = parent }
+    @objc func changed(_ slider: UISlider) {
+      let offset = ((Double(slider.value) - parent.bounds.lowerBound) / parent.step).rounded()
+      parent.value = min(
+        parent.bounds.upperBound,
+        max(
+          parent.bounds.lowerBound,
+          parent.bounds.lowerBound + offset * parent.step))
+      slider.value = Float(parent.value)
     }
   }
 }

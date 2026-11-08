@@ -33,7 +33,7 @@ struct ConnectionsView: View {
           }
         }
         Text("Contact details and messaging are not available.")
-          .font(.footnote).foregroundStyle(Theme.muted)
+          .font(Theme.caption).foregroundStyle(Theme.muted)
       }.padding(20)
     }.pageBackground().appNavigationTitle("Connections")
       .task(id: app.revision) { await load(true) }.refreshable { await load(true) }
@@ -92,7 +92,7 @@ struct InterestCard: View {
         }
       } else {
         Text("Open the opportunity to review your current eligibility before expressing interest.")
-          .font(.footnote).foregroundStyle(Theme.muted)
+          .font(Theme.caption).foregroundStyle(Theme.muted)
       }
       if let error = action.error { FailureView(error: error) }
     }.paperCard()

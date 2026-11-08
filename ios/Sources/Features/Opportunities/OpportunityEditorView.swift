@@ -50,7 +50,7 @@ struct OpportunityEditorView: View {
   }
   private var form: some View {
     Form {
-      Section("The project") {
+      AppSection("The project") {
         AppField(title: "Title") {
           TextField("Title", text: $draft.title).accessibilityIdentifier("opportunity.title")
         }
@@ -59,7 +59,7 @@ struct OpportunityEditorView: View {
             .accessibilityIdentifier("opportunity.description")
         }
         Text("At least 30 characters. Describe the work, technologies, and mentorship.").font(
-          .footnote
+          Theme.caption
         ).foregroundStyle(Theme.muted)
         AppSelect(
           title: "Opportunity type", selection: $draft.kind,
@@ -81,11 +81,11 @@ struct OpportunityEditorView: View {
           value: $draft.minimumWeeklyHours, range: 1...80)
         CollaborationPicker(value: $draft.collaboration)
       } header: {
-        Text("Who it suits")
+        Text("Who it suits").font(Theme.metadata).textCase(nil)
       } footer: {
         Text(
           "Essential technologies exclude developers who do not meet them. Leave this empty to consider transferable skills."
-        )
+        ).font(Theme.caption)
       }
       Section {
         AppField(title: "City") { TextField("City", text: $draft.city) }
@@ -103,11 +103,11 @@ struct OpportunityEditorView: View {
           }
         }
       } header: {
-        Text("Location")
+        Text("Location").font(Theme.metadata).textCase(nil)
       } footer: {
         Text(
           "A pin is optional. Only open, pinned Calgary opportunities appear on the city map; others remain in opportunity lists."
-        )
+        ).font(Theme.caption)
       }
       AIConsentSection(allowed: $consent)
       if let error = action.error { Section { FailureView(error: error) } }

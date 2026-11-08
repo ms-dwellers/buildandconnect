@@ -93,14 +93,14 @@ struct VoiceStudioView: View {
         Text(
           "Scripted replies, not live AI. Audio levels stay on this device; nothing is recorded, transcribed, or uploaded."
         )
-        .font(.footnote).foregroundStyle(Theme.muted)
+        .font(Theme.caption).foregroundStyle(Theme.muted)
         AppSegmentedControl(
           title: "Voice style", selection: $style,
           options: [
             ("calm", "Calm"), ("bright", "Bright"), ("grounded", "Grounded"),
           ])
         LabeledContent("Pace", value: pace.formatted(.number.precision(.fractionLength(1))) + "×")
-        Slider(value: $pace, in: 0.7...1.3, step: 0.1).accessibilityLabel("Voice preview pace")
+        AppSlider(value: $pace, bounds: 0.7...1.3, step: 0.1, label: "Voice preview pace")
         Toggle("Preview with a local device voice", isOn: $preview)
         if messages.isEmpty {
           ForEach(["Find a project", "Explore my skills", "Share an idea"], id: \.self) { prompt in

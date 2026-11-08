@@ -158,11 +158,13 @@ struct ExploreView: View {
         Spacer()
         if let error = feed.error { FailureView(error: error) { await load() }.paperCard() }
         if feed.value?.truncated == true {
-          Text("Some ideas are omitted from this feed.").font(.footnote).paperCard()
+          Text("Some ideas are omitted from this feed.").font(Theme.caption).paperCard()
         }
         if let focus, focused && !(feed.value?.listings.contains { $0.id == focus } ?? false) {
-          Text("This posting is closed, unavailable, or not on the Calgary map.").font(.footnote)
-            .paperCard()
+          Text("This posting is closed, unavailable, or not on the Calgary map.").font(
+            Theme.caption
+          )
+          .paperCard()
         }
         VStack(alignment: .leading, spacing: 16) {
           HStack {
@@ -483,7 +485,7 @@ struct ListingPreview: View {
       Text(listing.organization).foregroundStyle(Theme.muted)
       Label(listing.neighbourhood, systemImage: "mappin").font(Theme.metadata)
       if !listing.precise {
-        Text("Approximate area. Developer accounts can see the exact place.").font(.footnote)
+        Text("Approximate area. Developer accounts can see the exact place.").font(Theme.caption)
       }
       Text(listing.description)
       LabeledContent("Commitment", value: listing.commitment)
@@ -512,7 +514,7 @@ private struct ListingAction: View {
         )
         .buttonStyle(AppButtonStyle.primary)
       } else {
-        Text("Developer accounts can pick up community ideas.").font(.footnote).foregroundStyle(
+        Text("Developer accounts can pick up community ideas.").font(Theme.caption).foregroundStyle(
           Theme.muted)
       }
     }

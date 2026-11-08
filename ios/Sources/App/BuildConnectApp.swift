@@ -246,7 +246,9 @@ struct RootView: View {
           AuthView(initialMode: mode).padding(16).padding(.top, -24)
         }
       }.background(Theme.softAccent).presentationDragIndicator(.visible).preferredColorScheme(
-        .light)
+        .light
+      )
+      .presentationBackground(Theme.canvas).presentationCornerRadius(20)
     }
     .sheet(
       isPresented: Binding(get: { app.notice != nil }, set: { if !$0 { app.notice = nil } })

@@ -97,10 +97,10 @@ struct PinPicker: View {
               viewport = .camera(center: pin.coordinate, zoom: 12)
             }
             if let message = location.message {
-              Text(message).font(.footnote).foregroundStyle(Theme.muted)
+              Text(message).font(Theme.caption).foregroundStyle(Theme.muted)
             }
           }
-          Section("Selected location") {
+          AppSection("Selected location") {
             AppField(title: "Latitude") {
               TextField(
                 "Latitude", value: $pin.latitude, format: .number.precision(.fractionLength(6))

@@ -27,7 +27,7 @@ struct AIConsentSection: View {
       Text(
         "Your text is sent to server-side Workers AI to analyze requirements or experience and calculate matches. Nothing is published if analysis fails."
       )
-      .font(.footnote).foregroundStyle(Theme.muted)
+      .font(Theme.caption).foregroundStyle(Theme.muted)
     }
   }
 }
@@ -82,7 +82,7 @@ struct ProfileView: View {
       if let error = profile.error, (error as? APIError)?.status != 404 {
         Section { FailureView(error: error) { await load() } }
       }
-      Section("About you") {
+      AppSection("About you") {
         AppField(title: "Bio") {
           TextField("Bio", text: $draft.bio, axis: .vertical).lineLimit(3...8)
         }
@@ -110,11 +110,11 @@ struct ProfileView: View {
         Button("Add skill", systemImage: "plus") { draft.skills.append(Skill()) }.disabled(
           draft.skills.count >= 30)
       } header: {
-        Text("Skills")
+        Text("Skills").font(Theme.metadata).textCase(nil)
       } footer: {
-        Text("Add at least one skill. Swipe a row to remove it.")
+        Text("Add at least one skill. Swipe a row to remove it.").font(Theme.caption)
       }
-      Section("Projects") {
+      AppSection("Projects") {
         ForEach(draft.projects.indices, id: \.self) { index in
           VStack(alignment: .leading, spacing: 12) {
             AppField(title: "Project title") {
@@ -134,7 +134,7 @@ struct ProfileView: View {
         Button("Add project", systemImage: "plus") { draft.projects.append(Project()) }.disabled(
           draft.projects.count >= 10)
       }
-      Section("Goals and collaboration") {
+      AppSection("Goals and collaboration") {
         TagField(title: "Interests, separated by commas", values: $draft.interests)
         TagField(title: "What you want to learn", values: $draft.wantsToLearn)
         CollaborationPicker(value: $draft.collaboration)
@@ -145,14 +145,14 @@ struct ProfileView: View {
         Toggle(
           "Visible to companies and recruiters", isOn: flagBinding(\.discoverable, "discoverable"))
       } header: {
-        Text("Visibility")
+        Text("Visibility").font(Theme.metadata).textCase(nil)
       } footer: {
         Text(
           "Discovery shares your profile and projects, never your private area or contact details. Existing profiles update these settings without AI."
-        )
+        ).font(Theme.caption)
       }
       if profile.value != nil {
-        Section("Private area") {
+        AppSection("Private area") {
           NavigationLink(value: Route.area) {
             Label(
               profile.value?.location.map { "Requests within \(Int($0.radiusKm)) km" }
@@ -280,15 +280,15 @@ struct AreaEditorView: View {
           }
         }
       }
-      Section("Search area") {
+      AppSection("Search area") {
         Button(selected ? "Adjust your pin" : "Choose a pin", systemImage: "mappin.and.ellipse") {
           picker = true
         }
         LabeledContent("Radius", value: "\(Int(area.radiusKm)) km")
-        Slider(value: $area.radiusKm, in: 1...100, step: 1).accessibilityLabel(
-          "Search radius in kilometers")
+        AppSlider(
+          value: $area.radiusKm, bounds: 1...100, step: 1, label: "Search radius in kilometers")
         Text("Your area is private. Companies and recruiters cannot see your saved pin.").font(
-          .footnote
+          Theme.caption
         ).foregroundStyle(Theme.muted)
       }
       if let error = action.error { Section { FailureView(error: error) } }
@@ -342,9 +342,9 @@ struct DeveloperDetailView: View {
             ForEach(developer.skills) { skill in
               SkillRow(name: skill.name, level: skill.level)
             }
-            Text("Wants to learn").font(.headline)
+            Text("Wants to learn").font(Theme.subheading)
             Text(developer.wantsToLearn.joined(separator: ", "))
-            Text("Interests").font(.headline)
+            Text("Interests").font(Theme.subheading)
             Text(developer.interests.joined(separator: ", "))
             Text("Experience \(developer.experienceLevel) of 5 · \(developer.collaboration)")
             if developer.acceptsVolunteer { Text("Open to volunteering") }

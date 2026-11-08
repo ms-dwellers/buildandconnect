@@ -31,14 +31,14 @@ struct AuthView: View {
       }
       VStack(spacing: 15) {
         if mode == .signUp {
-          field("Your name", symbol: "person") {
+          field("Your name", symbol: "person", isFocused: focused == .name) {
             TextField("Name", text: $name, prompt: Text("Name").foregroundStyle(Theme.muted))
               .textContentType(.name).focused($focused, equals: .name)
               .accessibilityLabel("Your name")
               .submitLabel(.next).onSubmit { focused = .email }.accessibilityIdentifier("auth.name")
           }
         }
-        field("Email address", symbol: "envelope") {
+        field("Email address", symbol: "envelope", isFocused: focused == .email) {
           TextField(
             "Email address", text: $email,
             prompt: Text(verbatim: "you@example.com").foregroundStyle(Theme.muted)
@@ -54,7 +54,7 @@ struct AuthView: View {
           }.accessibilityIdentifier("auth.email")
           .accessibilityLabel("Email address")
         }
-        field("Password", symbol: "lock") {
+        field("Password", symbol: "lock", isFocused: passwordFocused) {
           PasswordEntry(
             text: $password, focused: $passwordFocused, revealed: revealPassword,
             creatingAccount: mode == .signUp, submit: submit)
@@ -65,7 +65,8 @@ struct AuthView: View {
           } label: {
             Image(systemName: revealPassword ? "eye.slash" : "eye").font(.system(size: 18)).frame(
               width: 44, height: 44)
-          }.accessibilityLabel(revealPassword ? "Hide password" : "Show password")
+          }.buttonStyle(AppButtonStyle(variant: .ghost, size: .icon))
+            .accessibilityLabel(revealPassword ? "Hide password" : "Show password")
         }
         if mode == .signUp {
           Text("Use at least 12 characters.").font(Theme.body(14)).foregroundStyle(Theme.muted)
@@ -107,7 +108,7 @@ struct AuthView: View {
           }
         }
         .font(Theme.body(14)).foregroundStyle(Theme.muted)
-      }.frame(maxWidth: .infinity)
+      }.frame(maxWidth: .infinity).buttonStyle(AppButtonStyle(variant: .link))
     }.paperCard()
       .onAppear { mode = initialMode }
       .onChange(of: focused) { _, field in if field != nil { passwordFocused = false } }
@@ -133,7 +134,7 @@ struct AuthView: View {
     }.accessibilityIdentifier("welcome.explore")
   }
   private func field<Content: View>(
-    _ title: String, symbol: String, @ViewBuilder content: () -> Content
+    _ title: String, symbol: String, isFocused: Bool, @ViewBuilder content: () -> Content
   ) -> some View {
     VStack(alignment: .leading, spacing: 7) {
       Text(title).font(Theme.metadata)
@@ -143,8 +144,7 @@ struct AuthView: View {
         ).accessibilityHidden(true)
         content().textFieldStyle(.plain)
       }.padding(.horizontal, 12).padding(.vertical, 8).frame(minHeight: 44)
-        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.inputBorder))
+        .modifier(AppInputSurface(focused: isFocused))
     }
   }
   private func cancelPending() {
@@ -329,7 +329,7 @@ struct AccountView: View {
           }
         }.padding(.vertical, 8)
       }
-      Section("Privacy") {
+      AppSection("Privacy") {
         Text(
           "Profiles and postings are processed by server-side AI for analysis and matching. Mapbox supplies the map."
         )
@@ -338,14 +338,14 @@ struct AccountView: View {
         )
         Text("No payment or messaging service is included.")
       }
-      Section("Account deletion") {
+      AppSection("Account deletion") {
         Text(
           "Account deletion is not available on the service yet. Closing a posting does not delete your account."
         )
         .foregroundStyle(Theme.muted)
       }
       #if DEBUG
-        Section("Labs") { NavigationLink("Voice studio") { VoiceStudioView() } }
+        AppSection("Labs") { NavigationLink("Voice studio") { VoiceStudioView() } }
       #endif
       Section {
         Button(signingOut ? "Signing out…" : "Sign out", role: .destructive) {

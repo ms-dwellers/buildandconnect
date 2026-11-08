@@ -28,7 +28,9 @@ struct RequestDetailView: View {
                 Text(item.place).font(Theme.metadata)
                 Text(item.ownerName).foregroundStyle(Theme.muted)
                 Text(item.description)
-                if let name = item.claimantName { Text("Accepted by \(name)").font(.headline) }
+                if let name = item.claimantName {
+                  Text("Accepted by \(name)").font(Theme.subheading)
+                }
               }.paperCard()
               AnalysisCard(analysis: item.analysis)
               actions(item)
@@ -173,7 +175,7 @@ struct RequestEditorView: View {
   }
   private var form: some View {
     Form {
-      Section("What do you need?") {
+      AppSection("What do you need?") {
         AppField(title: "Title") {
           TextField("Title", text: $draft.title).accessibilityIdentifier("request.title")
         }
@@ -181,7 +183,7 @@ struct RequestEditorView: View {
           TextField("Description", text: $draft.description, axis: .vertical).lineLimit(5...12)
             .accessibilityIdentifier("request.description")
         }
-        Text("Describe the work in at least 30 characters.").font(.footnote).foregroundStyle(
+        Text("Describe the work in at least 30 characters.").font(Theme.caption).foregroundStyle(
           Theme.muted)
       }
       Section {
@@ -193,9 +195,9 @@ struct RequestEditorView: View {
         Text(
           "Guests see an approximate area. Developers see your exact pin while the request is open. Choose a landmark, not a home address."
         )
-        .font(.footnote).foregroundStyle(Theme.muted)
+        .font(Theme.caption).foregroundStyle(Theme.muted)
       } header: {
-        Text("Where is help needed?")
+        Text("Where is help needed?").font(Theme.metadata).textCase(nil)
       }
       AIConsentSection(allowed: $consent)
       if let error = action.error { Section { FailureView(error: error) } }
@@ -300,11 +302,11 @@ struct AnalysisCard: View {
         }
       }
       if !analysis.learningOpportunities.isEmpty {
-        Text("You could learn").font(.headline)
+        Text("You could learn").font(Theme.subheading)
         Text(analysis.learningOpportunities.joined(separator: ", "))
       }
       if analysis.mentorshipAvailable { Label("Mentorship offered", systemImage: "person.2") }
-      Text("AI-estimated requirements. Review them before acting on a match.").font(.footnote)
+      Text("AI-estimated requirements. Review them before acting on a match.").font(Theme.caption)
         .foregroundStyle(Theme.muted)
     }.paperCard()
   }

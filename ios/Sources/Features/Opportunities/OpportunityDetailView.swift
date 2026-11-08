@@ -90,7 +90,7 @@ struct OpportunityDetailView: View {
       if let result = matches.value {
         Text(
           "\(result.total) eligible developers. Scores support your judgment; they do not predict success."
-        ).font(.footnote).foregroundStyle(Theme.muted)
+        ).font(Theme.caption).foregroundStyle(Theme.muted)
         if result.data.isEmpty {
           EmptyState(title: "No eligible developers yet", symbol: "person.2")
         }
@@ -103,7 +103,7 @@ struct OpportunityDetailView: View {
           }.paperCard()
         }
         if result.total > result.data.count {
-          Text("Showing the first \(result.data.count) ranked candidates.").font(.footnote)
+          Text("Showing the first \(result.data.count) ranked candidates.").font(Theme.caption)
         }
       }
     }
@@ -122,7 +122,7 @@ struct OpportunityDetailView: View {
         if let match = fit.data {
           MatchBreakdown(match: match)
         } else {
-          Text("Not eligible for this opportunity yet").font(.headline)
+          Text("Not eligible for this opportunity yet").font(Theme.subheading)
           ForEach(fit.ineligibleReasons, id: \.self) { Text($0) }
           NavigationLink("Review profile and preferences", value: Route.profile)
         }
