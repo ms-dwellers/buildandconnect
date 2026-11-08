@@ -401,13 +401,13 @@
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
   /*
-   * Evening city under firelight: lifted warm earth so Standard 3D is not a
-   * black void, cream roads, olive parks, slate water.
+   * Autumn evening city: lifted warm earth, cream roads, rust/amber canopy
+   * instead of greenspace green, slate water.
    */
   --map-land: #6e452c;
   --map-block: #7a5134;
   --map-road: #f0d9b5;
-  --map-park: #6a7a48;
+  --map-park: #c07838;
   --map-water: #4a6e6a;
   --map-water-edge: #355552;
   --map-arterial: #f0a345;

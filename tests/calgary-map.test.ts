@@ -148,7 +148,7 @@ test("map styles read the light preset token from the active theme", () => {
         {
           "--map-base": "#6e452c",
           "--map-water": "#4a6e6a",
-          "--map-park": "#6a7a48",
+          "--map-park": "#c07838",
           "--map-road": "#f0d9b5",
           "--map-arterial": "#f0a345",
           "--map-building": "#9a6340",
