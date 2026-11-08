@@ -114,7 +114,7 @@ export default function Home() {
           className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 sm:pb-24"
         >
           <Card className="relative overflow-hidden border-primary/15 bg-secondary/50">
-            <CardPanel className="grid items-center gap-8 p-8 pb-20 sm:p-12 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
+            <CardPanel className="grid items-center gap-8 p-8 pb-24 sm:p-12 sm:pb-24 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
               <h2
                 id="join-heading"
                 className="max-w-lg font-display text-3xl leading-tight tracking-tight sm:text-4xl"
