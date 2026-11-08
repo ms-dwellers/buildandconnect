@@ -25,6 +25,7 @@ export function fireworksAI(): AIService | undefined {
   if (!token) return undefined;
   return {
     async run(model, input, options) {
+      let phase = "prepare";
       try {
         const embedding = model === EMBEDDING_MODEL;
         if (!embedding && model !== ANALYSIS_MODEL)
@@ -43,6 +44,8 @@ export function fireworksAI(): AIService | undefined {
           ...(format
             ? {
                 stream: false,
+                // GLM defaults to maximum thinking, which can consume the JSON budget.
+                reasoning_effort: input.reasoning_effort ?? "low",
                 response_format: {
                   type: "json_schema",
                   json_schema: {
@@ -54,6 +57,7 @@ export function fireworksAI(): AIService | undefined {
               }
             : {}),
         };
+        phase = "request";
         const response = await fetch(
           `https://api.fireworks.ai/inference/v1/${embedding ? "embeddings" : "chat/completions"}`,
           {
@@ -68,17 +72,47 @@ export function fireworksAI(): AIService | undefined {
           },
         );
         if (!response.ok) {
+          console.warn("Fireworks rejected a request", {
+            kind: embedding ? "embedding" : "analysis",
+            status: response.status,
+          });
           await response.body?.cancel();
           throw new Error("Provider rejected request");
         }
+        phase = "decode";
         const result: unknown = await response.json();
+        phase = "validate";
         if (embedding) {
           return { data: [embeddingResponse.parse(result).data[0].embedding] };
         }
-        return {
-          response: chatResponse.parse(result).choices[0].message.content,
-        };
-      } catch {
+        const parsed = chatResponse.safeParse(result);
+        if (!parsed.success) {
+          const completion = result as {
+            choices?: { finish_reason?: unknown }[];
+          };
+          const reason = completion?.choices?.[0]?.finish_reason;
+          console.warn("Fireworks returned an incomplete analysis", {
+            finishReason: [
+              "stop",
+              "length",
+              "content_filter",
+              "tool_calls",
+            ].includes(String(reason))
+              ? String(reason)
+              : "unknown",
+          });
+          throw new Error("Invalid analysis response");
+        }
+        return { response: parsed.data.choices[0].message.content };
+      } catch (error) {
+        console.warn("Fireworks request failed", {
+          phase,
+          reason:
+            error instanceof Error &&
+            ["AbortError", "TimeoutError"].includes(error.name)
+              ? error.name
+              : "provider-or-validation",
+        });
         throw new AnalysisUnavailable("Fireworks is unavailable");
       }
     },
