@@ -197,6 +197,7 @@ export type Role = "developer" | "requester";
 export type RequestStatus = "open" | "claimed" | "closed";
 
 export type Developer = DeveloperProfile & {
+  revision?: number;
   id: string;
   name: string;
   embedding: number[];
@@ -204,6 +205,7 @@ export type Developer = DeveloperProfile & {
   location: DeveloperLocation | null;
 };
 export type Opportunity = OpportunityInput & {
+  revision?: number;
   id: string;
   ownerId: string;
   analysis: JobAnalysis;
@@ -211,6 +213,7 @@ export type Opportunity = OpportunityInput & {
   status: "open" | "closed";
 };
 export type LocalRequest = RequestInput & {
+  revision?: number;
   id: string;
   ownerId: string;
   ownerName: string;

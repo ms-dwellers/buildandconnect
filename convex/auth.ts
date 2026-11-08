@@ -51,6 +51,7 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
         }
       }),
     },
+    // Native sessions use signed bearer tokens; browsers retain cookie auth.
     plugins: [bearer({ requireSignature: true }), convex({ authConfig })],
   });
 }

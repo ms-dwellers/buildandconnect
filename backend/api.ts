@@ -31,7 +31,7 @@ import { HiringProviderError } from "./hiring/providers";
 
 export type ApiEnv = {
   Bindings: BackendEnv;
-  Variables: { client: ConvexHttpClient; role: Role | null };
+  Variables: { client: ConvexHttpClient; role: Role | null; userId: string };
 };
 type ApiContext = Context<ApiEnv>;
 type AnalysisServices = {
@@ -45,6 +45,28 @@ const pagination = z.object({
 });
 const client = (c: ApiContext) => c.get("client");
 const secret = (c: ApiContext) => c.env.CONVEX_BRIDGE_SECRET;
+function postingId(c: ApiContext) {
+  const key = c.req.header("Idempotency-Key");
+  return key
+    ? `${c.get("userId")}:${z.uuid().parse(key).toLowerCase()}`
+    : crypto.randomUUID();
+}
+function expectedRevision(c: ApiContext) {
+  const value = c.req.header("If-Match");
+  return value === undefined
+    ? undefined
+    : z.coerce
+        .number()
+        .int()
+        .nonnegative()
+        .parse(
+          z
+            .string()
+            .regex(/^(?:\d+|"\d+")$/)
+            .parse(value)
+            .replace(/^"|"$/g, ""),
+        );
+}
 function requireRole(c: ApiContext, ...roles: Role[]) {
   if (!c.get("role") || !roles.includes(c.get("role")!))
     throw new HTTPException(403, {
@@ -101,6 +123,7 @@ export function createApi(
     c.set("client", connection);
     const actor = await connection.query(convex.data.me, { secret: secret(c) });
     c.set("role", actor.role);
+    c.set("userId", actor.user.id);
     await next();
   });
   app.get("/me", async (c) =>
@@ -123,6 +146,7 @@ export function createApi(
   });
   app.put("/developers/me", async (c) => {
     requireRole(c, "developer");
+    const revision = expectedRevision(c);
     const profile = developerSchema.parse(await c.req.json());
     const embedding = await services.analyzeDeveloper(c.env.AI, profile);
     return c.json(
@@ -130,6 +154,7 @@ export function createApi(
         secret: secret(c),
         profile,
         embedding,
+        expectedRevision: revision,
       }),
     );
   });
@@ -195,12 +220,13 @@ export function createApi(
   );
   app.post("/opportunities", async (c) => {
     requireRole(c, "requester");
+    const id = postingId(c);
     const details = opportunitySchema.parse(await c.req.json());
     const result = await services.analyzeOpportunity(c.env.AI, details);
     return c.json(
       await client(c).mutation(convex.data.createOpportunity, {
         secret: secret(c),
-        id: crypto.randomUUID(),
+        id,
         details,
         ...result,
       }),
@@ -231,6 +257,7 @@ export function createApi(
   );
   app.put("/opportunities/:id", async (c) => {
     requireRole(c, "requester");
+    const revision = expectedRevision(c);
     const details = opportunitySchema.parse(await c.req.json());
     const result = await services.analyzeOpportunity(c.env.AI, details);
     return c.json(
@@ -238,6 +265,7 @@ export function createApi(
         secret: secret(c),
         id: c.req.param("id"),
         details,
+        expectedRevision: revision,
         ...result,
       }),
     );
@@ -308,12 +336,13 @@ export function createApi(
   );
   app.post("/requests", async (c) => {
     requireRole(c, "requester");
+    const id = postingId(c);
     const details = requestSchema.parse(await c.req.json());
     const result = await services.analyzeRequest(c.env.AI, details);
     return c.json(
       await client(c).mutation(convex.data.createRequest, {
         secret: secret(c),
-        id: crypto.randomUUID(),
+        id,
         details,
         ...result,
       }),
@@ -346,6 +375,7 @@ export function createApi(
   );
   app.put("/requests/:id", async (c) => {
     requireRole(c, "requester");
+    const revision = expectedRevision(c);
     const details = requestSchema.parse(await c.req.json());
     const result = await services.analyzeRequest(c.env.AI, details);
     return c.json(
@@ -353,6 +383,7 @@ export function createApi(
         secret: secret(c),
         id: c.req.param("id"),
         details,
+        expectedRevision: revision,
         ...result,
       }),
     );

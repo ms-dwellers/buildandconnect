@@ -50,6 +50,14 @@ import { CALGARY_BOUNDS, type CityJob } from "../lib/calgary-area";
 
 const secret = v.string();
 const pagination = { after: v.string(), limit: v.number() };
+const expectedRevision = v.optional(v.number());
+function checkRevision(actual: number, expected: number | undefined) {
+  if (expected !== undefined && actual !== expected)
+    fail(
+      409,
+      "This item changed on another device. Reload the latest version before saving.",
+    );
+}
 function checkLimit(limit: number) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 100)
     fail(400, "Limit must be between 1 and 100");
@@ -77,12 +85,13 @@ export const setRole = mutation({
 });
 
 export const putDeveloper = mutation({
-  args: { secret, profile, embedding: v.array(v.number()) },
+  args: { secret, profile, embedding: v.array(v.number()), expectedRevision },
   handler: async (ctx, args) => {
     const { user } = await access(ctx, args.secret, ["developer"]);
     const input = developerSchema.parse(args.profile);
     const old = await findDeveloper(ctx, user.id);
     const profile = { ...old?.profile, ...input };
+    checkRevision(old?.updatedAt ?? 0, args.expectedRevision);
     const values = {
       userId: user.id,
       name: user.name,
@@ -90,7 +99,7 @@ export const putDeveloper = mutation({
       profile,
       embedding: vectorSchema.parse(args.embedding),
       embeddingModel: EMBEDDING_MODEL,
-      updatedAt: Date.now(),
+      updatedAt: Math.max(Date.now(), (old?.updatedAt ?? 0) + 1),
     };
     if (old) await ctx.db.patch(old._id, values);
     else await ctx.db.insert("developers", { ...values, location: null });
@@ -143,7 +152,7 @@ export const patchDeveloper = mutation({
       fail(400, "Choose availability or discovery visibility");
     await ctx.db.patch(row._id, {
       profile: { ...row.profile, ...update },
-      updatedAt: Date.now(),
+      updatedAt: Math.max(Date.now(), row.updatedAt + 1),
     });
     return { id: user.id, ...update };
   },
@@ -156,7 +165,10 @@ export const setLocation = mutation({
     const row = await findDeveloper(ctx, user.id);
     if (!row) fail(404, "Create a developer profile first");
     const location = developerLocationSchema.parse(args.location);
-    await ctx.db.patch(row._id, { location, updatedAt: Date.now() });
+    await ctx.db.patch(row._id, {
+      location,
+      updatedAt: Math.max(Date.now(), row.updatedAt + 1),
+    });
     return { id: user.id, location };
   },
 });
@@ -184,7 +196,7 @@ export const developers = query({
 export const getDeveloper = query({
   args: { secret, id: v.string() },
   handler: async (ctx, args) => {
-    await access(ctx, args.secret, ["company", "recruiter"]);
+    await access(ctx, args.secret, ["requester"]);
     const row = await findDeveloper(ctx, args.id);
     if (!row || !row.profile.discoverable)
       fail(404, "This developer is no longer discoverable");
@@ -205,6 +217,19 @@ export const createOpportunity = mutation({
     const details = opportunitySchema.parse(args.details);
     const analysis = analysisSchema.parse(args.analysis);
     const id = args.id;
+    const existing = await findOpportunity(ctx, id);
+    if (existing) {
+      if (
+        existing.ownerId !== user.id ||
+        JSON.stringify(opportunitySchema.parse(existing.details)) !==
+          JSON.stringify(details)
+      )
+        fail(
+          409,
+          "This submission was already published with different details. Refresh your postings before editing it.",
+        );
+      return publicOpportunity(opportunityData(existing));
+    }
     await ctx.db.insert("opportunities", {
       id,
       ownerId: user.id,
@@ -279,7 +304,10 @@ export const updateOpportunity = mutation({
     if (!row) fail(404, "Opportunity not found");
     if (row.ownerId !== user.id)
       fail(403, "Only the opportunity owner can access this");
-    await ctx.db.patch(row._id, { status: args.status });
+    await ctx.db.patch(row._id, {
+      status: args.status,
+      revision: (row.revision ?? 0) + 1,
+    });
     return { id: row.id, status: args.status };
   },
 });
@@ -469,6 +497,19 @@ export const createRequest = mutation({
     const details = requestSchema.parse(args.details);
     const analysis = analysisSchema.parse(args.analysis);
     const id = args.id;
+    const existing = await findRequest(ctx, id);
+    if (existing) {
+      if (
+        existing.ownerId !== user.id ||
+        JSON.stringify(requestSchema.parse(existing.details)) !==
+          JSON.stringify(details)
+      )
+        fail(
+          409,
+          "This submission was already published with different details. Refresh your postings before editing it.",
+        );
+      return publicRequest(requestData(existing));
+    }
     await ctx.db.insert("requests", {
       id,
       ownerId: user.id,
@@ -585,6 +626,7 @@ export const closeRequest = mutation({
     if (row.ownerId !== user.id) fail(403, "Only the requester can close this");
     await ctx.db.patch(row._id, {
       status: "closed",
+      revision: (row.revision ?? 0) + 1,
       claimedBy: null,
       claimantName: null,
     });
@@ -613,6 +655,7 @@ export const acceptRequest = mutation({
       fail(409, "This request is outside your radius or eligibility");
     await ctx.db.patch(row._id, {
       status: "claimed",
+      revision: (row.revision ?? 0) + 1,
       claimedBy: user.id,
       claimantName: user.name,
     });
@@ -642,6 +685,7 @@ export const releaseRequest = mutation({
       fail(409, "Only a claimed request can be released");
     await ctx.db.patch(row._id, {
       status: "open",
+      revision: (row.revision ?? 0) + 1,
       claimedBy: null,
       claimantName: null,
     });
@@ -735,6 +779,7 @@ export const reviseOpportunity = mutation({
     details: opportunity,
     analysis,
     embedding: v.array(v.number()),
+    expectedRevision,
   },
   handler: async (ctx, args) => {
     const { user } = await access(ctx, args.secret, ["requester"]);
@@ -742,8 +787,10 @@ export const reviseOpportunity = mutation({
     if (!row) fail(404, "Opportunity not found");
     if (row.ownerId !== user.id)
       fail(403, "Only the opportunity owner can edit this");
+    checkRevision(row.revision ?? 0, args.expectedRevision);
     const details = opportunitySchema.parse(args.details);
     const values = {
+      revision: (row.revision ?? 0) + 1,
       cityKey: details.city.trim().toLowerCase(),
       details,
       analysis: analysisSchema.parse(args.analysis),
@@ -783,17 +830,20 @@ export const reviseRequest = mutation({
     details: request,
     analysis,
     embedding: v.array(v.number()),
+    expectedRevision,
   },
   handler: async (ctx, args) => {
     const { user } = await access(ctx, args.secret, ["requester"]);
     const row = await findRequest(ctx, args.id);
     if (!row) fail(404, "Request not found");
     if (row.ownerId !== user.id) fail(403, "Only the requester can edit this");
+    checkRevision(row.revision ?? 0, args.expectedRevision);
     // Editing a claimed request could move it outside the claimant's radius.
     if (row.status === "claimed")
       fail(409, "Release the claim before editing this request");
     if (row.status === "closed") fail(409, "Closed requests cannot be edited");
     const values = {
+      revision: (row.revision ?? 0) + 1,
       details: requestSchema.parse(args.details),
       analysis: analysisSchema.parse(args.analysis),
       embedding: vectorSchema.parse(args.embedding),

@@ -31,6 +31,7 @@ export async function developerData(
     .collect();
   return {
     ...row.profile,
+    revision: row.updatedAt,
     id: row.userId,
     name: row.name,
     embedding: row.embedding,
@@ -46,6 +47,7 @@ export async function developerData(
 export function opportunityData(row: Doc<"opportunities">): Opportunity {
   return {
     ...row.details,
+    revision: row.revision ?? 0,
     id: row.id,
     ownerId: row.ownerId,
     status: row.status,
@@ -55,6 +57,7 @@ export function opportunityData(row: Doc<"opportunities">): Opportunity {
 }
 export function requestData(row: Doc<"requests">): LocalRequest {
   return {
+    revision: row.revision ?? 0,
     ...row.details,
     id: row.id,
     ownerId: row.ownerId,
