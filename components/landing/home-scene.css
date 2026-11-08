@@ -1,7 +1,9 @@
 .home-scene {
-  position: absolute;
-  inset: auto 0 0;
+  position: relative;
+  width: 100%;
+  max-width: 72rem;
   height: var(--home-scene-height, 20rem);
+  margin-inline: auto;
   pointer-events: none;
 }
 
@@ -55,8 +57,11 @@
   opacity: 0;
 }
 
-.home-scene[data-phase="approaching"] ~ .landing-hero-copy,
-.home-scene[data-phase="covering"] ~ .landing-hero-copy {
+/* The copy and actions step aside while the camera approaches the monitor. */
+.landing-hero:has(.home-scene[data-phase="approaching"]) .landing-hero-copy,
+.landing-hero:has(.home-scene[data-phase="approaching"]) .landing-hero-actions,
+.landing-hero:has(.home-scene[data-phase="covering"]) .landing-hero-copy,
+.landing-hero:has(.home-scene[data-phase="covering"]) .landing-hero-actions {
   opacity: 0;
   transition: opacity 300ms ease-in;
 }

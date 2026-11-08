@@ -35,10 +35,9 @@ export default function Home() {
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           aria-labelledby="hero-heading"
-          className="landing-hero relative isolate w-full overflow-hidden bg-background"
+          className="landing-hero relative isolate w-full overflow-hidden bg-background px-5 sm:px-10"
         >
-          <HomeScene />
-          <div className="landing-hero-copy relative z-10 mx-auto flex max-w-4xl flex-col items-center px-5 text-center sm:px-10">
+          <div className="landing-hero-copy mx-auto flex max-w-3xl flex-col items-center text-center">
             <h1
               id="hero-heading"
               className="landing-hero-heading font-display font-bold leading-[0.98] tracking-[-0.045em] text-balance"
@@ -47,22 +46,23 @@ export default function Home() {
               <br />
               <span className="text-primary">{headingEnd}</span>
             </h1>
-            <p className="mt-7 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               {homeCopy.lead}
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-5">
-              <MapJourneyLink variant="highlight" size="lg">
-                {homeCopy.ctas.find.label}
-                <ArrowRightIcon aria-hidden="true" />
-              </MapJourneyLink>
-              <Button
-                render={<a href={homeCopy.ctas.post.href} />}
-                variant="outline"
-                size="lg"
-              >
-                {homeCopy.ctas.post.label}
-              </Button>
-            </div>
+          </div>
+          <HomeScene />
+          <div className="landing-hero-actions flex flex-wrap justify-center gap-x-4 gap-y-5">
+            <MapJourneyLink variant="highlight" size="lg">
+              {homeCopy.ctas.find.label}
+              <ArrowRightIcon aria-hidden="true" />
+            </MapJourneyLink>
+            <Button
+              render={<a href={homeCopy.ctas.post.href} />}
+              variant="outline"
+              size="lg"
+            >
+              {homeCopy.ctas.post.label}
+            </Button>
           </div>
         </section>
         <section
