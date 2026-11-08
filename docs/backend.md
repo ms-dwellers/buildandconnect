@@ -41,6 +41,24 @@ They no longer run and D1 is not bound to the app. Existing local D1 files are
 untouched. The selected Convex development deployment started empty; importing
 any existing production data requires a separate, reviewed migration.
 
+## Career targets
+
+Developers can `GET /api/developers/me/career-target` to read their private target
+(or `null` before saving one), and `PUT` the same path with `{sourceText,
+sourceUrl?}` to replace it. Source text is 30-6000 characters; URLs must use HTTP
+or HTTPS and are never fetched. Workers AI extracts the title and requirements,
+including normalized skills, unique IDs and verbatim supporting quotes. Clients
+cannot submit trusted requirements or another developer's ID. Analysis failure
+saves nothing; concurrent replacement returns 409 rather than overwriting a
+target saved while analysis was running. Requirements and their IDs belong to
+the returned `updatedAt` revision. No embedding or external job-board service is
+needed. Career targets are never included in public profiles or the map feed.
+
+Posting analysis now optionally includes `activities: [{id,description,skills}]`.
+Activities describe work supported by the request, not guaranteed skill gains.
+Existing analyses without activities remain valid. New analysis uses `job-v2`;
+existing records are not automatically reanalyzed or migrated.
+
 ## Browser QA console
 
 Run `bun run dev --host 127.0.0.1` and open `/debug` on the printed local

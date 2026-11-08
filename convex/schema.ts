@@ -83,6 +83,28 @@ export const analysis = v.object({
   responsibilities: tags,
   learningOpportunities: tags,
   mentorshipAvailable: v.boolean(),
+  activities: v.optional(
+    v.array(
+      v.object({
+        id: v.string(),
+        description: v.string(),
+        skills: tags,
+      }),
+    ),
+  ),
+});
+export const careerTarget = v.object({
+  title: v.string(),
+  sourceText: v.string(),
+  sourceUrl: v.optional(v.string()),
+  requirements: v.array(
+    v.object({
+      id: v.string(),
+      description: v.string(),
+      skills: tags,
+      sourceQuote: v.string(),
+    }),
+  ),
 });
 export const opportunity = v.object({
   title: v.string(),
@@ -109,6 +131,12 @@ export const request = v.object({
 });
 
 export default defineSchema({
+  careerTargets: defineTable({
+    developerId: v.string(),
+    target: careerTarget,
+    analysisVersion: v.string(),
+    updatedAt: v.number(),
+  }).index("by_developer", ["developerId"]),
   members: defineTable({ userId: v.string(), name: v.string(), role }).index(
     "by_user",
     ["userId"],

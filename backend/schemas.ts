@@ -5,6 +5,29 @@ const tags = z
   .array(text)
   .max(30)
   .transform((values) => [...new Set(values.map(normalizeSkill))]);
+export { tags as skillTagsSchema };
+export const analysisItemIdSchema = z
+  .string()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  .max(80);
+export const activitiesSchema = z
+  .array(
+    z
+      .object({
+        id: analysisItemIdSchema,
+        description: z.string().trim().min(1).max(300),
+        skills: tags.refine(
+          (values) => values.length > 0,
+          "Name a practiced skill",
+        ),
+      })
+      .strict(),
+  )
+  .max(15)
+  .refine(
+    (values) => new Set(values.map((value) => value.id)).size === values.length,
+    "Activity IDs must be unique",
+  );
 const level = z.number().int().min(1).max(5);
 export const collaboration = z.enum(["async", "sync", "flexible"]);
 
@@ -85,6 +108,7 @@ export const analysisSchema = z
     responsibilities: z.array(z.string().trim().min(1).max(300)).max(15),
     learningOpportunities: tags,
     mentorshipAvailable: z.boolean(),
+    activities: activitiesSchema.optional(),
   })
   .strict();
 

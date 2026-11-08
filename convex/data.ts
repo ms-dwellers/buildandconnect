@@ -47,9 +47,65 @@ import {
 } from "../backend/models";
 import { opportunityListing, requestListing } from "../backend/listings";
 import { CALGARY_BOUNDS, type CityJob } from "../lib/calgary-area";
+import { careerTarget as careerTargetValidator } from "./schema";
+import {
+  CAREER_ANALYSIS_VERSION,
+  careerTargetSchema,
+} from "../backend/career/schemas";
 
 const secret = v.string();
 const pagination = { after: v.string(), limit: v.number() };
+
+export const ownCareerTarget = query({
+  args: { secret },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["developer"]);
+    const row = await ctx.db
+      .query("careerTargets")
+      .withIndex("by_developer", (q) => q.eq("developerId", user.id))
+      .unique();
+    return row
+      ? {
+          ...row.target,
+          developerId: row.developerId,
+          analysisVersion: row.analysisVersion,
+          updatedAt: row.updatedAt,
+        }
+      : null;
+  },
+});
+
+export const putCareerTarget = mutation({
+  args: {
+    secret,
+    target: careerTargetValidator,
+    expectedUpdatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["developer"]);
+    const target = careerTargetSchema.parse(args.target);
+    const old = await ctx.db
+      .query("careerTargets")
+      .withIndex("by_developer", (q) => q.eq("developerId", user.id))
+      .unique();
+    if ((old?.updatedAt ?? 0) !== args.expectedUpdatedAt)
+      fail(409, "Your career target changed. Reload it before saving again.");
+    const values = {
+      developerId: user.id,
+      target,
+      analysisVersion: CAREER_ANALYSIS_VERSION,
+      updatedAt: Math.max(Date.now(), (old?.updatedAt ?? 0) + 1),
+    };
+    if (old) await ctx.db.replace(old._id, values);
+    else await ctx.db.insert("careerTargets", values);
+    return {
+      ...target,
+      developerId: user.id,
+      analysisVersion: values.analysisVersion,
+      updatedAt: values.updatedAt,
+    };
+  },
+});
 function checkLimit(limit: number) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 100)
     fail(400, "Limit must be between 1 and 100");
