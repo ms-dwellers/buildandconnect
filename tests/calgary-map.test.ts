@@ -147,13 +147,13 @@ test("map styles read the light preset token from the active theme", () => {
     getPropertyValue(name: string) {
       return (
         {
-          "--map-base": "#c4a07a",
-          "--map-water": "#7a9e9a",
-          "--map-park": "#e09a48",
-          "--map-road": "#f8f0de",
-          "--map-arterial": "#f0a345",
-          "--map-building": "#d4a070",
-          "--map-label": "#5a3820",
+          "--map-base": "#e2c08a",
+          "--map-water": "#8aada8",
+          "--map-park": "#f0a345",
+          "--map-road": "#faf3e4",
+          "--map-arterial": "#f4b05a",
+          "--map-building": "#e0b478",
+          "--map-label": "#5c4030",
           "--map-light-preset": "day",
         }[name] ?? ""
       );
@@ -161,9 +161,10 @@ test("map styles read the light preset token from the active theme", () => {
   };
   const config = cityMapConfigFromStyles(styles);
   assert.equal(config.lightPreset, "day");
-  assert.equal(config.colorLand, "#c4a07a");
-  assert.equal(config.colorBuildings, "#d4a070");
-  assert.equal(config.colorRoads, "#f8f0de");
+  assert.equal(config.colorLand, "#e2c08a");
+  assert.equal(config.colorBuildings, "#e0b478");
+  assert.equal(config.colorRoads, "#faf3e4");
+  assert.equal(config.colorGreenspace, "#f0a345");
 });
 
 test("empty building tokens fall back instead of leaving Mapbox black defaults", () => {

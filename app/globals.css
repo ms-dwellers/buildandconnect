@@ -401,25 +401,25 @@
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
   /*
-   * Autumn day city: warm earth and clay buildings kept light enough to read
-   * under daylight, amber canopy, soft slate water. Dusk crushed the 3D.
+   * Autumn day city: golden land and clear apricot canopy — orange, not rust.
+   * Red-brown landcover read as horror; keep chroma in the apricot/wheat band.
    */
-  --map-land: #c4a07a;
-  --map-block: #d2b08a;
-  --map-road: #f8f0de;
-  --map-park: #e09a48;
-  --map-water: #7a9e9a;
-  --map-water-edge: #5f8581;
-  --map-arterial: #f0a345;
-  --map-building: #d4a070;
-  --map-label: #5a3820;
+  --map-land: #e2c08a;
+  --map-block: #ebc998;
+  --map-road: #faf3e4;
+  --map-park: #f0a345;
+  --map-water: #8aada8;
+  --map-water-edge: #6d948f;
+  --map-arterial: #f4b05a;
+  --map-building: #e0b478;
+  --map-label: #5c4030;
   --map-light-preset: day;
   --cloud: #6e3a1c;
-  --map-mist-light: #5e3218;
-  --map-mist-shadow: #1a0e08;
+  --map-mist-light: #c48a48;
+  --map-mist-shadow: #3a2414;
   --dashboard-paper: #5e3218;
-  --map-base: #c4a07a;
-  --map-community: #e8a070;
+  --map-base: #e2c08a;
+  --map-community: #f0a345;
   /* Landing scene under firelight: warm key light, olive pines, dark shadows. */
   --scene-light: #ffe0bd;
   --scene-pine: #24200f;
