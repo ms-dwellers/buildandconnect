@@ -67,14 +67,14 @@ test("map clouds remain small and preserve sprite aspect ratios", () => {
 });
 
 test("seeded variation covers every grid cell in wide and portrait layouts", () => {
-  assert.equal(mapClouds.length, 56);
-  assert.equal(new Set(mapClouds.map((cloud) => cloud.id)).size, 56);
+  assert.equal(mapClouds.length, 256);
+  assert.equal(new Set(mapClouds.map((cloud) => cloud.id)).size, 256);
   assert.equal(new Set(mapClouds.map((cloud) => cloud.sprite.name)).size, 6);
   assert.equal(new Set(mapClouds.map((cloud) => cloud.depth)).size, 3);
   for (const cloud of mapClouds) {
-    assert.ok(cloud.offsetX >= 25 && cloud.offsetX < 75);
-    assert.ok(cloud.offsetY >= 25 && cloud.offsetY < 75);
-    assert.ok(cloud.scale >= 0.8 && cloud.scale < 1.2);
+    assert.ok(cloud.offsetX >= 35 && cloud.offsetX < 65);
+    assert.ok(cloud.offsetY >= 35 && cloud.offsetY < 65);
+    assert.ok(cloud.scale >= 0.9 && cloud.scale < 1.2);
     assert.ok(Math.abs(cloud.travelY) <= 30);
     const svg = readFileSync(
       new URL(`../public/sprites/${cloud.sprite.name}.svg`, import.meta.url),
@@ -86,10 +86,21 @@ test("seeded variation covers every grid cell in wide and portrait layouts", () 
       ),
     );
   }
+  assert.match(css, /grid-template-columns: repeat\(16, 1fr\)/);
+  assert.match(css, /grid-template-rows: repeat\(16, 1fr\)/);
   assert.match(css, /grid-template-columns: repeat\(8, 1fr\)/);
-  assert.match(css, /grid-template-rows: repeat\(7, 1fr\)/);
-  assert.match(css, /grid-template-columns: repeat\(4, 1fr\)/);
-  assert.match(css, /grid-template-rows: repeat\(14, 1fr\)/);
+  assert.match(css, /grid-template-rows: repeat\(32, 1fr\)/);
+});
+
+test("dense clouds extend past the edges and part without fading into patches", () => {
+  const field = css.match(/\.map-cloud-field\s*\{([^}]+)\}/)?.[1];
+  assert.ok(field);
+  assert.match(field, /inset: -4%/);
+  const reveal = css.match(
+    /@keyframes map-clouds-part\s*\{([\s\S]*?)\n\}/,
+  )?.[1];
+  assert.ok(reveal);
+  assert.doesNotMatch(reveal, /opacity/);
 });
 
 test("reveal completion follows the veil, not the first fast foreground cloud", () => {

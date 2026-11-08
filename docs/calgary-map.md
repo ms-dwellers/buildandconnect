@@ -1,18 +1,23 @@
 # Calgary map frontend
 
 Open `/`, select **Find a project**, or visit `/map` directly. The landing-page
-link brings 56 small sprite clouds in from both sides over 900 ms,
+link brings a dense blanket of small sprite clouds in from both sides over 900 ms,
 navigates beneath the fully opaque cover, then waits for Mapbox's first loaded
 render before revealing the map over 1400 ms. Clouds part diagonally in three
 depth layers: nearby clouds leave first and distant clouds move more slowly.
-An opaque cloud-colored veil closes gaps during navigation. Seeded variation
-in sprite, size, reflection and position keeps the layout organic without
-hydration changes. Each responsive grid cell holds a cloud: 8 × 7 on wide screens,
-4 × 14 in portrait. Sprites retain their aspect ratios and stay below 336 px wide
-at rest.
+The 256 sprites overlap in a 16 × 16 grid on wide screens and 8 × 32 in portrait,
+extending past the screen edges. Seeded variation in sprite, size, reflection and
+position keeps the layout organic without hydration changes. Sprites retain
+their aspect ratios and stay below 336 px wide at rest. They part without fading
+individually, so the map appears through the opening rather than through patchy
+transparency. An opaque cloud-colored veil covers navigation between pages.
 App-header map links use the same transition. Direct map visits show static clouds over the map
 while it loads, without replaying the journey. Reduced-motion
 preferences skip it; **Skip animation** or Escape also finishes it immediately.
+
+Coverage checks must measure the sprites' opaque pixels, not just their image
+bounding boxes: the artwork has transparent edges. At rest, verify at least
+99.5% cloud-pixel coverage at desktop and phone sizes with the veil excluded.
 
 The map shows live Convex records through the public `GET /api/map` feed: open
 company opportunities that have a map pin, and open community requests. No demo

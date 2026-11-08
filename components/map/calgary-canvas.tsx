@@ -149,7 +149,7 @@ export function CalgaryCanvas({
         <CompassIcon aria-hidden="true" className="size-5 text-primary" />
         <span className="text-sm font-semibold">Calgary, AB</span>
       </div>
-      {loading && (
+      {loading && phase === "idle" && (
         <div
           className="map-loading-clouds"
           data-testid="map-loading-clouds"

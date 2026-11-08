@@ -13,14 +13,14 @@ function noise(seed: number) {
   return ((value ^ (value >>> 16)) >>> 0) / 0x100000000;
 }
 
-// One cloud per cell keeps coverage even; seeded jitter is stable across hydration.
-export const mapClouds = Array.from({ length: 56 }, (_, index) => ({
+// Dense overlap fills the sprites' transparent edges, including at screen borders.
+export const mapClouds = Array.from({ length: 256 }, (_, index) => ({
   id: index,
   sprite: sprites[Math.floor(noise(index * 5 + 1) * sprites.length)],
   depth: (["far", "middle", "near"] as const)[index % 3],
-  offsetX: 25 + noise(index * 5 + 2) * 50,
-  offsetY: 25 + noise(index * 5 + 3) * 50,
-  scale: 0.8 + noise(index * 5 + 4) * 0.4,
+  offsetX: 35 + noise(index * 5 + 2) * 30,
+  offsetY: 35 + noise(index * 5 + 3) * 30,
+  scale: 0.9 + noise(index * 5 + 4) * 0.3,
   travelY: (noise(index * 5 + 5) - 0.5) * 60,
   reflected: noise(index * 5 + 6) > 0.5,
 }));

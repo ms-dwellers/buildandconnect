@@ -61,10 +61,10 @@
 
 .map-cloud-field {
   position: absolute;
-  inset: 0;
+  inset: -4%;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(7, 1fr);
+  grid-template-columns: repeat(16, 1fr);
+  grid-template-rows: repeat(16, 1fr);
   --cloud-width: clamp(100px, 19vw, 280px);
 }
 
@@ -79,10 +79,14 @@
   will-change: transform;
 }
 
-.map-cloud-cell:nth-child(8n + 5),
-.map-cloud-cell:nth-child(8n + 6),
-.map-cloud-cell:nth-child(8n + 7),
-.map-cloud-cell:nth-child(8n + 8) {
+.map-cloud-cell:nth-child(16n + 9),
+.map-cloud-cell:nth-child(16n + 10),
+.map-cloud-cell:nth-child(16n + 11),
+.map-cloud-cell:nth-child(16n + 12),
+.map-cloud-cell:nth-child(16n + 13),
+.map-cloud-cell:nth-child(16n + 14),
+.map-cloud-cell:nth-child(16n + 15),
+.map-cloud-cell:nth-child(16n + 16) {
   --cloud-travel-x: 110vw;
 }
 
@@ -145,8 +149,8 @@
 
 @media (aspect-ratio < 3/4) {
   .map-cloud-field {
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(14, 1fr);
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(32, 1fr);
     --cloud-width: clamp(85px, 32vw, 160px);
   }
 
@@ -154,8 +158,10 @@
     --cloud-travel-x: -110vw;
   }
 
-  .map-cloud-cell:nth-child(4n + 3),
-  .map-cloud-cell:nth-child(4n + 4) {
+  .map-cloud-cell:nth-child(8n + 5),
+  .map-cloud-cell:nth-child(8n + 6),
+  .map-cloud-cell:nth-child(8n + 7),
+  .map-cloud-cell:nth-child(8n + 8) {
     --cloud-travel-x: 110vw;
   }
 }
@@ -197,12 +203,10 @@
 @keyframes map-clouds-part {
   from {
     transform: translate3d(0, 0, 0);
-    opacity: 1;
   }
   to {
     transform: translate3d(var(--cloud-travel-x), var(--cloud-travel-y), 0)
       scale(1.08);
-    opacity: 0;
   }
 }
 @keyframes city-arrival {
