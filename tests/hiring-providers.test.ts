@@ -7,13 +7,18 @@ import {
   HiringProviderError,
   DEFAULT_GEMINI_MODEL,
   DEFAULT_SCRIBE_MODEL,
+  signVoiceConversation,
 } from "../backend/hiring/providers.ts";
 import {
   confirmedBriefSchema,
   emptyHiringBrief,
   intakeResponseSchema,
 } from "../backend/hiring/schemas.ts";
-import { draftBrief, recommendDevelopers } from "../backend/hiring/service.ts";
+import {
+  draftBrief,
+  extractBrief,
+  recommendDevelopers,
+} from "../backend/hiring/service.ts";
 import type { BackendEnv } from "../backend/env.ts";
 import type { PublicDeveloper } from "../lib/types.ts";
 
@@ -21,6 +26,70 @@ const env = {
   OPENROUTER_API_KEY: "test-openrouter",
   ELEVENLABS_API_KEY: "test-elevenlabs",
 } as BackendEnv;
+
+test("private voice sessions use a server-owned agent and hide upstream errors", async () => {
+  const configured = { ...env, ELEVENLABS_AGENT_ID: "agent_test" };
+  const signedUrl =
+    "wss://api.elevenlabs.io/v1/convai/conversation?conversation_signature=test";
+  assert.deepEqual(
+    await signVoiceConversation(configured, async (url, init) => {
+      assert.match(String(url), /agent_id=agent_test$/);
+      assert.equal(
+        new Headers(init?.headers).get("xi-api-key"),
+        "test-elevenlabs",
+      );
+      return Response.json({ signed_url: signedUrl });
+    }),
+    { signedUrl },
+  );
+  await assert.rejects(signVoiceConversation(env), /not configured/);
+  await assert.rejects(
+    signVoiceConversation({ ...env, ELEVENLABS_AGENT_ID: "../bad" }),
+    /valid ElevenLabs/,
+  );
+  for (const response of [
+    Response.json({ signed_url: "wss://evil.example/path" }),
+    Response.json({}),
+    new Response("private details", { status: 429 }),
+  ]) {
+    await assert.rejects(
+      signVoiceConversation(configured, async () => response),
+      (error: unknown) => {
+        assert.ok(error instanceof HiringProviderError);
+        assert.doesNotMatch(error.message, /private details/);
+        return true;
+      },
+    );
+  }
+});
+
+test("background extraction has no spoken reply and retains previous facts as data", async (t) => {
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async (_url: unknown, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      assert.match(
+        body.messages[0].content,
+        /silent background form-filling agent/,
+      );
+      assert.match(
+        body.messages[0].content,
+        /assistant questions and suggestions are not evidence/,
+      );
+      const input = JSON.parse(body.messages[1].content);
+      assert.deepEqual(input.previousBrief, brief);
+      return completion({ brief: { ...brief, workArrangement: "remote" } });
+    },
+  );
+  const result = await extractBrief(
+    env,
+    [{ role: "user", content: "Actually, remote please." }],
+    brief,
+  );
+  assert.equal(result.brief.workArrangement, "remote");
+  assert.equal("reply" in result, false);
+});
 
 test("Worker model settings have public defaults while API keys remain secrets", () => {
   const config = readFileSync(

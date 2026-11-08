@@ -21,7 +21,7 @@ independent deadlines keep navigation working if animation callbacks are lost.
 The landing-page pixel-art scene is unchanged.
 
 The map shows live Convex records through the public `GET /api/map` feed: open
-company opportunities that have a map pin, and open community requests. No demo
+requester opportunities that have a map pin, and open community requests. No demo
 data remains. Select a pin or list entry to open its details; search by skill,
 title, organisation or neighbourhood, and filter Paid, Volunteer or Community.
 
@@ -29,11 +29,11 @@ title, organisation or neighbourhood, and filter Paid, Volunteer or Community.
 
 Browsing is public. `backend/listings.ts` decides what each viewer receives:
 
-| Viewer                                      | Opportunities              | Community requests                                                      |
-| ------------------------------------------- | -------------------------- | ----------------------------------------------------------------------- |
-| Guest, company, recruiter, other requesters | Exact pin and company name | Location rounded to about 1 km, no requester name or place text         |
-| Developer                                   | Exact pin                  | Exact pin, place and requester name (as the request API already allows) |
-| Request owner or claimant                   | Exact pin                  | Exact, and still visible after it is accepted                           |
+| Viewer                    | Opportunities                | Community requests                                                      |
+| ------------------------- | ---------------------------- | ----------------------------------------------------------------------- |
+| Guest or other requesters | Exact pin and requester name | Location rounded to about 1 km, no requester name or place text         |
+| Developer                 | Exact pin                    | Exact pin, place and requester name (as the request API already allows) |
+| Request owner or claimant | Exact pin                    | Exact, and still visible after it is accepted                           |
 
 Claimed requests leave the public map; closed requests and closed opportunities
 never appear. Postings outside Calgary's bounds are not listed.
@@ -45,8 +45,8 @@ Popups show actions for the signed-in role. Convex enforces every rule again:
 - Guests: **Sign in to respond**, returning to the same listing.
 - Developers: **Accept request** or **Release request**, and **See your fit** for
   opportunities. The feed refreshes after each change.
-- Requesters and companies: **Post a request** / **Post an opportunity** in the
-  sidebar enters placement mode. Click the map or use **Use downtown Calgary**
+- Requesters: **Post a request** in the sidebar enters placement mode. Paid or
+  volunteer opportunities are also available from the dashboard. Click the map or use **Use downtown Calgary**
   (keyboard alternative) to open the form with that pin prefilled. Owners get
   **Edit**, **Manage requests** or **View candidates**.
 

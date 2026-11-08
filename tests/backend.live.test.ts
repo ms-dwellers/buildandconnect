@@ -111,12 +111,25 @@ test(
       return { cookie, id: json.user.id };
     }
     assert.equal((await request("/opportunities")).status, 401);
-    const company = await signup("company", "Garden Company");
-    const otherCompany = await signup("company", "Other Company");
+    const company = await signup("requester", "Garden Requester");
+    const otherCompany = await signup("requester", "Other Requester");
     const junior = await signup("developer", "Junior Developer");
-    const recruiter = await signup("recruiter", "Recruiter");
+    const recruiter = await signup("requester", "Discovery Requester");
+    for (const removedRole of ["company", "recruiter"]) {
+      assert.equal(
+        (
+          await request(
+            "/me/role",
+            "PUT",
+            { role: removedRole },
+            company.cookie,
+          )
+        ).status,
+        400,
+      );
+    }
     assert.equal(
-      (await request("/me/role", "PUT", { role: "company" }, junior.cookie))
+      (await request("/me/role", "PUT", { role: "requester" }, junior.cookie))
         .status,
       409,
     );
@@ -310,13 +323,13 @@ test(
     );
     const pending = (await pendingInterest.json()) as {
       data: {
-        companyInterested: boolean;
+        requesterInterested: boolean;
         developerInterested: boolean;
         connected: boolean;
       }[];
     };
     assert.equal(pending.data.length, 1);
-    assert.equal(pending.data[0].companyInterested, true);
+    assert.equal(pending.data[0].requesterInterested, true);
     assert.equal(pending.data[0].developerInterested, false);
     assert.equal(pending.data[0].connected, false);
     const mutual = await request(
@@ -518,7 +531,7 @@ test(
             latitude: 43.66,
             longitude: -79.38,
           },
-          company.cookie,
+          junior.cookie,
         )
       ).status,
       403,

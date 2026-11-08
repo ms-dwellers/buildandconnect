@@ -34,7 +34,7 @@ Workers AI has no local inference engine. To exercise real model calls locally,
 authenticate the Cloudflare CLI, set `WORKERS_AI_REMOTE=true` in the environment
 that launches Vite, and restart `bun run dev`. Calls may incur Workers AI charges.
 Without opt-in, analysis returns 503 rather than fabricated data. Only authorized
-company/profile requests can invoke models.
+requester/profile requests can invoke models.
 
 The old SQL files in `migrations/` are retained only as migration references.
 They no longer run and D1 is not bound to the app. Existing local D1 files are
@@ -69,6 +69,13 @@ and mutual-interest flow when AI is available.
 
 ## HTTP contract
 
+Developer and Requester are the only account roles. Legacy `company` and
+`recruiter` values are accepted only when reading existing Convex member rows;
+they resolve to Requester without changing user IDs, postings, or ownership.
+New role selections reject those legacy values. Stored interest columns retain
+their old names for compatibility, but the API exposes `requesterInterested` and
+`requesterName`.
+
 All application endpoints below require a Better Auth session cookie. Fetch from
 the same origin with `credentials: "include"`. JSON bodies use `Content-Type:
 application/json`. Errors return `{ "error": "..." }`; validation errors also
@@ -81,17 +88,17 @@ include field paths under `issues`. Better Auth routes use its native error shap
 | POST   | `/api/auth/sign-out`              | Ends current session                                                                 |
 | GET    | `/api/auth/get-session`           | Better Auth session                                                                  |
 | GET    | `/api/me`                         | Own ID, name and selected role                                                       |
-| PUT    | `/api/me/role`                    | `{role:"developer"\|"company"\|"recruiter"\|"requester"}`; one-time, retry-safe      |
+| PUT    | `/api/me/role`                    | `{role:"developer"\|"requester"}`; one-time, retry-safe                              |
 | PUT    | `/api/developers/me`              | Developer: save the complete profile and embed its experience                        |
 | GET    | `/api/developers/me`              | Developer: own profile and location, including when undiscoverable                   |
 | PATCH  | `/api/developers/me`              | Developer: `{available?:boolean,discoverable?:boolean}` without AI calls             |
 | PATCH  | `/api/developers/me/location`     | Developer: `{latitude,longitude,radiusKm?}` without AI calls                         |
 | PATCH  | `/api/developers/me/preferences`  | Developer: replace experience, pay and work-arrangement preferences without AI calls |
-| GET    | `/api/developers`                 | Company/recruiter: consented profiles and project evidence                           |
-| POST   | `/api/opportunities`              | Company: analyze, embed, and persist a new opportunity; returns 201                  |
+| GET    | `/api/developers`                 | Requester: consented profiles and project evidence                                   |
+| POST   | `/api/opportunities`              | Requester: analyze, embed, and persist a new opportunity; returns 201                |
 | GET    | `/api/map`                        | Public: Calgary map listings, precision depending on viewer (see map guide)          |
 | GET    | `/api/opportunities`              | Open opportunities and structured analyses                                           |
-| GET    | `/api/opportunities/mine`         | Company: own opportunities, open and closed, paginated                               |
+| GET    | `/api/opportunities/mine`         | Requester: own opportunities, open and closed, paginated                             |
 | PUT    | `/api/opportunities/:id`          | Owner: replace details; re-analyses and re-embeds; status unchanged                  |
 | GET    | `/api/opportunities/:id`          | Opportunity detail                                                                   |
 | PATCH  | `/api/opportunities/:id`          | Owner: `{status:"open"\|"closed"}`                                                   |
@@ -126,7 +133,7 @@ and `kind=paid` or `kind=volunteer`.
 The optional matching-preference fields are preserved when older clients omit
 them, and can be explicitly cleared with `null`.
 Skill proficiency and experience levels run from 1 to 5. `discoverable` is explicit
-consent to recruiter/company discovery; `available` controls new matching.
+consent to requester discovery; `available` controls new matching.
 Use `PATCH /api/developers/me` to change these flags without invoking AI, even
 when the model service is unavailable.
 
@@ -151,7 +158,7 @@ without regenerating embeddings. `null` means unknown or cleared, not zero:
 Years accept zero and fractional values. Rates are nonnegative; when both are
 provided, the preferred rate must be at least the minimum. Work arrangements are
 `remote`, `hybrid`, `onsite`, or `flexible`; a flexible preference cannot also be
-required. Preferences are visible to companies/recruiters only through the
+required. Preferences are visible to requesters only through the
 existing discovery-consent rules. The additive Convex schema supports existing
 records without a data migration; sync it to the development deployment before
 using the new mutation.
@@ -181,7 +188,7 @@ using the new mutation.
 
 ### Opportunity
 
-`essentialTechnologies` are the company's explicit non-negotiable gates. Use an
+`essentialTechnologies` are the requester's explicit non-negotiable gates. Use an
 empty array when willing to consider transferable experience. `kind` distinguishes
 paid contracts from volunteer experience; no payment processing is implied.
 `collaboration` accepts `async`, `sync`, or `flexible` on both input types.
@@ -203,10 +210,10 @@ paid contracts from volunteer experience; no payment processing is implied.
 Analysis returns required/preferred technologies, difficulty (1-5), experience
 level (`beginner`, `intermediate`, `advanced`), required skills, responsibilities,
 learning opportunities, and mentorship availability. It is an estimate: have the
-company review it before acting on a recommendation. This MVP does not yet offer
+requester review it before acting on a recommendation. This MVP does not yet offer
 an analysis editing endpoint.
 
-Interest responses include `companyInterested`, `developerInterested`, and
+Interest responses include `requesterInterested`, `developerInterested`, and
 `connected`. Retrying changes only the caller's flag. A connection exists only
 while both flags are true; either party can withdraw even after opportunity close.
 Closing an opportunity stops new interest and matching, but preserves existing
@@ -225,9 +232,9 @@ reopen; archive-versus-delete policy and account deletion await a product decisi
 
 Requester posts are unpaid neighborhood problems. Analysis reuses the opportunity
 pipeline. Developer coordinates live on the `developer` row and never appear in
-company/recruiter browse responses. Default radius is 25 km (1-100). Nearby browse
+requester browse responses. Default radius is 25 km (1-100). Nearby browse
 prefilters with a bounding box, applies haversine distance, then ranks with the
-growth matcher. Local requests skip company essential-technology gates.
+growth matcher. Local requests skip opportunity essential-technology gates.
 
 ```json
 {

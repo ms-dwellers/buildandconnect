@@ -60,7 +60,10 @@ test("approximate locations round to about one kilometre", () => {
 });
 
 test("opportunities appear only when open, pinned, and inside Calgary", () => {
-  const listing = opportunityListing(job(), { id: "company", role: "company" });
+  const listing = opportunityListing(job(), {
+    id: "company",
+    role: "requester",
+  });
   assert.deepEqual(
     {
       source: listing?.source,
@@ -103,7 +106,7 @@ test("request location and requester identity depend on who is looking", () => {
   assert.equal(guest.neighbourhood, "Approximate area");
   assert.ok(!JSON.stringify(guest).includes("Garden Lane"));
   assert.ok(!JSON.stringify(guest).includes("Pat"));
-  for (const role of ["company", "recruiter", "requester"] as const)
+  for (const role of ["requester"] as const)
     assert.equal(requestListing(request(), { id: "x", role })?.precise, false);
   const developer = requestListing(request(), {
     id: "dev",

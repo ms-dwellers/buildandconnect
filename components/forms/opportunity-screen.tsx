@@ -18,7 +18,7 @@ export function OpportunityScreen({
   defaultPin?: Pin | null;
 }) {
   return (
-    <RequireRole roles={["company"]}>
+    <RequireRole roles={["requester"]}>
       {({ user }) =>
         id ? (
           <EditOpportunity id={id} userId={user.id} />
@@ -47,7 +47,7 @@ function EditOpportunity({ id, userId }: { id: string; userId: string }) {
     return (
       <ErrorAlert
         title="You can't edit this opportunity"
-        message="Only the company that posted it can make changes."
+        message="Only the requester who posted it can make changes."
       />
     );
   return <OpportunityForm initial={opportunity.data} />;

@@ -15,8 +15,6 @@ type NavItem = { href: string; label: string };
 export const ROLE_LABELS: Record<Role, string> = {
   developer: "Developer",
   requester: "Requester",
-  company: "Company",
-  recruiter: "Recruiter",
 };
 
 const NAVIGATION: Record<Role | "unassigned" | "guest", NavItem[]> = {
@@ -32,14 +30,6 @@ const NAVIGATION: Record<Role | "unassigned" | "guest", NavItem[]> = {
   ],
   requester: [
     { href: "/dashboard", label: "My requests" },
-    { href: "/map", label: "Map" },
-  ],
-  company: [
-    { href: "/dashboard", label: "Opportunities" },
-    { href: "/map", label: "Map" },
-  ],
-  recruiter: [
-    { href: "/dashboard", label: "Developers" },
     { href: "/map", label: "Map" },
   ],
 };

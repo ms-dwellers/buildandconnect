@@ -2,13 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  BriefcaseBusinessIcon,
-  CodeXmlIcon,
-  HeartHandshakeIcon,
-  SearchIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { CodeXmlIcon, HeartHandshakeIcon, type LucideIcon } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import { ErrorAlert, LoadingBlock } from "@/components/app/require-role";
 import { api } from "@/lib/api";
@@ -34,24 +28,8 @@ const CHOICES: {
     role: "requester",
     label: "Requester",
     description:
-      "Post a local problem on the map and find a developer nearby to help.",
+      "Describe a project or post a local request and find a developer to help.",
     icon: HeartHandshakeIcon,
-    next: "/dashboard",
-  },
-  {
-    role: "company",
-    label: "Company",
-    description:
-      "Post paid or volunteer opportunities and review developers ranked by growth fit.",
-    icon: BriefcaseBusinessIcon,
-    next: "/dashboard",
-  },
-  {
-    role: "recruiter",
-    label: "Recruiter",
-    description:
-      "Browse developers who have chosen to be discoverable, with their project evidence.",
-    icon: SearchIcon,
     next: "/dashboard",
   },
 ];

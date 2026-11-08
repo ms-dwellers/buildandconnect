@@ -35,11 +35,19 @@ type Suggestions = {
   }[];
 };
 
-export function EmployerIntake() {
-  return <RequireRole roles={["company"]}>{() => <Intake />}</RequireRole>;
+export function EmployerIntake({
+  initialBrief,
+}: {
+  initialBrief?: HiringBrief;
+}) {
+  return (
+    <RequireRole roles={["requester"]}>
+      {() => <Intake initialBrief={initialBrief} />}
+    </RequireRole>
+  );
 }
 
-function Intake() {
+function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
   const config = useApi<{ transcription: boolean; matching: boolean }>(
     "/hiring/status",
   );
@@ -49,9 +57,11 @@ function Intake() {
     setDraft((previous) => [previous, text].filter(Boolean).join(" ")),
   );
   const [messages, setMessages] = useState<HiringMessage[]>([]);
-  const [brief, setBrief] = useState<HiringBrief>(emptyHiringBrief);
+  const [brief, setBrief] = useState<HiringBrief>(
+    initialBrief ?? emptyHiringBrief,
+  );
   const [stage, setStage] = useState<"conversation" | "review" | "results">(
-    "conversation",
+    initialBrief ? "review" : "conversation",
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -201,7 +211,7 @@ function Intake() {
         >
           <section
             className="voice-stage min-h-96 rounded-xl border"
-            aria-label="Employer voice intake"
+            aria-label="Project voice intake"
             data-phase={recording ? "listening" : "ready"}
           >
             <Aurora
@@ -274,7 +284,7 @@ function Intake() {
               <div
                 ref={transcript}
                 role="log"
-                aria-label="Employer intake conversation"
+                aria-label="Project intake conversation"
                 aria-live="polite"
                 className="max-h-72 space-y-5 overflow-y-auto"
               >
@@ -405,7 +415,7 @@ function Intake() {
             ))}
           </ul>
           <p className="text-sm text-muted-foreground">
-            No invitations have been sent. Use your company dashboard to post an
+            No invitations have been sent. Use your dashboard to post an
             opportunity and express interest.
           </p>
           <Button render={<a href="/opportunities/new" />}>

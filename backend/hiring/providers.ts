@@ -150,3 +150,55 @@ export async function transcribeAudio(
     );
   }
 }
+
+export async function signVoiceConversation(
+  env: BackendEnv,
+  request: typeof fetch = fetch,
+  signal?: AbortSignal,
+) {
+  if (!env.ELEVENLABS_API_KEY || !env.ELEVENLABS_AGENT_ID)
+    throw new HiringProviderError(
+      "The voice agent is not configured yet.",
+      503,
+    );
+  if (!/^agent_[a-zA-Z0-9]+$/.test(env.ELEVENLABS_AGENT_ID))
+    throw new HiringProviderError("Configure a valid ElevenLabs agent.", 503);
+  try {
+    const response = await request(
+      `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${env.ELEVENLABS_AGENT_ID}`,
+      {
+        headers: {
+          "xi-api-key": env.ELEVENLABS_API_KEY,
+        },
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(15_000)])
+          : AbortSignal.timeout(15_000),
+      },
+    );
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new HiringProviderError(
+        response.status === 429
+          ? "The voice agent is busy. Try again shortly."
+          : "The voice agent could not connect. Try again.",
+        response.status === 429 ? 429 : 502,
+      );
+    }
+    const result = z
+      .object({ signed_url: z.string().max(4000).url() })
+      .parse(await response.json());
+    const url = new URL(result.signed_url);
+    if (
+      url.protocol !== "wss:" ||
+      url.hostname !== "api.elevenlabs.io" ||
+      url.pathname !== "/v1/convai/conversation"
+    )
+      throw new Error("Invalid voice connection URL");
+    return { signedUrl: result.signed_url };
+  } catch (error) {
+    if (error instanceof HiringProviderError) throw error;
+    throw new HiringProviderError(
+      "The voice connection was interrupted. Try again.",
+    );
+  }
+}

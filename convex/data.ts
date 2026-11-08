@@ -164,7 +164,7 @@ export const setLocation = mutation({
 export const developers = query({
   args: { secret, ...pagination },
   handler: async (ctx, args) => {
-    await access(ctx, args.secret, ["company", "recruiter"]);
+    await access(ctx, args.secret, ["requester"]);
     checkLimit(args.limit);
     const rows = await ctx.db
       .query("developers")
@@ -190,7 +190,7 @@ export const createOpportunity = mutation({
     embedding: v.array(v.number()),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["company"]);
+    const { user } = await access(ctx, args.secret, ["requester"]);
     const details = opportunitySchema.parse(args.details);
     const analysis = analysisSchema.parse(args.analysis);
     const id = args.id;
@@ -263,7 +263,7 @@ export const updateOpportunity = mutation({
     status: v.union(v.literal("open"), v.literal("closed")),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["company"]);
+    const { user } = await access(ctx, args.secret, ["requester"]);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
     if (row.ownerId !== user.id)
@@ -276,7 +276,7 @@ export const updateOpportunity = mutation({
 export const matches = query({
   args: { secret, id: v.string(), limit: v.number() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["company"]);
+    const { user } = await access(ctx, args.secret, ["requester"]);
     checkLimit(args.limit);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
@@ -344,15 +344,15 @@ export const setInterest = mutation({
     interested: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const actor = await access(ctx, args.secret, ["company", "developer"]);
+    const actor = await access(ctx, args.secret, ["requester", "developer"]);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
-    const company = actor.role === "company";
-    if (company && row.ownerId !== actor.user.id)
-      fail(403, "Only the opportunity owner can express company interest");
-    if (!company && args.developerId && args.developerId !== actor.user.id)
+    const requester = actor.role === "requester";
+    if (requester && row.ownerId !== actor.user.id)
+      fail(403, "Only the opportunity owner can express requester interest");
+    if (!requester && args.developerId && args.developerId !== actor.user.id)
       fail(403, "You can only express interest for yourself");
-    const developerId = company ? args.developerId : actor.user.id;
+    const developerId = requester ? args.developerId : actor.user.id;
     if (!developerId) fail(400, "Choose a developer");
     const devRow = await findDeveloper(ctx, developerId);
     if (!devRow) fail(404, "Developer not found");
@@ -372,15 +372,15 @@ export const setInterest = mutation({
     const values = {
       opportunityId: row.id,
       developerId,
-      companyInterested: company
+      companyInterested: requester
         ? args.interested
         : (old?.companyInterested ?? false),
-      developerInterested: company
+      developerInterested: requester
         ? (old?.developerInterested ?? false)
         : args.interested,
       firstCompanyInterestAt:
         old?.firstCompanyInterestAt ??
-        (company && args.interested ? Date.now() : null),
+        (requester && args.interested ? Date.now() : null),
       updatedAt: Date.now(),
     };
     if (old) await ctx.db.patch(old._id, values);
@@ -388,7 +388,7 @@ export const setInterest = mutation({
     return {
       opportunityId: row.id,
       developerId,
-      companyInterested: values.companyInterested,
+      requesterInterested: values.companyInterested,
       developerInterested: values.developerInterested,
       connected: values.companyInterested && values.developerInterested,
     };
@@ -398,7 +398,7 @@ export const setInterest = mutation({
 export const connections = query({
   args: { secret, ...pagination, connectedOnly: v.boolean() },
   handler: async (ctx, args) => {
-    const actor = await access(ctx, args.secret, ["company", "developer"]);
+    const actor = await access(ctx, args.secret, ["requester", "developer"]);
     checkLimit(args.limit);
     const rows =
       actor.role === "developer"
@@ -418,7 +418,7 @@ export const connections = query({
       )
         continue;
       const job = await findOpportunity(ctx, row.opportunityId);
-      if (!job || (actor.role === "company" && job.ownerId !== actor.user.id))
+      if (!job || (actor.role === "requester" && job.ownerId !== actor.user.id))
         continue;
       const dev = await findDeveloper(ctx, row.developerId);
       if (!dev) continue;
@@ -428,8 +428,8 @@ export const connections = query({
         developerId: row.developerId,
         title: job.details.title,
         developerName: dev.name,
-        companyName: job.ownerName,
-        companyInterested: row.companyInterested,
+        requesterName: job.ownerName,
+        requesterInterested: row.companyInterested,
         developerInterested: row.developerInterested,
         connected: row.companyInterested && row.developerInterested,
       });
@@ -696,7 +696,7 @@ export const mapListings = query({
 export const ownedOpportunities = query({
   args: { secret, ...pagination },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["company"]);
+    const { user } = await access(ctx, args.secret, ["requester"]);
     checkLimit(args.limit);
     const rows = await ctx.db
       .query("opportunities")
@@ -719,7 +719,7 @@ export const reviseOpportunity = mutation({
     embedding: v.array(v.number()),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["company"]);
+    const { user } = await access(ctx, args.secret, ["requester"]);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
     if (row.ownerId !== user.id)

@@ -10,9 +10,14 @@ import {
   MAX_AUDIO_BYTES,
   HiringProviderError,
   transcribeAudio,
+  signVoiceConversation,
 } from "./providers.ts";
-import { confirmedBriefSchema, conversationSchema } from "./schemas.ts";
-import { draftBrief, recommendDevelopers } from "./service.ts";
+import {
+  confirmedBriefSchema,
+  conversationSchema,
+  extractionRequestSchema,
+} from "./schemas.ts";
+import { draftBrief, extractBrief, recommendDevelopers } from "./service.ts";
 import { hiringEligibility } from "./eligibility.ts";
 
 export async function listHiringDevelopers(
@@ -53,6 +58,8 @@ type HiringServices = {
   recommendDevelopers: typeof recommendDevelopers;
   transcribeAudio: typeof transcribeAudio;
   listDevelopers: typeof listHiringDevelopers;
+  signVoiceConversation: typeof signVoiceConversation;
+  extractBrief: typeof extractBrief;
 };
 
 export function createHiringRoutes(
@@ -61,13 +68,15 @@ export function createHiringRoutes(
     recommendDevelopers,
     transcribeAudio,
     listDevelopers: listHiringDevelopers,
+    signVoiceConversation,
+    extractBrief,
   },
 ) {
   const routes = new Hono<ApiEnv>();
   routes.use("*", async (c, next) => {
-    if (c.get("role") !== "company")
+    if (c.get("role") !== "requester")
       throw new HTTPException(403, {
-        message: "Employer voice intake requires a company account",
+        message: "Project voice intake requires a requester account",
       });
     await next();
   });
@@ -75,6 +84,9 @@ export function createHiringRoutes(
     c.json({
       transcription: Boolean(c.env.ELEVENLABS_API_KEY),
       matching: Boolean(c.env.OPENROUTER_API_KEY),
+      conversation: Boolean(
+        c.env.ELEVENLABS_API_KEY && c.env.ELEVENLABS_AGENT_ID,
+      ),
     }),
   );
   routes.post(
@@ -110,6 +122,17 @@ export function createHiringRoutes(
   routes.post("/brief", async (c) => {
     const { messages } = conversationSchema.parse(await c.req.json());
     return c.json(await services.draftBrief(c.env, messages));
+  });
+  routes.post("/voice-session", async (c) => {
+    return c.json(
+      await services.signVoiceConversation(c.env, fetch, c.req.raw.signal),
+    );
+  });
+  routes.post("/extract", async (c) => {
+    const { messages, brief } = extractionRequestSchema.parse(
+      await c.req.json(),
+    );
+    return c.json(await services.extractBrief(c.env, messages, brief));
   });
   routes.post("/matches", async (c) => {
     const { brief } = confirmedBriefSchema.parse(await c.req.json());

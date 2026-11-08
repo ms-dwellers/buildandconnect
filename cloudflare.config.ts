@@ -28,6 +28,7 @@ export default defineConfig({
       ELEVENLABS_STT_MODEL: bindings.text(
         process.env.ELEVENLABS_STT_MODEL || "scribe_v2",
       ),
+      ELEVENLABS_AGENT_ID: bindings.secret(),
     },
   }),
 });

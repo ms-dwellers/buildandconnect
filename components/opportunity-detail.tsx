@@ -265,7 +265,7 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
         >
           {(match) => {
             const current = interest.byDeveloper.get(match.developerId);
-            const interested = current?.companyInterested ?? false;
+            const interested = current?.requesterInterested ?? false;
             return (
               <li key={match.developerId}>
                 <ItemCard>
@@ -321,7 +321,7 @@ function YourFit({ opportunity }: { opportunity: OpportunityRecord }) {
         "interest",
         `/opportunities/${opportunity.id}/interest`,
         { method: "PUT", body: JSON.stringify({ interested: next }) },
-        next ? "Interest sent to the company" : "Interest withdrawn",
+        next ? "Interest sent to the requester" : "Interest withdrawn",
       )
     )
       await interest.reload();
@@ -358,8 +358,10 @@ function YourFit({ opportunity }: { opportunity: OpportunityRecord }) {
                   {Math.round(fit.data.score)}% match
                 </Badge>
                 {mine?.connected && <Badge variant="success">Connected</Badge>}
-                {!mine?.connected && mine?.companyInterested && (
-                  <Badge variant="info">The company is interested in you</Badge>
+                {!mine?.connected && mine?.requesterInterested && (
+                  <Badge variant="info">
+                    The requester is interested in you
+                  </Badge>
                 )}
               </div>
               <p className="text-sm">{fit.data.explanation}</p>
@@ -389,8 +391,8 @@ function YourFit({ opportunity }: { opportunity: OpportunityRecord }) {
               </Button>
               <p className="text-xs text-muted-foreground">
                 {interested
-                  ? "The company can see you're interested."
-                  : "A connection forms only if the company is interested too."}
+                  ? "The requester can see you're interested."
+                  : "A connection forms only if the requester is interested too."}
               </p>
             </div>
           )}

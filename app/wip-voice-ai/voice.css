@@ -178,17 +178,23 @@
   justify-content: center;
   padding-top: 1.5rem;
 }
-.voice-presence-caption {
+.voice-session .voice-presence-caption {
   text-align: center;
-  margin-top: 1rem;
+  width: min(44rem, 100%);
 }
 .voice-session .voice-presence {
   min-height: clamp(10rem, 28svh, 19.375rem);
 }
-.voice-presence-caption p {
-  margin-top: 1.5rem;
-  font-size: 0.875rem;
+.voice-session .voice-presence-caption p {
+  font-family: var(--app-font-display);
+  font-size: clamp(1.5rem, 3.2vw, 2.5rem);
+  line-height: 1.45;
   color: var(--voice-ink);
+}
+.voice-reply-word {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .voice-waveform {
   display: flex;
@@ -297,6 +303,10 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   padding: 1.4rem 0.1rem;
+}
+.voice-transcript:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
 }
 .voice-empty {
   text-align: center;
@@ -444,6 +454,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .voice-reply[data-animated="true"] .voice-reply-word {
+    animation: voice-word-reveal 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: var(--word-delay);
+  }
   .voice-stage[data-phase="speaking"]
     .voice-waveform:not([data-reactive="true"])
     span {
@@ -456,6 +470,19 @@
     animation: voice-wave 1s calc(var(--bar) * -60ms) ease-in-out infinite
       alternate;
     opacity: 0.3;
+  }
+}
+
+@keyframes voice-word-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.55em);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 

@@ -28,15 +28,16 @@ remains a minimal public liveness route, not a provider-readiness check.
    cookie through the same-origin Hono proxy. Hono obtains a Convex JWT and calls
    protected functions with it and the server-only bridge credential. Convex checks
    the live session and role on every operation, including cached JWTs.
-2. The account chooses one immutable role: developer, company, recruiter, or
-   requester. These are hackathon account types, not verified identities.
+2. The account chooses one immutable role: developer or requester. Legacy
+   company/recruiter records are read as requesters, preserving ownership and
+   existing data; the old roles cannot be selected or submitted anymore.
 3. Developers submit explicit skills, projects, interests, learning goals, and
    discovery consent. BGE Small embeds demonstrated experience, not aspirations.
-4. Companies post opportunities. Llama produces schema-constrained job analysis;
+4. Requesters post opportunities. Llama produces schema-constrained job analysis;
    Zod validates it. BGE Small embeds the structured requirements. Only after both
    succeed is the complete record written to Convex. A failure returns 503 and saves
    nothing. Updating a profile similarly preserves its previous version on failure.
-5. Companies fetch ranked candidates for their own opportunities. Convex narrows
+5. Requesters fetch ranked candidates for their own opportunities. Convex narrows
    availability and location; deterministic hard gates and scoring run in TypeScript.
    Developers can retrieve their own match and eligibility reasons.
 6. Each side can express or withdraw interest. One atomic mutation changes only that
@@ -66,9 +67,9 @@ unrounded factors, rounded to one decimal place. Ties sort by developer ID.
 | Growth potential     | 30%    | 65% desired-learning alignment, 35% supported challenge fit; scaled by readiness  |
 | Developer interest   | 20%    | Shared explicit project interests; neutral when the opportunity has none          |
 | Collaboration        | 10%    | Compatible async/sync preference, with flexible matching either                   |
-| Opportunity exposure | 10%    | `1 / (1 + recentCompanyInterestCount / 3)`                                        |
+| Opportunity exposure | 10%    | `1 / (1 + recentRequesterInterestCount / 3)`                                      |
 
-Hard gates: available and discoverable, explicit company-designated essential
+Hard gates: available and discoverable, explicit requester-designated essential
 technologies, minimum weekly availability, city for non-remote projects, and
 consent to volunteering. AI-extracted required technologies influence readiness
 but do not automatically become hard gates. No arbitrary years-of-experience or
@@ -82,15 +83,15 @@ without bound. Empty technical requirements are neutral rather than a free 100%.
 Project difficulty and experience levels are self-reported/model estimates, not
 verified certifications; matches assist human decisions, not automatic hiring.
 
-Exposure counts distinct opportunity/company-interest records first created in
+Exposure counts distinct opportunity/requester-interest records first created in
 the last 30 days. Listing matches never changes it; retrying, withdrawing, and
 re-expressing interest cannot inflate it within the same opportunity. This is a
 small diversity boost independent of seniority, not an exclusion rule. Sybil or
-colluding-company abuse prevention is outside this MVP.
+colluding-account abuse prevention is outside this MVP.
 
 ## Boundaries and limitations
 
-- Recruiters and companies can browse consented profiles and project evidence,
+- Requesters can browse consented profiles and project evidence,
   not emails, auth records, embeddings, or private exposure counts. Only an
   opportunity owner sees its full candidate ranking. Only participants see their
   connections and pending interests. Visibility/availability can be changed without

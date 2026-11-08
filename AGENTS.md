@@ -1,7 +1,8 @@
 # Build & Connect
 
-A hackathon app connecting early-career developers with non-technical people and
-companies through shared interests and social-impact projects.
+A hackathon app connecting early-career developers with non-technical requesters
+through shared interests and social-impact projects. Developer and Requester are
+the only account roles; do not reintroduce Company or Recruiter account types.
 
 ## Scope and stack
 

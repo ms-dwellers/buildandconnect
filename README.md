@@ -1,15 +1,15 @@
 # Build & Connect
 
-A hackathon app connecting early-career developers with non-technical people and
-companies through shared interests and social-impact projects.
+A hackathon app connecting early-career developers with non-technical requesters
+through shared interests and social-impact projects.
 
 **Current state:** landing page, Mapbox nearby-request UI, `/api/health`, and a
 Hono backend with Better Auth, Convex persistence, Workers AI analysis, growth-oriented
-matching, recruiter discovery, opportunity-specific mutual interest, and exclusive
+matching, consent-based developer discovery, opportunity-specific mutual interest, and exclusive
 local-request claims. See [the backend guide](docs/backend.md) for setup and API
 examples. For browser-based backend QA, run the frontend and open `/debug`.
-Signed-in users land on a role dashboard at `/dashboard` (developer, requester,
-company, or recruiter). The public Calgary `/map` shows live requests and
+Signed-in users land on a role dashboard at `/dashboard` (developer or requester).
+The public Calgary `/map` shows live requests and
 opportunities with role-specific actions. See [the map guide](docs/calgary-map.md).
 The future native Swift iOS app is deliberately not scaffolded or built on Linux.
 
@@ -139,14 +139,15 @@ separate built-in `bun test` runner.
 
 ## Architecture and service setup
 
-Company accounts can use `/hire` for [employer voice intake](docs/employer-voice-intake.md):
+Requester accounts can use `/hire` for [project intake](docs/employer-voice-intake.md):
 ElevenLabs transcribes recorded answers, and Gemini through OpenRouter drafts a
 reviewable brief and suggests up to ten developers. Both integrations require
 server-only provider keys; no opportunity is posted automatically.
 
-The isolated [voice studio prototype](docs/voice-prototype.md) lives at
-`/wip-voice-ai`. It uses a local mock conversation and an autumn aurora shader;
-there is no ElevenLabs integration or microphone recording.
+The [voice studio](docs/voice-prototype.md) at `/wip-voice-ai` connects a private
+ElevenLabs interviewer to the microphone and displays its words over the aurora.
+A separate Gemini agent fills the project brief in the background. Requesters
+review the brief before requesting developer suggestions.
 
 The component foundation is [coss ui](https://coss.com/ui/docs), with the supplied
 emerald, cream, wheat, apricot, and coral palette. See

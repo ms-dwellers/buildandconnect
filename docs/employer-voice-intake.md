@@ -1,20 +1,21 @@
-# Employer voice intake
+# Requester project intake
 
-Open `/hire` from a company account, or use **Describe a project with voice** on
-the company dashboard. `/wip-voice-ai` remains the separate local-only animation
-prototype.
+Open `/hire` from a requester account for record-and-review intake. Use
+**Describe a project with voice** on the requester dashboard for the live
+[`/wip-voice-ai`](voice-prototype.md) interviewer and background brief extraction.
 
 ## Provider setup
 
 Set these server-only values in an ignored `.env.local` or `.dev.vars` for local
 development, or in the Worker's secret store for production:
 
-| Setting                | Purpose                                           |
-| ---------------------- | ------------------------------------------------- |
-| `ELEVENLABS_API_KEY`   | ElevenLabs key with speech-to-text access         |
-| `ELEVENLABS_STT_MODEL` | Optional; defaults to `scribe_v2`                 |
-| `OPENROUTER_API_KEY`   | OpenRouter key with access to a Gemini text model |
-| `OPENROUTER_MODEL`     | Optional; defaults to `google/gemini-3.8-flash`   |
+| Setting                | Purpose                                              |
+| ---------------------- | ---------------------------------------------------- |
+| `ELEVENLABS_API_KEY`   | ElevenLabs key with speech-to-text and Agents access |
+| `ELEVENLABS_STT_MODEL` | Optional; defaults to `scribe_v2`                    |
+| `ELEVENLABS_AGENT_ID`  | Private interview agent used by `/wip-voice-ai`      |
+| `OPENROUTER_API_KEY`   | OpenRouter key with access to a Gemini text model    |
+| `OPENROUTER_MODEL`     | Optional; defaults to `google/gemini-3.8-flash`      |
 
 Restart the server after changing local configuration. No provider keys are sent
 to the browser. Neither service is provisioned by installing dependencies, and
@@ -57,7 +58,7 @@ routing requires structured output support and excludes data-collection routes.
 
 ## Boundaries
 
-- All `/api/hiring/*` endpoints require the existing authenticated company role.
+- All `/api/hiring/*` endpoints require the authenticated requester role.
   Normal same-origin checks, no-store responses, and JSON body limits apply.
 - `/status` returns provider availability booleans, not secrets.
 - `/transcribe` accepts only supported audio MIME types, caps request size,

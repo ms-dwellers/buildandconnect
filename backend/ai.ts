@@ -108,7 +108,7 @@ export async function analyzeRequest(
   ai: BackendEnv["AI"],
   input: RequestInput,
 ) {
-  // Reuse job analysis: local requests are unpaid neighborhood problems, not company posts.
+  // Reuse job analysis: local requests are unpaid neighborhood problems.
   return analyzeOpportunity(ai, {
     title: input.title,
     description: input.description,

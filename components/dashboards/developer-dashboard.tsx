@@ -21,7 +21,7 @@ import type {
   OwnProfile,
   RequestRecord,
 } from "@/lib/types";
-import { InterestSection } from "./company-dashboard";
+import { InterestSection } from "./requester-opportunities";
 import {
   ConfirmButton,
   EmptyState,
@@ -134,7 +134,7 @@ function Dashboard({
             {(
               [
                 ["available", "Available for new work"],
-                ["discoverable", "Visible to companies and recruiters"],
+                ["discoverable", "Visible to requesters"],
               ] as const
             ).map(([key, label]) => (
               <div
@@ -275,7 +275,7 @@ function Dashboard({
 
       <Section
         title="Open opportunities"
-        description="Paid and volunteer projects posted by companies."
+        description="Paid and volunteer projects posted by requesters."
       >
         <ListState
           {...opportunities}

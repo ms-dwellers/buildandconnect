@@ -1,17 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
-import {
-  ArrowDownIcon,
   ArrowLeftIcon,
   ArrowUpIcon,
-  ArrowUpRightIcon,
   CheckIcon,
   MicIcon,
   PauseIcon,
@@ -22,48 +14,33 @@ import {
   VolumeXIcon,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
+import { RequireRole } from "@/components/app/require-role";
+import { BriefForm } from "@/components/hiring/brief-form";
+import { EmployerIntake } from "@/components/hiring/employer-intake";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Aurora } from "./aurora";
-import { Waveform } from "./waveform";
-import {
-  formatDuration,
-  greeting,
-  isSessionActive,
-  phaseLabel,
-  replyFor,
-  starters,
-  voiceStyles,
-  type DemoMessage,
-  type VoicePhase,
-} from "./demo";
-
-const DEFAULT_VOICE = voiceStyles[0];
-const DEFAULT_PACE = 35;
+import { isSessionActive } from "./session";
+import { useVoiceConversation } from "./use-voice-conversation";
+import { RollingText } from "./rolling-text";
 
 export function VoiceStudio() {
-  const [phase, setPhase] = useState<VoicePhase>("ready");
-  const [sound, setSound] = useState(false);
+  return <RequireRole roles={["requester"]}>{() => <Studio />}</RequireRole>;
+}
+
+function Studio() {
+  const conversation = useVoiceConversation();
+  const { phase, messages, brief, sound } = conversation;
   const [moving, setMoving] = useState(true);
-  const [seconds, setSeconds] = useState(0);
-  const [messages, setMessages] = useState<DemoMessage[]>([]);
   const [draft, setDraft] = useState("");
-  const [audioNote, setAudioNote] = useState("");
-  const previousPhase = useRef<VoicePhase>("listening");
-  const pendingReply = useRef(greeting);
-  const soundRef = useRef(sound);
-  const speakingAudio = useRef(false);
+  const [reviewing, setReviewing] = useState(false);
   const transcript = useRef<HTMLDivElement>(null);
-  const nextId = useRef(0);
+  const briefPanel = useRef<HTMLElement>(null);
   const active = isSessionActive(phase);
   const canReply =
-    phase === "ready" || phase === "listening" || phase === "ended";
+    !reviewing && ["ready", "listening", "paused", "ended"].includes(phase);
 
-  useEffect(() => {
-    soundRef.current = sound;
-  }, [sound]);
   useEffect(() => {
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
     const changed = () => setMoving(!preference.matches);
@@ -72,138 +49,31 @@ export function VoiceStudio() {
     return () => preference.removeEventListener("change", changed);
   }, []);
   useEffect(() => {
-    if (!active || phase === "paused") return;
-    const timer = setInterval(() => setSeconds((value) => value + 1), 1000);
-    return () => clearInterval(timer);
-  }, [active, phase]);
-  useEffect(() => {
     const element = transcript.current;
     if (element) element.scrollTop = element.scrollHeight;
   }, [messages, phase]);
-  useEffect(
-    () => () => {
-      window.speechSynthesis?.cancel();
-    },
-    [],
-  );
 
-  const previewSpeech = useCallback((text: string) => {
-    if (!soundRef.current) return false;
-    const synthesizer = window.speechSynthesis;
-    const localVoice = synthesizer
-      ?.getVoices()
-      .find((item) => item.localService && item.lang.startsWith("en"));
-    if (!synthesizer || !localVoice) {
-      setAudioNote(
-        "No local device voice is available. The demo still works through text.",
-      );
-      return false;
-    }
-    synthesizer.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = localVoice;
-    utterance.rate = DEFAULT_VOICE.rate;
-    utterance.pitch = DEFAULT_VOICE.pitch;
-    utterance.onend = () => {
-      speakingAudio.current = false;
-      setPhase((current) => (current === "speaking" ? "listening" : current));
-    };
-    utterance.onerror = () => {
-      speakingAudio.current = false;
-      setAudioNote(
-        "The device voice stopped. You can keep going through text.",
-      );
-      setPhase((current) => (current === "speaking" ? "listening" : current));
-    };
-    synthesizer.speak(utterance);
-    return true;
-  }, []);
-
-  useEffect(() => {
-    if (phase === "connecting" || phase === "thinking") {
-      const timer = setTimeout(
-        () => {
-          const text = pendingReply.current;
-          setMessages((current) => [
-            ...current,
-            { id: nextId.current++, speaker: "guide", text },
-          ]);
-          setPhase("speaking");
-          speakingAudio.current = previewSpeech(text);
-        },
-        phase === "connecting" ? 950 : 1100,
-      );
-      return () => clearTimeout(timer);
-    }
-    if (phase === "speaking") {
-      if (speakingAudio.current) return;
-      const timer = setTimeout(
-        () => setPhase("listening"),
-        6500 + (100 - DEFAULT_PACE) * 25,
-      );
-      return () => clearTimeout(timer);
-    }
-  }, [phase, previewSpeech]);
-
-  function begin() {
-    window.speechSynthesis?.cancel();
-    nextId.current = 0;
-    setMessages([]);
-    setSeconds(0);
-    pendingReply.current = greeting;
-    setPhase("connecting");
-  }
-  function send(text: string) {
-    if (!text.trim() || !canReply) return;
-    if (!active) {
-      setMessages([]);
-      setSeconds(0);
-    }
-    setMessages((current) => [
-      ...current,
-      { id: nextId.current++, speaker: "you", text: text.trim() },
-    ]);
-    pendingReply.current = replyFor(text.trim());
-    setDraft("");
-    setPhase("thinking");
-  }
   function submit(event: FormEvent) {
     event.preventDefault();
-    send(draft);
-  }
-  function pause() {
-    if (phase === "paused") {
-      setPhase(previousPhase.current);
-      if (sound) window.speechSynthesis?.resume();
-    } else {
-      previousPhase.current = phase;
-      setPhase("paused");
-      window.speechSynthesis?.pause();
-    }
-  }
-  function end() {
-    speakingAudio.current = false;
-    window.speechSynthesis?.cancel();
-    setPhase("ended");
-  }
-  function reset() {
-    speakingAudio.current = false;
-    window.speechSynthesis?.cancel();
-    setPhase("ready");
-    setMessages([]);
-    setSeconds(0);
+    if (!draft.trim() || !canReply) return;
+    const text = draft;
     setDraft("");
-    setAudioNote("");
+    void conversation.send(text).then((sent) => {
+      if (!sent) setDraft(text);
+    });
   }
-  function toggleSound() {
-    if (sound) {
-      window.speechSynthesis?.cancel();
-      speakingAudio.current = false;
-      setPhase((current) => (current === "speaking" ? "listening" : current));
-    }
-    setSound(!sound);
-    soundRef.current = !sound;
-    setAudioNote("");
+
+  function reset() {
+    conversation.reset();
+    setDraft("");
+    setReviewing(false);
+  }
+
+  function review() {
+    conversation.end();
+    setReviewing(true);
+    briefPanel.current?.scrollIntoView({ behavior: "instant", block: "start" });
+    briefPanel.current?.focus({ preventScroll: true });
   }
 
   return (
@@ -219,7 +89,6 @@ export function VoiceStudio() {
         <span className="voice-nav-divider" aria-hidden="true" />
         <span className="voice-nav-title">Voice studio</span>
         <div className="voice-nav-end">
-          <Badge variant="outline">Local demo</Badge>
           <Button variant="ghost" render={<a href="/" />}>
             <ArrowLeftIcon aria-hidden="true" />
             Back home
@@ -228,62 +97,37 @@ export function VoiceStudio() {
       </header>
       <main id="voice-main" tabIndex={-1} className="voice-main">
         <h1 className="sr-only">Think out loud.</h1>
-
         <div className="voice-workspace">
-          <section
-            className="voice-session"
-            aria-label="Voice conversation preview"
-          >
+          <section className="voice-session" aria-label="Voice conversation">
             <div className="voice-stage" data-phase={phase}>
               <Aurora
                 moving={moving && phase !== "paused"}
                 speaking={phase === "speaking"}
+                microphone={
+                  phase === "listening" ? conversation.microphone : undefined
+                }
               />
-              <div className="voice-stage-top">
-                <span>
-                  <span className="voice-live-dot" />
-                  Voice preview
-                </span>
-                <div>
-                  <span className="voice-timer" aria-label="Session duration">
-                    {formatDuration(seconds)}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={
-                      moving ? "Pause atmosphere" : "Animate atmosphere"
-                    }
-                    aria-pressed={moving}
-                    onClick={() => setMoving(!moving)}
-                  >
-                    {moving ? (
-                      <PauseIcon aria-hidden="true" />
-                    ) : (
-                      <PlayIcon aria-hidden="true" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
               <div className="voice-presence">
                 <div className="voice-presence-caption">
-                  <Waveform />
-                  <p className="voice-phase" role="status">
-                    {phaseLabel(phase)}
+                  <p className="voice-phase" role="status" aria-atomic="true">
+                    <RollingText
+                      text={conversation.agentText}
+                      animated={messages.some(
+                        (message) => message.role === "assistant",
+                      )}
+                    />
                   </p>
                 </div>
               </div>
-
               <div className="voice-controls">
                 <Button
                   variant="outline"
                   size="icon-xl"
                   aria-label={
-                    sound ? "Mute voice preview" : "Enable voice preview"
+                    sound ? "Mute spoken replies" : "Enable spoken replies"
                   }
                   aria-pressed={sound}
-                  onClick={toggleSound}
+                  onClick={conversation.toggleSound}
                 >
                   {sound ? (
                     <Volume2Icon aria-hidden="true" />
@@ -292,27 +136,35 @@ export function VoiceStudio() {
                   )}
                 </Button>
                 {!active ? (
-                  <Button size="xl" className="voice-start" onClick={begin}>
+                  <Button
+                    size="xl"
+                    className="voice-start"
+                    onClick={conversation.resume}
+                    disabled={reviewing}
+                  >
                     <MicIcon aria-hidden="true" />
-                    {phase === "ended" ? "Start again" : "Begin conversation"}
+                    {phase === "ended"
+                      ? "Continue conversation"
+                      : "Begin conversation"}
                   </Button>
                 ) : (
                   <Button
                     size="xl"
                     className="voice-start"
-                    onClick={pause}
-                    disabled={phase === "connecting"}
+                    onClick={
+                      phase === "paused"
+                        ? conversation.resume
+                        : conversation.pause
+                    }
                   >
                     {phase === "paused" ? (
                       <PlayIcon aria-hidden="true" />
                     ) : (
                       <PauseIcon aria-hidden="true" />
                     )}
-                    {phase === "connecting"
-                      ? "Starting…"
-                      : phase === "paused"
-                        ? "Resume conversation"
-                        : "Pause conversation"}
+                    {phase === "paused"
+                      ? "Resume conversation"
+                      : "Pause conversation"}
                   </Button>
                 )}
                 {active ? (
@@ -320,7 +172,7 @@ export function VoiceStudio() {
                     variant="outline"
                     size="icon-xl"
                     aria-label="End conversation"
-                    onClick={end}
+                    onClick={conversation.end}
                   >
                     <SquareIcon aria-hidden="true" />
                   </Button>
@@ -328,22 +180,29 @@ export function VoiceStudio() {
                   <span className="voice-control-spacer" />
                 )}
               </div>
-              {audioNote && (
-                <p className="voice-device-note" role="status">
-                  {audioNote}
+              {conversation.error && (
+                <p className="voice-device-note" role="alert">
+                  {conversation.error}
                 </p>
+              )}
+              {brief.title && brief.description && !reviewing && (
+                <Button
+                  variant="ghost"
+                  className="mt-3"
+                  onClick={review}
+                  disabled={conversation.extracting}
+                >
+                  Review project brief
+                </Button>
               )}
             </div>
           </section>
-
           <section
             className="voice-conversation"
             aria-labelledby="conversation-title"
           >
             <div className="voice-conversation-heading">
-              <div>
-                <h2 id="conversation-title">Transcript</h2>
-              </div>
+              <h2 id="conversation-title">Transcript</h2>
               <Button
                 variant="ghost"
                 size="icon"
@@ -357,30 +216,25 @@ export function VoiceStudio() {
             <div
               className="voice-transcript"
               ref={transcript}
+              tabIndex={0}
               role="log"
-              aria-label="Demo conversation"
+              aria-label="Project conversation"
               aria-live="polite"
             >
               {messages.length === 0 ? (
                 <div className="voice-empty">
                   <h3>No conversation yet</h3>
-                  <p>Start a session or choose a prompt below.</p>
                 </div>
               ) : (
-                messages.map((message) => (
+                messages.map((message, index) => (
                   <article
-                    key={message.id}
-                    className={`voice-message voice-message-${message.speaker}`}
+                    key={index}
+                    className={`voice-message voice-message-${message.role === "user" ? "you" : "guide"}`}
                   >
-                    <span>{message.speaker === "you" ? "You" : "Voice"}</span>
-                    <p>{message.text}</p>
+                    <span>{message.role === "user" ? "You" : "Assistant"}</span>
+                    <p>{message.content}</p>
                   </article>
                 ))
-              )}
-              {phase === "thinking" && (
-                <p className="voice-thinking">
-                  Preparing a reply<span aria-hidden="true">…</span>
-                </p>
               )}
               {phase === "ended" && (
                 <div className="voice-ended">
@@ -389,55 +243,80 @@ export function VoiceStudio() {
                 </div>
               )}
             </div>
-            <div className="voice-starters">
-              <h3>
-                Try a prompt <ArrowDownIcon aria-hidden="true" />
-              </h3>
-              {starters.map((starter) => (
-                <Button
-                  key={starter.title}
-                  variant="ghost"
-                  className="voice-starter"
-                  onClick={() => send(starter.text)}
-                  disabled={!canReply}
-                >
-                  <span>{starter.title}</span>
-                  <ArrowUpRightIcon aria-hidden="true" />
-                </Button>
-              ))}
-            </div>
             <form className="voice-compose" onSubmit={submit}>
               <Label htmlFor="voice-thought" className="sr-only">
-                Type a thought
+                Your answer
               </Label>
               <Input
                 id="voice-thought"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="Or type a thought…"
-                maxLength={600}
+                placeholder="Or type an answer…"
+                maxLength={3000}
                 disabled={!canReply}
                 autoComplete="off"
               />
               <Button
                 type="submit"
                 size="icon"
-                aria-label="Send thought"
+                aria-label="Send answer"
                 disabled={!canReply || !draft.trim()}
               >
                 <ArrowUpIcon aria-hidden="true" />
               </Button>
             </form>
           </section>
+          <section
+            className="voice-conversation"
+            ref={briefPanel}
+            tabIndex={-1}
+            aria-labelledby="voice-brief-title"
+          >
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <h2 id="voice-brief-title" className="text-lg font-semibold">
+                Project brief
+              </h2>
+              {!reviewing && (
+                <Button
+                  variant="outline"
+                  onClick={review}
+                  disabled={
+                    conversation.extracting ||
+                    !brief.title ||
+                    !brief.description
+                  }
+                >
+                  Review and edit
+                </Button>
+              )}
+            </div>
+            {conversation.extracting && (
+              <p role="status" className="mb-4 text-sm text-muted-foreground">
+                Updating brief…
+              </p>
+            )}
+            {conversation.briefError && (
+              <div className="mb-4 space-y-2">
+                <p role="alert">{conversation.briefError}</p>
+                <Button variant="outline" onClick={conversation.retryBrief}>
+                  Retry brief update
+                </Button>
+              </div>
+            )}
+            {reviewing ? (
+              <EmployerIntake initialBrief={brief} />
+            ) : (
+              <BriefForm
+                key={JSON.stringify(brief)}
+                brief={brief}
+                pending={false}
+                disabled
+                preview
+                onSubmit={() => {}}
+              />
+            )}
+          </section>
         </div>
-
-        <footer className="voice-footer">
-          <span>
-            <span className="voice-footer-dot" />
-            Voice prototype
-          </span>
-          <p>Scripted replies · local voice preview</p>
-        </footer>
       </main>
     </div>
   );

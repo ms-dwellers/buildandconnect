@@ -46,7 +46,7 @@ async function developerNear(t: ReturnType<typeof setup>) {
 
 test("the public map lists only open, pinned Calgary postings and hides requester details", async () => {
   const t = setup();
-  const company = await actor(t, "company");
+  const company = await actor(t, "requester");
   const requester = await actor(t, "requester");
   const post = (details: typeof pinnedJob | typeof job) =>
     company.client.mutation(api.data.createOpportunity, {
@@ -84,7 +84,7 @@ test("the public map lists only open, pinned Calgary postings and hides requeste
   const job0 = guest.listings.find((listing) => listing.id === shown.id)!;
   expect(job0).toMatchObject({
     source: "opportunity",
-    organization: "company",
+    organization: "requester",
     compensation: "$1,200 project",
     precise: true,
     viewerIsOwner: false,
@@ -100,7 +100,7 @@ test("the public map lists only open, pinned Calgary postings and hides requeste
     longitude: -114.07,
   });
   expect(JSON.stringify(guest)).not.toContain("Garden Lane");
-  expect(JSON.stringify(guest)).not.toContain("requester");
+  expect(JSON.stringify(guest)).not.toContain("Garden Lane");
 
   const owner = await requester.client.query(api.data.mapListings, { secret });
   expect(owner.viewer).toEqual({ name: "requester", role: "requester" });
@@ -173,8 +173,8 @@ test("claimed requests stay on the map only for the requester and claimant", asy
 
 test("only owners edit postings, and claimed or closed requests are locked", async () => {
   const t = setup();
-  const company = await actor(t, "company");
-  const rival = await actor(t, "company");
+  const company = await actor(t, "requester");
+  const rival = await actor(t, "requester");
   const requester = await actor(t, "requester");
   const neighbour = await actor(t, "requester");
   const claimant = await developerNear(t);

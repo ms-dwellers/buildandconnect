@@ -126,11 +126,10 @@ try {
   const voice = await fetch(`${origin}/wip-voice-ai`);
   assert.equal(voice.status, 200);
   const voiceHtml = await voice.text();
-  assert.match(voiceHtml, /Begin conversation/);
-  assert.match(voiceHtml, /Local demo/);
+  assert.doesNotMatch(voiceHtml, /Local demo/);
   assert.match(voiceHtml, /noindex/);
 
-  for (const page of [html, designHtml, mapHtml, debugHtml, voiceHtml]) {
+  for (const page of [html, designHtml, mapHtml, debugHtml]) {
     assert.match(page, /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/);
   }
   const logo = await fetch(`${origin}/brand/campfire-clasped-hands.svg`);
@@ -144,6 +143,18 @@ try {
     [401, 503].includes(hiringApi.status),
     "Provider status requires authentication",
   );
+  for (const path of ["voice-session", "extract"]) {
+    const response = await fetch(`${origin}/api/hiring/${path}`, {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": "application/json" },
+      body: "{}",
+    });
+    assert.ok(
+      [401, 503].includes(response.status),
+      `${path} requires authentication`,
+    );
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+  }
 
   const health = await fetch(`${origin}/api/health`);
   assert.equal(health.headers.get("Cache-Control"), "no-store");

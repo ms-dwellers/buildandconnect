@@ -20,7 +20,7 @@ import {
   useMutation,
 } from "./parts";
 
-export function CompanyDashboard() {
+export function RequesterOpportunities() {
   const opportunities = usePaged<OpportunityRecord>("/opportunities/mine");
   const interests = usePaged<Interest>("/interests");
   const { pending, run } = useMutation();
@@ -39,7 +39,9 @@ export function CompanyDashboard() {
 
   return (
     <div className="space-y-12">
-      <Button render={<a href="/hire" />}>Describe a project with voice</Button>
+      <Button render={<a href="/wip-voice-ai" />}>
+        Describe a project with voice
+      </Button>
       <Section
         title="Your opportunities"
         description="Open opportunities with a map pin appear on the Calgary map."
@@ -126,7 +128,7 @@ export function CompanyDashboard() {
           )}
         </ListState>
       </Section>
-      <InterestSection interests={interests} viewer="company" />
+      <InterestSection interests={interests} viewer="requester" />
     </div>
   );
 }
@@ -136,7 +138,7 @@ export function InterestSection({
   viewer,
 }: {
   interests: ReturnType<typeof usePaged<Interest>>;
-  viewer: "company" | "developer";
+  viewer: "requester" | "developer";
 }) {
   return (
     <Section
@@ -152,7 +154,7 @@ export function InterestSection({
             icon={HandshakeIcon}
             title="No interest yet"
             description={
-              viewer === "company"
+              viewer === "requester"
                 ? "Express interest in a candidate from an opportunity's ranked list."
                 : "Open an opportunity to see your fit and say you're interested."
             }
@@ -161,18 +163,18 @@ export function InterestSection({
       >
         {(interest) => {
           const theirs =
-            viewer === "company"
+            viewer === "requester"
               ? interest.developerInterested
-              : interest.companyInterested;
+              : interest.requesterInterested;
           return (
             <li key={interest.id}>
               <ItemCard>
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <h3 className="font-semibold">{interest.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {viewer === "company"
+                    {viewer === "requester"
                       ? interest.developerName
-                      : interest.companyName}
+                      : interest.requesterName}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -180,9 +182,9 @@ export function InterestSection({
                     <Badge variant="success">Connected</Badge>
                   ) : theirs ? (
                     <Badge variant="info">
-                      {viewer === "company"
+                      {viewer === "requester"
                         ? "Developer is interested"
-                        : "Company is interested"}
+                        : "Requester is interested"}
                     </Badge>
                   ) : (
                     <Badge variant="outline">Waiting for a reply</Badge>

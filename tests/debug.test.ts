@@ -62,8 +62,8 @@ test("query fields are bounded by the selected endpoint contract", () => {
     /Supported query fields/,
   );
 });
-test("company interest resolves its placeholder but still permits invalid JSON objects for QA", () => {
-  const request = preset("interest-company");
+test("requester interest resolves its placeholder but still permits invalid JSON objects for QA", () => {
+  const request = preset("interest-requester");
   assert.equal(
     JSON.parse(
       buildRequest(request, "job", "dev", "", JSON.stringify(request.body))

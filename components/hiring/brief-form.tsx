@@ -28,11 +28,13 @@ export function BriefForm({
   pending,
   disabled,
   onSubmit,
+  preview = false,
 }: {
   brief: HiringBrief;
   pending: boolean;
   disabled: boolean;
   onSubmit: (brief: HiringBrief) => void;
+  preview?: boolean;
 }) {
   const [error, setError] = useState("");
   const [consent, setConsent] = useState(false);
@@ -229,24 +231,32 @@ export function BriefForm({
           />
         </div>
       </fieldset>
-      <div className="flex items-start gap-3">
-        <Checkbox
-          id="hiring-consent"
-          checked={consent}
-          onCheckedChange={(value) => setConsent(value === true)}
-          disabled={pending || disabled}
-        />
-        <Label htmlFor="hiring-consent" className="text-sm leading-6">
-          I’ve reviewed this brief and agree to send it to Gemini through
-          OpenRouter for developer suggestions.
-        </Label>
-      </div>
-      <p role="alert" className="text-sm text-destructive-foreground">
-        {error}
-      </p>
-      <Button type="submit" disabled={!consent || disabled} loading={pending}>
-        Find up to 10 developers
-      </Button>
+      {!preview && (
+        <>
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="hiring-consent"
+              checked={consent}
+              onCheckedChange={(value) => setConsent(value === true)}
+              disabled={pending || disabled}
+            />
+            <Label htmlFor="hiring-consent" className="text-sm leading-6">
+              I’ve reviewed this brief and agree to send it to Gemini through
+              OpenRouter for developer suggestions.
+            </Label>
+          </div>
+          <p role="alert" className="text-sm text-destructive-foreground">
+            {error}
+          </p>
+          <Button
+            type="submit"
+            disabled={!consent || disabled}
+            loading={pending}
+          >
+            Find up to 10 developers
+          </Button>
+        </>
+      )}
     </Form>
   );
 }

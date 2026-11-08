@@ -14,6 +14,46 @@ import {
 beforeEach(() => vi.stubEnv("CONVEX_BRIDGE_SECRET", secret));
 afterEach(() => vi.unstubAllEnvs());
 
+test("legacy customer accounts become requesters without losing ownership or data", async () => {
+  for (const legacyRole of ["company", "recruiter"] as const) {
+    const t = setup();
+    const customer = await actor(t, "requester");
+    const posted = await customer.client.mutation(api.data.createOpportunity, {
+      secret,
+      id: crypto.randomUUID(),
+      details: job,
+      analysis,
+      embedding,
+    });
+    await t.run(async (ctx) => {
+      const member = await ctx.db
+        .query("members")
+        .withIndex("by_user", (q) => q.eq("userId", customer.id))
+        .unique();
+      await ctx.db.patch(member!._id, { role: legacyRole });
+    });
+    expect(await customer.client.query(api.data.me, { secret })).toMatchObject({
+      role: "requester",
+      user: { id: customer.id },
+    });
+    const owned = await customer.client.query(api.data.ownedOpportunities, {
+      secret,
+      after: "",
+      limit: 20,
+    });
+    expect(owned.data[0].id).toBe(posted.id);
+    await expect(
+      customer.client.mutation(api.data.setRole, { secret, role: "requester" }),
+    ).resolves.toEqual({ role: "requester" });
+    await expect(
+      customer.client.mutation(api.data.setRole, {
+        secret,
+        role: legacyRole as never,
+      }),
+    ).rejects.toThrow();
+  }
+});
+
 test("data access requires both the server bridge and a live authenticated session", async () => {
   const t = setup();
   await expect(t.query(api.data.me, { secret: "wrong" })).rejects.toThrow(
@@ -25,7 +65,7 @@ test("data access requires both the server bridge and a live authenticated sessi
     dev.client.query(api.data.me, { secret }),
   ).resolves.toMatchObject({ user: { id: dev.id }, role: "developer" });
   await expect(
-    dev.client.mutation(api.data.setRole, { secret, role: "company" }),
+    dev.client.mutation(api.data.setRole, { secret, role: "requester" }),
   ).rejects.toThrow(/already set/);
   await t.run((ctx) =>
     ctx.runMutation(components.betterAuth.adapter.deleteOne, {
@@ -43,8 +83,8 @@ test("data access requires both the server bridge and a live authenticated sessi
 test("profile privacy, location, and availability remain independent of AI", async () => {
   const t = setup();
   const dev = await actor(t, "developer");
-  const company = await actor(t, "company");
-  const recruiter = await actor(t, "recruiter");
+  const company = await actor(t, "requester");
+  const recruiter = await actor(t, "requester");
   await dev.client.mutation(api.data.putDeveloper, {
     secret,
     profile,
@@ -90,7 +130,7 @@ test("matching preferences persist for zero-experience developers without regene
   const t = setup();
   const dev = await actor(t, "developer");
   const other = await actor(t, "developer");
-  const company = await actor(t, "company");
+  const company = await actor(t, "requester");
   await dev.client.mutation(api.data.putDeveloper, {
     secret,
     profile,
@@ -205,8 +245,8 @@ test("invalid developer preferences do not change stored profiles", async () => 
 test("opportunity ownership, matching, and mutual interest are enforced atomically", async () => {
   const t = setup();
   const dev = await actor(t, "developer");
-  const company = await actor(t, "company");
-  const other = await actor(t, "company");
+  const company = await actor(t, "requester");
+  const other = await actor(t, "requester");
   await dev.client.mutation(api.data.putDeveloper, {
     secret,
     profile,

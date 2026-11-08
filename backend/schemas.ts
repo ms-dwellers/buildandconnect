@@ -193,7 +193,7 @@ export type DeveloperProfile = z.infer<typeof developerSchema>;
 export type OpportunityInput = z.infer<typeof opportunitySchema>;
 export type RequestInput = z.infer<typeof requestSchema>;
 export type DeveloperLocation = z.infer<typeof developerLocationSchema>;
-export type Role = "developer" | "company" | "recruiter" | "requester";
+export type Role = "developer" | "requester";
 export type RequestStatus = "open" | "claimed" | "closed";
 
 export type Developer = DeveloperProfile & {

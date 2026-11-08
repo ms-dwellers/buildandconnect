@@ -81,8 +81,8 @@ export type Interest = {
   developerId: string;
   title: string;
   developerName: string;
-  companyName: string;
-  companyInterested: boolean;
+  requesterName: string;
+  requesterInterested: boolean;
   developerInterested: boolean;
   connected: boolean;
 };

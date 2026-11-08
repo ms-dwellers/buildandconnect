@@ -120,7 +120,7 @@ export const requests: RequestPreset[] = [
     title: "Browse developers",
     method: "GET",
     path: "/api/developers",
-    caller: "Company or recruiter",
+    caller: "Requester",
     query: browse,
   },
   {
@@ -129,7 +129,7 @@ export const requests: RequestPreset[] = [
     title: "Post opportunity",
     method: "POST",
     path: "/api/opportunities",
-    caller: "Company",
+    caller: "Requester",
     body: sampleOpportunity,
     ai: true,
   },
@@ -187,9 +187,9 @@ export const requests: RequestPreset[] = [
     note: "Set interested to false to withdraw.",
   },
   {
-    id: "interest-company",
+    id: "interest-requester",
     group: "Networking",
-    title: "Express company interest",
+    title: "Express requester interest",
     method: "PUT",
     path: "/api/opportunities/:id/interest",
     caller: "Opportunity owner",
@@ -202,7 +202,7 @@ export const requests: RequestPreset[] = [
     title: "Read pending interests",
     method: "GET",
     path: "/api/interests",
-    caller: "Company or developer",
+    caller: "Requester or developer",
     query: browse,
   },
   {
@@ -211,7 +211,7 @@ export const requests: RequestPreset[] = [
     title: "Read mutual connections",
     method: "GET",
     path: "/api/connections",
-    caller: "Company or developer",
+    caller: "Requester or developer",
     query: browse,
   },
 ];
@@ -286,15 +286,15 @@ export function redact(
 export const qaSteps = [
   [
     "Create test accounts",
-    "Use separate browser profiles or private windows for company and developer sessions. Roles cannot be changed after selection.",
+    "Use separate browser profiles or private windows for requester and developer sessions. Roles cannot be changed after selection.",
   ],
   [
     "Save a developer profile",
-    "Use the sample profile as the developer, then post the sample opportunity as the company. Both actions need Workers AI.",
+    "Use the sample profile as the developer, then post the sample opportunity as the requester. Both actions need Workers AI.",
   ],
   [
     "Rank and inspect",
-    "Copy the opportunity ID into the request context. Rank as its owner; try another company or recruiter and expect 403.",
+    "Copy the opportunity ID into the request context. Rank as its owner; try another requester and expect 403.",
   ],
   [
     "Connect through a project",

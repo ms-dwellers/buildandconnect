@@ -7,12 +7,9 @@ const collaboration = v.union(
   v.literal("sync"),
   v.literal("flexible"),
 );
-export const role = v.union(
-  v.literal("developer"),
-  v.literal("company"),
-  v.literal("recruiter"),
-  v.literal("requester"),
-);
+export const role = v.union(v.literal("developer"), v.literal("requester"));
+// Read compatibility only: legacy customer accounts now act as requesters.
+const storedRole = v.union(role, v.literal("company"), v.literal("recruiter"));
 export const location = v.object({
   latitude: v.number(),
   longitude: v.number(),
@@ -109,10 +106,11 @@ export const request = v.object({
 });
 
 export default defineSchema({
-  members: defineTable({ userId: v.string(), name: v.string(), role }).index(
-    "by_user",
-    ["userId"],
-  ),
+  members: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    role: storedRole,
+  }).index("by_user", ["userId"]),
   developers: defineTable({
     userId: v.string(),
     name: v.string(),

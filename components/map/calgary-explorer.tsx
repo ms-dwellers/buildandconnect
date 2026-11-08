@@ -37,7 +37,6 @@ const FILTERS: { value: MapFilter; label: string }[] = [
 
 const POST_TARGET: Partial<Record<Role, { path: string; label: string }>> = {
   requester: { path: "/requests/new", label: "Post a request" },
-  company: { path: "/opportunities/new", label: "Post an opportunity" },
 };
 
 export function CalgaryExplorer({ focus }: { focus: string | null }) {
@@ -210,7 +209,7 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                 <p className="text-sm text-muted-foreground">
                   {post
                     ? "Be the first. Choose a spot on the map for your post."
-                    : "Projects appear here as neighbours and companies post them."}
+                    : "Projects appear here as requesters post them."}
                 </p>
                 {session.status === "guest" && (
                   <Button render={<a href="/sign-up" />} variant="outline">

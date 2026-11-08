@@ -2,26 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import {
-  fallbackReply,
   formatDuration,
   isSessionActive,
   phaseLabel,
-  replyFor,
-  starters,
-  voiceStyles,
-} from "../app/wip-voice-ai/demo.ts";
+} from "../app/wip-voice-ai/session.ts";
 
-test("voice prototype uses deterministic local replies", () => {
-  for (const starter of starters)
-    assert.equal(replyFor(starter.text), starter.reply);
-  assert.equal(replyFor("A thought of my own"), fallbackReply);
-  assert.equal(
-    new Set(voiceStyles.map((voice) => voice.id)).size,
-    voiceStyles.length,
-  );
-});
-
-test("voice prototype exposes session states and readable durations", () => {
+test("voice conversation exposes session states and readable durations", () => {
   assert.equal(isSessionActive("ready"), false);
   assert.equal(isSessionActive("ended"), false);
   for (const phase of [
@@ -72,8 +58,15 @@ test("navigation stays above the unframed voice panel, with the transcript below
   );
   assert.doesNotMatch(
     source,
-    /useMicrophone|Enable microphone|Simulated conversation/,
+    /Enable microphone|Simulated conversation|speechSynthesis|replyFor|Local demo|voice-stage-top|Waveform|voice-timer/,
   );
-  assert.match(source, /DEFAULT_VOICE = voiceStyles\[0\]/);
-  assert.match(source, /DEFAULT_PACE = 35/);
+  assert.match(source, /useVoiceConversation/);
+  assert.match(source, /initialBrief=\{brief\}/);
+  assert.match(source, /<RollingText/);
+  assert.match(source, /aria-atomic="true"/);
+  assert.match(
+    css,
+    /@media \(prefers-reduced-motion: no-preference\)\s*\{\s*\.voice-reply/,
+  );
+  assert.match(css, /animation-delay: var\(--word-delay\)/);
 });

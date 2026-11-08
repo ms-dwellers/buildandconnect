@@ -35,7 +35,7 @@ const brief = {
 };
 
 function harness(
-  role: ApiEnv["Variables"]["role"] = "company",
+  role: ApiEnv["Variables"]["role"] = "requester",
   visibleAfter = true,
   initial: PublicDeveloper = candidate,
   changed: PublicDeveloper = initial,
@@ -44,6 +44,8 @@ function harness(
     transcription: 0,
     drafting: 0,
     matching: 0,
+    sessions: 0,
+    extraction: 0,
     listing: 0,
     candidates: [] as PublicDeveloper[],
   };
@@ -56,6 +58,18 @@ function harness(
   app.route(
     "/api/hiring",
     createHiringRoutes({
+      signVoiceConversation: async () => {
+        calls.sessions++;
+        return {
+          signedUrl:
+            "wss://api.elevenlabs.io/v1/convai/conversation?conversation_signature=test",
+        };
+      },
+      extractBrief: async (_env, messages, previous) => {
+        calls.extraction++;
+        assert.equal(messages.at(-1)?.role, "user");
+        return { brief: { ...previous, ...brief } };
+      },
       transcribeAudio: async (_env, audio) => {
         calls.transcription++;
         assert.ok(audio.size);
@@ -103,8 +117,8 @@ function harness(
   return { app, calls };
 }
 
-test("only company accounts can use paid hiring providers", async () => {
-  for (const role of [null, "developer", "requester", "recruiter"] as const) {
+test("only requester accounts can use paid intake providers", async () => {
+  for (const role of [null, "developer"] as const) {
     const { app, calls } = harness(role);
     const response = await app.request("/api/hiring/transcribe", {
       method: "POST",
@@ -113,7 +127,54 @@ test("only company accounts can use paid hiring providers", async () => {
     });
     assert.equal(response.status, 403);
     assert.equal(calls.transcription, 0);
+    const speech = await app.request("/api/hiring/voice-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "Hello" }),
+    });
+    assert.equal(speech.status, 403);
+    assert.equal(calls.sessions, 0);
+    assert.equal(
+      (await app.request("/api/hiring/extract", { method: "POST" })).status,
+      403,
+    );
+    assert.equal(calls.extraction, 0);
   }
+});
+
+test("background extraction validates its own data and never requests a spoken reply", async () => {
+  const { app, calls } = harness();
+  for (const body of [
+    { messages: [], brief },
+    { messages: [{ role: "assistant", content: "Hello" }], brief },
+  ]) {
+    const response = await app.request("/api/hiring/extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    assert.equal(response.status, 400);
+  }
+  assert.equal(calls.extraction, 0);
+  const response = await app.request("/api/hiring/extract", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: "A community website" }],
+      brief: emptyHiringBrief(),
+    }),
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.deepEqual(body, { brief });
+  assert.equal(calls.extraction, 1);
+  assert.equal(calls.drafting, 0);
+  assert.equal(calls.matching, 0);
+  assert.equal(
+    (await app.request("/api/hiring/voice-session", { method: "POST" })).status,
+    200,
+  );
+  assert.equal(calls.sessions, 1);
 });
 
 test("transcription rejects wrong content types, empty and oversized recordings", async () => {
@@ -188,7 +249,7 @@ test("drafting and recommendations are separate explicit requests", async () => 
 });
 
 test("withdrawn discovery consent removes a candidate before the response", async () => {
-  const { app } = harness("company", false);
+  const { app } = harness("requester", false);
   const response = await app.request("/api/hiring/matches", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -229,7 +290,7 @@ test("matching uses saved zero-year preferences and rechecks changed boundaries 
     ...initial,
     workArrangementPreference: { preferred: "onsite", required: true },
   };
-  const { app, calls } = harness("company", true, initial, changed);
+  const { app, calls } = harness("requester", true, initial, changed);
   const response = await app.request("/api/hiring/matches", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

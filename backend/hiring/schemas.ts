@@ -59,6 +59,21 @@ export const intakeResponseSchema = z
   })
   .strict();
 
+export const extractionRequestSchema = z
+  .object({
+    messages: conversationSchema.shape.messages,
+    brief: hiringBriefSchema,
+  })
+  .strict()
+  .refine(
+    (value) => value.messages.some((message) => message.role === "user"),
+    "Describe the project first",
+  );
+
+export const extractionResponseSchema = z
+  .object({ brief: hiringBriefSchema })
+  .strict();
+
 export const matchingCriteriaSchema = z
   .object({
     technologies: tags,

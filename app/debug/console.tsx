@@ -397,22 +397,20 @@ export function DebugConsole() {
                             aria-labelledby="qa-role-label"
                             className="flex flex-wrap gap-2"
                           >
-                            {["developer", "company", "recruiter"].map(
-                              (item) => (
-                                <Button
-                                  key={item}
-                                  size="sm"
-                                  variant={
-                                    role === item ? "secondary" : "outline"
-                                  }
-                                  aria-pressed={role === item}
-                                  onClick={() => setRole(item)}
-                                  disabled={api.busy}
-                                >
-                                  {item}
-                                </Button>
-                              ),
-                            )}
+                            {["developer", "requester"].map((item) => (
+                              <Button
+                                key={item}
+                                size="sm"
+                                variant={
+                                  role === item ? "secondary" : "outline"
+                                }
+                                aria-pressed={role === item}
+                                onClick={() => setRole(item)}
+                                disabled={api.busy}
+                              >
+                                {item}
+                              </Button>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -545,7 +543,7 @@ export function DebugConsole() {
                           onChange={(event) =>
                             setDeveloperId(event.target.value)
                           }
-                          placeholder="Used for company interest"
+                          placeholder="Used for requester interest"
                           className="font-mono text-base sm:text-xs"
                           maxLength={100}
                         />

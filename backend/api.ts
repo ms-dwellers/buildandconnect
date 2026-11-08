@@ -110,7 +110,7 @@ export function createApi(
   app.put("/me/role", async (c) => {
     const input = z
       .object({
-        role: z.enum(["developer", "company", "recruiter", "requester"]),
+        role: z.enum(["developer", "requester"]),
       })
       .strict()
       .parse(await c.req.json());
@@ -186,7 +186,7 @@ export function createApi(
     ),
   );
   app.post("/opportunities", async (c) => {
-    requireRole(c, "company");
+    requireRole(c, "requester");
     const details = opportunitySchema.parse(await c.req.json());
     const result = await services.analyzeOpportunity(c.env.AI, details);
     return c.json(
@@ -222,7 +222,7 @@ export function createApi(
     ),
   );
   app.put("/opportunities/:id", async (c) => {
-    requireRole(c, "company");
+    requireRole(c, "requester");
     const details = opportunitySchema.parse(await c.req.json());
     const result = await services.analyzeOpportunity(c.env.AI, details);
     return c.json(

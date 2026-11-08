@@ -422,7 +422,7 @@ function ProfileForm({
             {(
               [
                 ["available", "Available for new work"],
-                ["discoverable", "Visible to companies and recruiters"],
+                ["discoverable", "Visible to requesters"],
                 ["acceptsVolunteer", "Open to volunteer projects"],
               ] as const
             ).map(([key, label]) => (

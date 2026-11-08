@@ -10,6 +10,7 @@
   "dependencies": {
     "@base-ui/react": "^1.9.0",
     "@convex-dev/better-auth": "^0.13.0",
+    "@elevenlabs/client": "^1.35.0",
     "@vinext/cloudflare": "^1.3.3",
     "better-auth": "~1.7.18",
     "class-variance-authority": "^0.7.1",
@@ -71,6 +72,7 @@
     "check": "bun run fmt:check && bun run typecheck && bun run test",
     "smoke": "node scripts/smoke.mjs",
     "setup:backend": "node scripts/configure-convex.mjs",
+    "setup:voice": "node --env-file=.env.local scripts/setup-voice-agent.mjs",
     "fmt:powershell": "pwsh -NoProfile -File scripts/format-powershell.ps1",
     "fmt:powershell:check": "pwsh -NoProfile -File scripts/format-powershell.ps1 -Check"
   }

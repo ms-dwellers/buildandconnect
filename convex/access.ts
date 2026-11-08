@@ -38,11 +38,16 @@ export async function access(
     .query("members")
     .withIndex("by_user", (q) => q.eq("userId", user._id))
     .unique();
-  if (roles && (!member || !roles.includes(member.role))) {
+  const role: Role | null = member
+    ? member.role === "developer"
+      ? "developer"
+      : "requester"
+    : null;
+  if (roles && (!role || !roles.includes(role))) {
     fail(403, "This account role cannot perform that action");
   }
   return {
     user: { id: user._id, name: user.name },
-    role: member?.role ?? null,
+    role,
   };
 }

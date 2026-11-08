@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     icon: { url: "/brand/campfire-clasped-hands.svg", type: "image/svg+xml" },
   },
   description:
-    "Connect early-career developers with people and companies building social-impact projects.",
+    "Connect early-career developers with requesters building social-impact projects.",
 };
 
 export default function RootLayout({
