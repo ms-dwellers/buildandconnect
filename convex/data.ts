@@ -38,6 +38,7 @@ import {
   eligibility,
   rankDevelopers,
   rankNearbyRequests,
+  requestEligibility,
   WEIGHTS,
   MATCH_VERSION,
   asMatchOpportunity,
@@ -59,6 +60,119 @@ import {
   CAREER_ANALYSIS_VERSION,
   careerTargetSchema,
 } from "../backend/career/schemas";
+import {
+  opportunityFromDraft,
+  projectDraftContentSchema,
+} from "../backend/project-drafts";
+
+const draftRecord = (row: {
+  id: string;
+  content: unknown;
+  updatedAt: number;
+  publishedOpportunityId?: string;
+}) => ({
+  id: row.id,
+  content: projectDraftContentSchema.parse(row.content),
+  updatedAt: row.updatedAt,
+  ...(row.publishedOpportunityId && {
+    publishedOpportunityId: row.publishedOpportunityId,
+  }),
+});
+
+export const projectDrafts = query({
+  args: { secret: v.string() },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["requester"]);
+    const rows = await ctx.db
+      .query("projectDrafts")
+      .withIndex("by_owner", (q) => q.eq("ownerId", user.id))
+      .filter((q) => q.eq(q.field("publishedOpportunityId"), undefined))
+      .take(21);
+    return rows.sort((a, b) => b.updatedAt - a.updatedAt).map(draftRecord);
+  },
+});
+export const getProjectDraft = query({
+  args: { secret: v.string(), id: v.string() },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["requester"]);
+    const row = await ctx.db
+      .query("projectDrafts")
+      .withIndex("by_public_id", (q) => q.eq("id", args.id))
+      .unique();
+    if (!row || row.ownerId !== user.id) fail(404, "Project draft not found");
+    return draftRecord(row);
+  },
+});
+export const saveProjectDraft = mutation({
+  args: {
+    secret: v.string(),
+    id: v.string(),
+    content: v.any(),
+    expectedUpdatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["requester"]);
+    const content = projectDraftContentSchema.parse(args.content);
+    const old = await ctx.db
+      .query("projectDrafts")
+      .withIndex("by_public_id", (q) => q.eq("id", args.id))
+      .unique();
+    if (old && old.ownerId !== user.id) fail(404, "Project draft not found");
+    if (
+      old &&
+      args.expectedUpdatedAt === 0 &&
+      !old.publishedOpportunityId &&
+      JSON.stringify(old.content) === JSON.stringify(content)
+    )
+      return draftRecord(old);
+    if (old?.publishedOpportunityId)
+      fail(
+        409,
+        "This draft has already been published. Open the opportunity to edit it.",
+      );
+    if ((old?.updatedAt ?? 0) !== args.expectedUpdatedAt)
+      fail(
+        409,
+        "This draft changed in another tab. Reload the saved draft before editing again.",
+      );
+    if (!old) {
+      const drafts = await ctx.db
+        .query("projectDrafts")
+        .withIndex("by_owner", (q) => q.eq("ownerId", user.id))
+        .filter((q) => q.eq(q.field("publishedOpportunityId"), undefined))
+        .take(20);
+      if (drafts.length >= 20)
+        fail(
+          409,
+          "You have 20 saved drafts. Publish or discard one before starting another.",
+        );
+    }
+    const values = {
+      id: args.id,
+      ownerId: user.id,
+      content,
+      updatedAt: Math.max(Date.now(), (old?.updatedAt ?? 0) + 1),
+    };
+    if (old) await ctx.db.replace(old._id, values);
+    else await ctx.db.insert("projectDrafts", values);
+    return draftRecord(values);
+  },
+});
+export const discardProjectDraft = mutation({
+  args: { secret: v.string(), id: v.string(), expectedUpdatedAt: v.number() },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["requester"]);
+    const row = await ctx.db
+      .query("projectDrafts")
+      .withIndex("by_public_id", (q) => q.eq("id", args.id))
+      .unique();
+    if (!row || row.ownerId !== user.id) fail(404, "Project draft not found");
+    if (row.publishedOpportunityId || row.updatedAt !== args.expectedUpdatedAt)
+      fail(409, "This draft has changed. Reload before discarding it.");
+    await ctx.db.delete(row._id);
+    return { discarded: true };
+  },
+});
 
 const secret = v.string();
 const pagination = { after: v.string(), limit: v.number() };
@@ -365,12 +479,45 @@ export const createOpportunity = mutation({
     details: opportunity,
     analysis,
     embedding: v.array(v.number()),
+    draftId: v.optional(v.string()),
+    draftUpdatedAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { user } = await access(ctx, args.secret, ["requester"]);
     const details = opportunitySchema.parse(args.details);
     const analysis = analysisSchema.parse(args.analysis);
     const id = args.id;
+    const draft = args.draftId
+      ? await ctx.db
+          .query("projectDrafts")
+          .withIndex("by_public_id", (q) => q.eq("id", args.draftId!))
+          .unique()
+      : null;
+    if (args.draftId) {
+      if (!draft || draft.ownerId !== user.id)
+        fail(404, "Project draft not found");
+      if (draft.publishedOpportunityId) {
+        const existing = await findOpportunity(
+          ctx,
+          draft.publishedOpportunityId,
+        );
+        if (!existing) fail(409, "Published opportunity could not be found");
+        return publicOpportunity(opportunityData(existing));
+      }
+      if (draft.updatedAt !== args.draftUpdatedAt)
+        fail(
+          409,
+          "The draft changed while publishing. Review the latest saved version and try again.",
+        );
+      if (
+        JSON.stringify(
+          opportunityFromDraft(projectDraftContentSchema.parse(draft.content)),
+        ) !== JSON.stringify(details)
+      )
+        fail(409, "Publishing details must match the saved draft");
+    }
+    if (await findOpportunity(ctx, id))
+      fail(409, "An opportunity with this ID already exists");
     await ctx.db.insert("opportunities", {
       id,
       ownerId: user.id,
@@ -385,6 +532,11 @@ export const createOpportunity = mutation({
       createdAt: Date.now(),
       status: "open",
     });
+    if (draft)
+      await ctx.db.patch(draft._id, {
+        publishedOpportunityId: id,
+        updatedAt: Math.max(Date.now(), draft.updatedAt + 1),
+      });
     return { id, ...details, analysis, status: "open" as const };
   },
 });
@@ -573,7 +725,12 @@ export const setInterest = mutation({
 });
 
 export const connections = query({
-  args: { secret, ...pagination, connectedOnly: v.boolean() },
+  args: {
+    secret,
+    ...pagination,
+    connectedOnly: v.boolean(),
+    opportunityId: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const actor = await access(ctx, args.secret, ["requester", "developer"]);
     checkLimit(args.limit);
@@ -588,6 +745,8 @@ export const connections = query({
         : await ctx.db.query("interests").collect();
     const result = [];
     for (const row of rows) {
+      if (args.opportunityId && row.opportunityId !== args.opportunityId)
+        continue;
       if (
         args.connectedOnly
           ? !row.companyInterested || !row.developerInterested
@@ -732,6 +891,24 @@ export const getRequest = query({
     ))
       fail(403, "Only the requester or an eligible developer can view this");
     return publicRequest(requestData(row));
+  },
+});
+
+export const ownRequestMatch = query({
+  args: { secret, id: v.string() },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.secret, ["developer"]);
+    const row = await findRequest(ctx, args.id);
+    if (!row) fail(404, "Request not found");
+    if (row.status !== "open" && row.claimedBy !== user.id)
+      fail(403, "This request is no longer available");
+    const profile = await findDeveloper(ctx, user.id);
+    if (!profile)
+      return { ineligibleReasons: ["Create your developer profile first"] };
+    const developer = await developerData(ctx, profile);
+    return {
+      ineligibleReasons: requestEligibility(requestData(row), developer),
+    };
   },
 });
 

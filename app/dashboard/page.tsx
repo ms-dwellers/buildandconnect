@@ -15,7 +15,7 @@ const TITLES: Record<Role, string> = {
 };
 
 const PRIMARY_ACTION: Partial<Record<Role, { href: string; label: string }>> = {
-  requester: { href: "/requests/new", label: "Post a request" },
+  requester: { href: "/projects/new", label: "Start a project" },
 };
 
 export default function DashboardPage() {

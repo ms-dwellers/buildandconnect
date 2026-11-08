@@ -15,7 +15,7 @@ import {
   type CareerRecommendations,
   type SavedCareerTarget,
 } from "@/lib/career";
-import { useCareerResource } from "./use-career-resource";
+import { useApi } from "@/lib/use-api";
 
 export function CareerProjects({
   target,
@@ -24,7 +24,7 @@ export function CareerProjects({
   target: SavedCareerTarget;
   onReloadTarget: () => Promise<void>;
 }) {
-  const projects = useCareerResource<CareerRecommendations>(
+  const projects = useApi<CareerRecommendations>(
     "/developers/me/career-projects?limit=100",
   );
   if (projects.error)
@@ -59,7 +59,7 @@ function ProjectExplorer({
 }: {
   recommendations: CareerRecommendations;
 }) {
-  const map = useCareerResource<MapFeed>("/map");
+  const map = useApi<MapFeed>("/map");
   const [requirementId, setRequirementId] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const visible = useMemo(
@@ -342,7 +342,7 @@ function ProjectCard({
             <a
               href={
                 project.source === "request"
-                  ? `/map?focus=${encodeURIComponent(project.id)}`
+                  ? `/requests/${encodeURIComponent(project.id)}`
                   : `/opportunities/${encodeURIComponent(project.id)}`
               }
             />

@@ -4,6 +4,7 @@ import { HeartHandshakeIcon, MapPinIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePaged } from "@/lib/use-api";
 import { RequesterOpportunities } from "./requester-opportunities";
+import { DraftList } from "@/components/projects/draft-list";
 import type { RequestRecord } from "@/lib/types";
 import {
   ConfirmButton,
@@ -38,6 +39,7 @@ export function RequesterDashboard() {
 
   return (
     <div className="space-y-12">
+      <DraftList />
       <RequesterOpportunities />
       <Section
         title="Your requests"
@@ -86,6 +88,13 @@ export function RequesterDashboard() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button
+                    render={<a href={`/requests/${request.id}`} />}
+                    variant="outline"
+                    size="sm"
+                  >
+                    View request
+                  </Button>
                   {request.status === "open" && (
                     <Button
                       render={<a href={`/requests/${request.id}/edit`} />}

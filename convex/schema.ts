@@ -128,6 +128,15 @@ export const request = v.object({
 });
 
 export default defineSchema({
+  projectDrafts: defineTable({
+    id: v.string(),
+    ownerId: v.string(),
+    content: v.any(),
+    updatedAt: v.number(),
+    publishedOpportunityId: v.optional(v.string()),
+  })
+    .index("by_public_id", ["id"])
+    .index("by_owner", ["ownerId"]),
   careerTargets: defineTable({
     developerId: v.string(),
     target: careerTarget,

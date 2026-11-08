@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button, type ButtonProps } from "@/components/ui/button";
@@ -166,6 +166,8 @@ export function OpportunityStatusBadge({
  */
 export function useMutation() {
   const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const busy = useRef(false);
   const run = useCallback(
     async (
       key: string,
@@ -173,21 +175,39 @@ export function useMutation() {
       init: RequestInit,
       success: string,
     ): Promise<boolean> => {
+      if (busy.current) return false;
+      busy.current = true;
       setPending(key);
-      const result = await api(path, init);
-      setPending(null);
-      if (result.ok) toastManager.add({ title: success, type: "success" });
-      else
+      setError(null);
+      try {
+        const result = await api(path, init);
+        if (result.ok) toastManager.add({ title: success, type: "success" });
+        else {
+          setError(result.error);
+          toastManager.add({
+            title: "Action not completed",
+            description: result.error,
+            type: "error",
+          });
+        }
+        return result.ok;
+      } catch {
+        const message = "Check your connection and try again.";
+        setError(message);
         toastManager.add({
-          title: "That didn't work",
-          description: result.error,
+          title: "Action not completed",
+          description: message,
           type: "error",
         });
-      return result.ok;
+        return false;
+      } finally {
+        busy.current = false;
+        setPending(null);
+      }
     },
     [],
   );
-  return { pending, run };
+  return { pending, run, error };
 }
 
 export function ConfirmButton({
@@ -196,6 +216,7 @@ export function ConfirmButton({
   description,
   confirmLabel,
   onConfirm,
+  confirmVariant = "destructive",
   ...props
 }: Omit<ButtonProps, "onClick"> & {
   label: ReactNode;
@@ -203,6 +224,7 @@ export function ConfirmButton({
   description: string;
   confirmLabel: string;
   onConfirm: () => void;
+  confirmVariant?: ButtonProps["variant"];
 }) {
   return (
     <Dialog>
@@ -217,7 +239,7 @@ export function ConfirmButton({
             Cancel
           </DialogClose>
           <DialogClose
-            render={<Button variant="destructive" onClick={onConfirm} />}
+            render={<Button variant={confirmVariant} onClick={onConfirm} />}
           >
             {confirmLabel}
           </DialogClose>

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useOpportunityDraft } from "@/lib/opportunity-draft-context";
+import { createProjectDraft } from "@/lib/project-drafts";
+import { projectDraftFromBrief } from "@/backend/project-drafts";
 import { MicIcon, SquareIcon } from "lucide-react";
 import { RequireRole, ErrorAlert } from "@/components/app/require-role";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,6 @@ export function EmployerIntake({
 
 function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
   const router = useRouter();
-  const opportunityDraft = useOpportunityDraft();
   const config = useApi<{ transcription: boolean; matching: boolean }>(
     "/hiring/status",
   );
@@ -424,9 +424,24 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
             opportunity and express interest.
           </p>
           <Button
-            onClick={() => {
-              const id = opportunityDraft.stage(brief);
-              router.push(`/opportunities/new?draft=${encodeURIComponent(id)}`);
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError("");
+              try {
+                const saved = await createProjectDraft(
+                  projectDraftFromBrief(brief),
+                );
+                router.push(`/projects/drafts/${saved.id}`);
+              } catch (failure) {
+                setError(
+                  failure instanceof Error
+                    ? failure.message
+                    : "The project draft could not be saved.",
+                );
+              } finally {
+                setBusy(false);
+              }
             }}
           >
             Post an opportunity

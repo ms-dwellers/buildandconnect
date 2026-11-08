@@ -17,6 +17,11 @@ project activities on the Calgary map and list. Live requester voice conversatio
 at `/voice`, manual entry, explicit interruption, and the existing prefilled
 opportunity handoff are retained.
 
+Project commitment review and resumable requester drafts are also implemented:
+`/projects/new` leads to voice or manual entry, then one saved review/publishing
+form. Community requests have explicit acceptance review; opportunities retain
+mutual interest. Delivery confirmation and messaging are still not implemented.
+
 Start with a specific job description, not an inferred broad career goal. Keep
 exclusive community-request pickup and opportunity mutual interest separate.
 Three minutes is the planning budget, subject to confirmation by the event.

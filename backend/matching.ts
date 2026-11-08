@@ -259,6 +259,21 @@ export function scoreNearbyRequest(
   };
 }
 
+export function requestEligibility(
+  request: LocalRequest,
+  developer: Developer,
+) {
+  const reasons = eligibility(asMatchOpportunity(request), developer);
+  if (request.status !== "open" && request.claimedBy !== developer.id)
+    reasons.push("This request is no longer open");
+  if (!developer.location) reasons.push("Set your search area first");
+  else if (
+    haversineKm(developer.location, request) > developer.location.radiusKm
+  )
+    reasons.push("This request is outside your search radius");
+  return reasons;
+}
+
 export function rankNearbyRequests(
   requests: LocalRequest[],
   developer: Developer,

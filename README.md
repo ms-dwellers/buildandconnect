@@ -147,7 +147,11 @@ server-only provider keys; no opportunity is posted automatically.
 The [voice studio](docs/voice-studio.md) at `/voice` connects a private
 ElevenLabs interviewer to the microphone and displays its words over the aurora.
 A separate Gemini agent fills the project brief in the background. Requesters
-review the brief before requesting developer suggestions.
+review the saved project fields before explicitly publishing.
+
+Requesters start at `/projects/new`, talk or type, and review one saved project
+draft before explicitly publishing. Drafts can be resumed from the dashboard.
+See [project drafts](docs/project-drafts.md) for persistence and commitment rules.
 
 Developers can use `/career` to save a private target job, inspect requirements
 and their source quotes, and find relevant project activities on the Calgary map

@@ -2,7 +2,6 @@
 
 import {
   BriefcaseBusinessIcon,
-  CircleCheckIcon,
   CompassIcon,
   MapPinIcon,
   UserRoundPenIcon,
@@ -84,17 +83,6 @@ function Dashboard({
       )
     )
       await reload();
-  };
-  const accept = async (id: string) => {
-    if (
-      await run(
-        id,
-        `/requests/${id}/accept`,
-        { method: "POST" },
-        "Request accepted. The requester can see your name.",
-      )
-    )
-      await Promise.all([nearby.reload(), claimed.reload()]);
   };
   const release = async (id: string) => {
     if (
@@ -196,11 +184,11 @@ function Dashboard({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    render={<a href={`/map?focus=${request.id}`} />}
+                    render={<a href={`/requests/${request.id}`} />}
                     variant="ghost"
                     size="sm"
                   >
-                    View on map
+                    View request
                   </Button>
                   <ConfirmButton
                     label="Release"
@@ -276,11 +264,9 @@ function Dashboard({
                   </div>
                   <Button
                     size="sm"
-                    loading={pending === request.requestId}
-                    onClick={() => void accept(request.requestId)}
+                    render={<a href={`/requests/${request.requestId}`} />}
                   >
-                    <CircleCheckIcon aria-hidden="true" />
-                    Accept
+                    Review request
                   </Button>
                 </ItemCard>
               </li>

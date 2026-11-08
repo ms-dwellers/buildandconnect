@@ -62,13 +62,13 @@ try {
   assert.match(html, /Build &amp; Connect/);
   assert.match(html, /Build experience\./);
   assert.match(html, /Make a difference\./);
-  assert.match(html, /Post a request/);
+  assert.match(html, /Start a project/);
   assert.match(html, /Nearby map/);
   assert.match(html, /data-slot="button"/);
   assert.match(html, /data-slot="card"/);
   for (const route of [
     "/map",
-    "/requests/new",
+    "/projects/new",
     "/sign-up",
     "/sign-in",
     "/design-system",
@@ -100,7 +100,10 @@ try {
     "/dashboard",
     "/profile",
     "/requests/new",
+    "/projects/new",
     "/opportunities/new",
+    "/projects/drafts/smoke-test",
+    "/requests/smoke-test",
     "/hire",
   ]) {
     const page = await fetch(`${origin}${route}`);
@@ -111,6 +114,7 @@ try {
       `${route} must use the shared logo`,
     );
   }
+  assert.equal((await fetch(`${origin}/api/project-drafts`)).status, 401);
   const mapFeed = await fetch(`${origin}/api/map`);
   assert.ok([200, 503].includes(mapFeed.status), "Map feed must be public");
   assert.equal(mapFeed.headers.get("Cache-Control"), "no-store");

@@ -41,27 +41,40 @@ problems; developers build experience and working relationships.
 6. Inspect the project description, relevant activities, existing strengths, and
    opportunities to practice. Legacy projects without extracted activities say
    so rather than inventing work.
-7. Review the project through its existing detail/map flow before any commitment.
-   There is no new automatic pickup or interest action on the career screen.
+7. Review the project details before any commitment. Local requests open at
+   `/requests/:id`, with scope, estimated difficulty, support, eligibility, and
+   explicit acceptance confirmation. Opportunities use explicit interest, not
+   acceptance. Neither action runs automatically from a recommendation.
 8. Return later to the saved target, or edit it. Source changes re-run analysis;
    a failed analysis or concurrent edit does not silently replace it.
 
-## Requester journey retained
+## Requester journey
 
-1. Describe a project at `/voice`, either by live conversation or manual entry.
-2. Review the brief. Switching from voice cancels pending extraction updates.
-3. Request developer suggestions deliberately, then open the prefilled posting.
-4. Review all details and explicitly publish. A brief is never a public posting.
-5. Manage the published opportunity and mutual interest from the dashboard.
+1. Choose **Start a project** at `/projects/new`, then talk or write.
+2. Voice uses `/voice`; **Review project brief** ends the conversation, cancels
+   extraction, and saves the extracted project fields privately. Manual entry
+   creates the same kind of private draft without any microphone or AI request.
+3. Review and edit once at `/projects/drafts/:id`. Changes save automatically to
+   Convex; **Save and exit** waits for saving before returning to the dashboard.
+4. Resume saved drafts from the dashboard, including on another device. The UI
+   warns about unsaved changes and rejects stale saves rather than overwriting
+   another tab. Failed saving leaves the current fields intact for retry.
+5. **Publish opportunity** validates the saved draft and explicitly runs posting
+   analysis. Saving is never publishing. Failed analysis leaves the draft intact;
+   retries and simultaneous publication cannot create duplicate opportunities.
+6. Manage published opportunities, responses, and mutual interest from the
+   dashboard. A mutual connection is not a work assignment or delivery record.
 
 The shorter community-request form and its exclusive pickup remain available.
 Unifying these two posting journeys is a later product change, not part of the
-career-target release. The shared brief mapper serves both the existing browser
-handoff and the backend posting-draft endpoint.
+release. The existing `/hire` Gemini suggestion flow is retained and also hands
+its reviewed brief into a saved project draft. `/opportunities/new` redirects to
+the shared starting point. Drafts contain project fields, not recordings or
+transcripts; see [project drafts](project-drafts.md) for the persistence contract.
 
 ## Scope after this release
 
-Further simplify onboarding and requester entry, add resumable project drafts,
-and decide how both parties coordinate after connection. Delivery submissions,
+Further simplify onboarding and decide how both parties coordinate after
+connection. Delivery submissions,
 owner confirmation, and portfolio evidence need their own full lifecycle. Do not
 equate the existing close action with successful completion.

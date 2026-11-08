@@ -11,7 +11,7 @@ import { Card, CardPanel } from "@/components/ui/card";
 import type { SavedCareerTarget } from "@/lib/career";
 import { TargetEditor } from "./target-editor";
 import { CareerProjects } from "./career-projects";
-import { useCareerResource } from "./use-career-resource";
+import { useApi } from "@/lib/use-api";
 
 export function CareerPath() {
   return (
@@ -22,7 +22,7 @@ export function CareerPath() {
 }
 
 function Path() {
-  const target = useCareerResource<SavedCareerTarget | null>(
+  const target = useApi<SavedCareerTarget | null>(
     "/developers/me/career-target",
   );
   const [editing, setEditing] = useState(false);

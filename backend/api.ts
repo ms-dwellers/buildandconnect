@@ -30,6 +30,10 @@ import { createHiringRoutes } from "./hiring/routes";
 import { HiringProviderError } from "./hiring/providers";
 import { createCareerRoutes } from "./career/routes";
 import type { analyzeCareerTarget } from "./career/analysis";
+import {
+  opportunityFromDraft,
+  projectDraftContentSchema,
+} from "./project-drafts";
 
 export type ApiEnv = {
   Bindings: BackendEnv;
@@ -111,6 +115,100 @@ export function createApi(
   );
   app.route("/hiring", createHiringRoutes());
   app.route("/developers/me", createCareerRoutes(services.analyzeCareerTarget));
+  app.get("/project-drafts", async (c) =>
+    c.json(
+      await client(c).query(convex.data.projectDrafts, { secret: secret(c) }),
+    ),
+  );
+  app.get("/project-drafts/:id", async (c) =>
+    c.json(
+      await client(c).query(convex.data.getProjectDraft, {
+        secret: secret(c),
+        id: c.req.param("id"),
+      }),
+    ),
+  );
+  app.post("/project-drafts", async (c) => {
+    requireRole(c, "requester");
+    const input = z
+      .object({ id: z.uuid(), content: projectDraftContentSchema })
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await client(c).mutation(convex.data.saveProjectDraft, {
+        secret: secret(c),
+        ...input,
+        expectedUpdatedAt: 0,
+      }),
+      201,
+    );
+  });
+  app.put("/project-drafts/:id", async (c) => {
+    requireRole(c, "requester");
+    const input = z
+      .object({
+        content: projectDraftContentSchema,
+        expectedUpdatedAt: z.number().int().nonnegative(),
+      })
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await client(c).mutation(convex.data.saveProjectDraft, {
+        secret: secret(c),
+        id: c.req.param("id"),
+        ...input,
+      }),
+    );
+  });
+  app.delete("/project-drafts/:id", async (c) => {
+    const input = z
+      .object({ expectedUpdatedAt: z.number().int().nonnegative() })
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await client(c).mutation(convex.data.discardProjectDraft, {
+        secret: secret(c),
+        id: c.req.param("id"),
+        ...input,
+      }),
+    );
+  });
+  app.post("/project-drafts/:id/publish", async (c) => {
+    requireRole(c, "requester");
+    const input = z
+      .object({ expectedUpdatedAt: z.number().int().nonnegative() })
+      .strict()
+      .parse(await c.req.json());
+    const draft = await client(c).query(convex.data.getProjectDraft, {
+      secret: secret(c),
+      id: c.req.param("id"),
+    });
+    if (draft.publishedOpportunityId)
+      return c.json(
+        await client(c).query(convex.data.getOpportunity, {
+          secret: secret(c),
+          id: draft.publishedOpportunityId,
+        }),
+      );
+    if (draft.updatedAt !== input.expectedUpdatedAt)
+      throw new HTTPException(409, {
+        message:
+          "The saved draft changed. Reload and review it before publishing.",
+      });
+    const details = opportunityFromDraft(draft.content);
+    const result = await services.analyzeOpportunity(c.env.AI, details);
+    return c.json(
+      await client(c).mutation(convex.data.createOpportunity, {
+        secret: secret(c),
+        id: `draft-${draft.id}`,
+        details,
+        ...result,
+        draftId: draft.id,
+        draftUpdatedAt: draft.updatedAt,
+      }),
+      201,
+    );
+  });
   app.put("/me/role", async (c) => {
     const input = z
       .object({
@@ -301,6 +399,16 @@ export function createApi(
       }),
     ),
   );
+  app.get("/opportunities/:id/interests", async (c) =>
+    c.json(
+      await client(c).query(convex.data.connections, {
+        secret: secret(c),
+        ...pagination.parse(c.req.query()),
+        connectedOnly: false,
+        opportunityId: c.req.param("id"),
+      }),
+    ),
+  );
   app.post("/requests", async (c) => {
     requireRole(c, "requester");
     const details = requestSchema.parse(await c.req.json());
@@ -355,6 +463,14 @@ export function createApi(
   app.get("/requests/:id", async (c) =>
     c.json(
       await client(c).query(convex.data.getRequest, {
+        secret: secret(c),
+        id: c.req.param("id"),
+      }),
+    ),
+  );
+  app.get("/requests/:id/match", async (c) =>
+    c.json(
+      await client(c).query(convex.data.ownRequestMatch, {
         secret: secret(c),
         id: c.req.param("id"),
       }),

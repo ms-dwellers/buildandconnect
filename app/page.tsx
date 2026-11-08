@@ -58,11 +58,11 @@ export default function Home() {
                 <ArrowRightIcon aria-hidden="true" />
               </MapJourneyLink>
               <Button
-                render={<a href="/requests/new" />}
+                render={<a href="/projects/new" />}
                 variant="outline"
                 size="lg"
               >
-                Post a request
+                Start a project
               </Button>
             </div>
           </div>
@@ -98,11 +98,11 @@ export default function Home() {
               speak code to get started.
             </p>
             <Button
-              render={<a href="/requests/new" />}
+              render={<a href="/projects/new" />}
               variant="link"
               className="mt-5 px-0"
             >
-              Share a request
+              Start a project
               <ArrowUpRightIcon aria-hidden="true" />
             </Button>
           </article>

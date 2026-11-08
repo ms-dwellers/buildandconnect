@@ -1,6 +1,5 @@
 "use client";
 
-import type { Pin } from "@/components/MapPinPicker";
 import {
   ErrorAlert,
   LoadingBlock,
@@ -9,66 +8,14 @@ import {
 import { useApi } from "@/lib/use-api";
 import type { OpportunityRecord } from "@/lib/types";
 import { OpportunityForm } from "./opportunity-form";
-import { useState } from "react";
-import { useOpportunityDraft } from "@/lib/opportunity-draft-context";
-import { opportunityDraftFromBrief } from "@/lib/opportunity-draft";
 
-export function OpportunityScreen({
-  id,
-  defaultPin,
-  draftId,
-}: {
-  id?: string;
-  defaultPin?: Pin | null;
-  draftId?: string;
-}) {
+export function OpportunityScreen({ id }: { id: string }) {
   return (
     <RequireRole roles={["requester"]}>
-      {({ user }) =>
-        id ? (
-          <EditOpportunity id={id} userId={user.id} />
-        ) : (
-          <NewOpportunity
-            key={`${user.id}:${draftId ?? "new"}`}
-            defaultPin={defaultPin}
-            draftId={draftId}
-          />
-        )
-      }
-    </RequireRole>
-  );
-}
-
-function NewOpportunity({
-  defaultPin,
-  draftId,
-}: {
-  defaultPin?: Pin | null;
-  draftId?: string;
-}) {
-  const handoff = useOpportunityDraft();
-  const [brief] = useState(() => (draftId ? handoff.read(draftId) : undefined));
-  const [draft] = useState(() =>
-    brief ? opportunityDraftFromBrief(brief) : undefined,
-  );
-  const clear = () => {
-    if (draftId) handoff.clear(draftId);
-  };
-  return (
-    <div className="space-y-5">
-      {draftId && !draft && (
-        <ErrorAlert
-          title="Brief draft unavailable"
-          message="Return to your brief and choose Post an opportunity again, or fill in the form below."
-        />
+      {({ user }) => (
+        <EditOpportunity key={`${id}:${user.id}`} id={id} userId={user.id} />
       )}
-      <OpportunityForm
-        draft={draft}
-        defaultPin={defaultPin}
-        onSubmitted={clear}
-        onCancel={clear}
-      />
-    </div>
+    </RequireRole>
   );
 }
 

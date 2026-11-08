@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { createProjectDraft } from "@/lib/project-drafts";
+import { projectDraftFromBrief } from "@/backend/project-drafts";
 import {
   ArrowLeftIcon,
   ArrowUpIcon,
@@ -17,7 +20,6 @@ import {
 import { BrandLogo } from "@/components/brand-logo";
 import { RequireRole } from "@/components/app/require-role";
 import { BriefForm } from "@/components/hiring/brief-form";
-import { EmployerIntake } from "@/components/hiring/employer-intake";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +33,10 @@ export function VoiceStudio() {
 }
 
 function Studio() {
+  const router = useRouter();
+  const reviewId = useRef<string | null>(null);
+  const reviewPending = useRef(false);
+  const [reviewError, setReviewError] = useState("");
   const conversation = useVoiceConversation();
   const { phase, messages, brief, sound } = conversation;
   const [moving, setMoving] = useState(true);
@@ -69,13 +75,33 @@ function Studio() {
     conversation.reset();
     setDraft("");
     setReviewing(false);
+    reviewId.current = null;
+    setReviewError("");
   }
 
-  function review() {
+  async function review() {
+    if (reviewPending.current) return;
+    reviewPending.current = true;
     conversation.prepareReview();
     setReviewing(true);
-    briefPanel.current?.scrollIntoView({ behavior: "instant", block: "start" });
-    briefPanel.current?.focus({ preventScroll: true });
+    setReviewError("");
+    try {
+      reviewId.current ??= crypto.randomUUID();
+      const saved = await createProjectDraft(
+        projectDraftFromBrief(brief),
+        reviewId.current,
+      );
+      router.push(`/projects/drafts/${saved.id}`);
+    } catch (failure) {
+      setReviewError(
+        failure instanceof Error
+          ? failure.message
+          : "The private draft could not be saved. Try again.",
+      );
+      setReviewing(false);
+    } finally {
+      reviewPending.current = false;
+    }
   }
 
   return (
@@ -209,6 +235,11 @@ function Studio() {
                     : "Fill out manually"}
                 </Button>
               )}
+              {reviewError && (
+                <p role="alert" className="voice-device-note">
+                  {reviewError}
+                </p>
+              )}
             </div>
           </section>
           <section
@@ -221,7 +252,7 @@ function Studio() {
                 variant="ghost"
                 size="icon"
                 aria-label="Clear conversation"
-                disabled={!messages.length && phase === "ready"}
+                disabled={reviewing || (!messages.length && phase === "ready")}
                 onClick={reset}
               >
                 <RotateCcwIcon aria-hidden="true" />
@@ -309,8 +340,12 @@ function Studio() {
                 </Button>
               </div>
             )}
+            <p className="mb-4 text-xs text-muted-foreground">
+              Reviewing saves project details as a private draft. Audio and
+              transcripts are not saved in the draft.
+            </p>
             {reviewing ? (
-              <EmployerIntake initialBrief={brief} />
+              <p role="status">Saving your private project draft…</p>
             ) : (
               <BriefForm
                 key={JSON.stringify(brief)}

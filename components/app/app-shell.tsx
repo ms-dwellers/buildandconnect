@@ -30,7 +30,7 @@ const NAVIGATION: Record<Role | "unassigned" | "guest", NavItem[]> = {
     { href: "/profile", label: "Profile" },
   ],
   requester: [
-    { href: "/dashboard", label: "My requests" },
+    { href: "/dashboard", label: "My projects" },
     { href: "/map", label: "Map" },
   ],
 };

@@ -41,31 +41,33 @@ Earlier extracted facts are retained in the previous brief.
    preserved. There may be a short connection delay before listening resumes.
    The SDK does not expose a stop-current-reply operation, so no fake user
    utterance is sent to force an interruption.
-4. **Review project brief** ends the interview and opens the existing editable
-   review and matching flow. Suggestions require explicit review/consent. Nothing
-   is published and no invitations are sent automatically.
+4. **Review project brief** ends the interview, saves the extracted project fields
+   as a private draft, and opens the single editable review/publishing form.
+   Nothing is published and no invitations are sent automatically.
 
 **Fill out manually** skips the interview and opens the editable form immediately,
 even with an empty brief. You can also switch to manual entry during a conversation.
 Existing extracted fields are kept; pending AI updates are canceled so they cannot
 overwrite manual edits. Editing does not require microphone access or configured
-voice services. Developer suggestions still require Gemini and explicit consent.
+voice services. The saved review form requires an authenticated, configured
+Convex backend, but no voice or inference service until explicit publishing.
 
-After suggestions, **Post an opportunity** opens a prefilled opportunity form
-using the latest reviewed brief. Title, description, location, pay, hours, causes,
+The saved form is prefilled using the latest extracted brief. Title, description, location, pay, hours, causes,
 and timeline carry over. Technology preferences and communities served are kept
 in the description; preferences never become mandatory technology filters.
-You can edit everything before explicitly posting. This handoff stays in memory,
-is scoped to the signed-in requester, and uses only a random draft ID in the URL.
-Reloading loses the handoff; a normal new-opportunity link still opens a blank form.
+You can edit everything before explicitly posting. Drafts are scoped to the
+signed-in requester, use only a random ID in the URL, and survive reloads.
+The dashboard lists unfinished drafts. The legacy `/hire` matching flow keeps
+its explicit Gemini consent and now hands its results into the same saved form.
 
 Navigation remains above the full-screen voice panel. There is no preview label,
 timer, atmosphere control, waveform, voice-style bar, or separate microphone row.
 The transcript and project brief sit below the first viewport. Reduced-motion
 preferences stop the aurora; WebGL has a CSS fallback.
 
-Drafts and transcripts stay in page memory; reload or clear discards them. This
-flow does not write recordings or drafts to Convex or browser storage. ElevenLabs
+Before review, conversation and extracted fields stay in page memory; reload
+or clear discards them. Reviewing saves only project fields to Convex. Recordings
+and transcripts are never saved with the project draft. ElevenLabs
 receives live audio and conversation; OpenRouter/Gemini receives transcript and
 brief data. Provider retention policies apply. The supplied agent configuration
 disables audio recording and limits transcript retention to one day.

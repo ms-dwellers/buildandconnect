@@ -1,8 +1,6 @@
 "use client";
 
-import { CircleCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMutation } from "@/components/dashboards/parts";
 import type { CityJob } from "@/lib/calgary";
 import type { Session } from "@/lib/session";
 
@@ -16,7 +14,6 @@ export function ListingActions({
   session: Session;
   onChanged: () => void;
 }) {
-  const { pending, run } = useMutation();
   if (session.status === "loading") return null;
   if (session.status !== "member")
     return (
@@ -74,38 +71,13 @@ export function ListingActions({
     );
 
   if (session.role !== "developer") return null;
-  const claim = async (action: "accept" | "release") => {
-    if (
-      await run(
-        job.id,
-        `/requests/${job.id}/${action}`,
-        { method: "POST" },
-        action === "accept"
-          ? "Request accepted. It's on your dashboard."
-          : "Request released",
-      )
-    )
-      onChanged();
-  };
-  return job.viewerHasClaimed ? (
-    <Button
-      size="sm"
-      variant="outline"
-      className="w-full"
-      loading={pending === job.id}
-      onClick={() => void claim("release")}
-    >
-      Release request
-    </Button>
-  ) : (
+  return (
     <Button
       size="sm"
       className="w-full"
-      loading={pending === job.id}
-      onClick={() => void claim("accept")}
+      render={<a href={`/requests/${encodeURIComponent(job.id)}`} />}
     >
-      <CircleCheckIcon aria-hidden="true" />
-      Accept request
+      {job.viewerHasClaimed ? "View accepted request" : "Review request"}
     </Button>
   );
 }

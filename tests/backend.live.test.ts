@@ -6,6 +6,10 @@ import { build } from "esbuild";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { developer, opportunity } from "./fixtures/matching.ts";
 import { careerTarget } from "./fixtures/career.ts";
+import {
+  emptyProjectDraft,
+  type ProjectDraftRecord,
+} from "../backend/project-drafts.ts";
 import type {
   CareerRecommendations,
   SavedCareerTarget,
@@ -733,6 +737,92 @@ test(
       ).status,
       200,
     );
+
+    const draftId = crypto.randomUUID();
+    const draftContent = {
+      ...emptyProjectDraft(),
+      title: "Resumable project",
+      description: "AI_UNAVAILABLE draft analysis failure",
+      city: "Toronto",
+      kind: "volunteer",
+      minimumWeeklyHours: "4",
+    };
+    const draftResponse = await request(
+      "/project-drafts",
+      "POST",
+      { id: draftId, content: draftContent },
+      company.cookie,
+    );
+    assert.equal(draftResponse.status, 201, await draftResponse.clone().text());
+    let projectDraft = (await draftResponse.json()) as ProjectDraftRecord;
+    assert.equal(
+      (
+        await request(
+          `/project-drafts/${draftId}`,
+          "GET",
+          undefined,
+          otherCompany.cookie,
+        )
+      ).status,
+      404,
+    );
+    assert.equal(
+      (await request("/project-drafts", "GET", undefined, junior.cookie))
+        .status,
+      403,
+    );
+    assert.equal(
+      (
+        await request(
+          `/project-drafts/${draftId}/publish`,
+          "POST",
+          { expectedUpdatedAt: projectDraft.updatedAt },
+          company.cookie,
+        )
+      ).status,
+      503,
+    );
+    assert.deepEqual(
+      await (
+        await request(
+          `/project-drafts/${draftId}`,
+          "GET",
+          undefined,
+          company.cookie,
+        )
+      ).json(),
+      projectDraft,
+    );
+    const editResponse = await request(
+      `/project-drafts/${draftId}`,
+      "PUT",
+      {
+        expectedUpdatedAt: projectDraft.updatedAt,
+        content: {
+          ...draftContent,
+          description: "Build an accessible website for a community garden.",
+        },
+      },
+      company.cookie,
+    );
+    assert.equal(editResponse.status, 200);
+    projectDraft = (await editResponse.json()) as ProjectDraftRecord;
+    const publication = await request(
+      `/project-drafts/${draftId}/publish`,
+      "POST",
+      { expectedUpdatedAt: projectDraft.updatedAt },
+      company.cookie,
+    );
+    assert.equal(publication.status, 201, await publication.clone().text());
+    const published = (await publication.json()) as { id: string };
+    const duplicate = await request(
+      `/project-drafts/${draftId}/publish`,
+      "POST",
+      { expectedUpdatedAt: projectDraft.updatedAt },
+      company.cookie,
+    );
+    assert.equal(duplicate.status, 200);
+    assert.equal(((await duplicate.json()) as { id: string }).id, published.id);
 
     assert.equal(
       (await request("/auth/sign-out", "POST", {}, junior.cookie)).status,

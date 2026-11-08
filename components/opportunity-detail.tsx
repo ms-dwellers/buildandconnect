@@ -24,6 +24,8 @@ import {
   useMutation,
 } from "@/components/dashboards/parts";
 import { useApi, usePaged } from "@/lib/use-api";
+import { ProjectScope } from "@/components/project-scope";
+import { ConfirmButton } from "@/components/dashboards/parts";
 import type {
   DeveloperMatch,
   Interest,
@@ -42,7 +44,9 @@ const FACTORS: [keyof MatchScores, string][] = [
 export function OpportunityDetail({ id }: { id: string }) {
   return (
     <RequireRole>
-      {({ user, role }) => <Loaded id={id} userId={user.id} role={role} />}
+      {({ user, role }) => (
+        <Loaded key={`${user.id}:${id}`} id={id} userId={user.id} role={role} />
+      )}
     </RequireRole>
   );
 }
@@ -74,7 +78,9 @@ function Loaded({
     <div className="space-y-12">
       <Summary opportunity={job} owner={owner} />
       {owner && <Candidates opportunity={job} />}
-      {role === "developer" && <YourFit opportunity={job} />}
+      {role === "developer" && (
+        <YourFit opportunity={job} reloadOpportunity={opportunity.reload} />
+      )}
     </div>
   );
 }
@@ -175,17 +181,31 @@ function Summary({
             </div>
           )}
         </dl>
-        <p className="text-xs text-muted-foreground">
-          Requirements are estimated from the description. Review them before
-          acting on a match.
+        <p className="text-sm">
+          At least {opportunity.minimumWeeklyHours} hours/week ·{" "}
+          {opportunity.collaboration === "async"
+            ? "Mostly asynchronous"
+            : opportunity.collaboration === "sync"
+              ? "Live sessions"
+              : "Flexible collaboration"}
         </p>
+        {opportunity.essentialTechnologies.length > 0 && (
+          <p className="text-sm">
+            Required by the requester:{" "}
+            {opportunity.essentialTechnologies.join(", ")}
+          </p>
+        )}
+        <ProjectScope analysis={analysis} />
       </CardPanel>
     </Card>
   );
 }
 
 function useInterestFor(opportunityId: string) {
-  const interests = usePaged<Interest>("/interests", 100);
+  const interests = usePaged<Interest>(
+    `/opportunities/${encodeURIComponent(opportunityId)}/interests`,
+    100,
+  );
   const byDeveloper = useMemo(
     () =>
       new Map(
@@ -195,7 +215,7 @@ function useInterestFor(opportunityId: string) {
       ),
     [interests.items, opportunityId],
   );
-  return { byDeveloper, reload: interests.reload };
+  return { byDeveloper, reload: interests.reload, error: interests.error };
 }
 
 function Scores({ scores }: { scores: MatchScores }) {
@@ -244,6 +264,13 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
           : undefined
       }
     >
+      {interest.error && (
+        <ErrorAlert
+          title="Responses could not be loaded"
+          message={interest.error.message}
+          onRetry={() => void interest.reload()}
+        />
+      )}
       {opportunity.status === "closed" ? (
         <p className="text-sm text-muted-foreground">
           This opportunity is closed. Reopen it from your dashboard to see
@@ -280,19 +307,50 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
                         <Badge variant="info">Interested in this role</Badge>
                       )}
                     </div>
+                    {current?.connected && (
+                      <p className="text-sm">
+                        You are both interested. Agree on scope, timing, and
+                        support before starting; no work assignment or messaging
+                        is created automatically.
+                      </p>
+                    )}
+                    {interested && !current?.connected && (
+                      <p className="text-sm">
+                        Your interest is shared. Waiting for the developer’s
+                        response.
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {match.explanation}
                     </p>
                     <Scores scores={match.scores} />
                   </div>
-                  <Button
+                  <ConfirmButton
+                    confirmVariant={interested ? "destructive" : "default"}
                     variant={interested ? "outline" : "default"}
                     size="sm"
                     loading={pending === match.developerId}
-                    onClick={() => void toggle(match.developerId, !interested)}
-                  >
-                    {interested ? "Withdraw interest" : "I'm interested"}
-                  </Button>
+                    disabled={!!interest.error}
+                    label={
+                      interested ? "Withdraw interest" : "Express interest"
+                    }
+                    title={
+                      interested
+                        ? "Withdraw your interest?"
+                        : `Express interest in ${match.name}?`
+                    }
+                    description={
+                      interested
+                        ? "Any mutual connection with this developer will end."
+                        : "The developer can see your interest. This does not assign work or send an invitation outside the app."
+                    }
+                    confirmLabel={
+                      interested ? "Withdraw interest" : "Express interest"
+                    }
+                    onConfirm={() =>
+                      void toggle(match.developerId, !interested)
+                    }
+                  />
                 </ItemCard>
               </li>
             );
@@ -309,22 +367,26 @@ type OwnMatch = {
   status: "open" | "closed";
 };
 
-function YourFit({ opportunity }: { opportunity: OpportunityRecord }) {
+function YourFit({
+  opportunity,
+  reloadOpportunity,
+}: {
+  opportunity: OpportunityRecord;
+  reloadOpportunity: () => Promise<void>;
+}) {
   const match = useApi<OwnMatch>(`/opportunities/${opportunity.id}/match`);
   const interest = useInterestFor(opportunity.id);
-  const { pending, run } = useMutation();
+  const { pending, run, error } = useMutation();
   const mine = [...interest.byDeveloper.values()][0];
   const interested = mine?.developerInterested ?? false;
   const toggle = async (next: boolean) => {
-    if (
-      await run(
-        "interest",
-        `/opportunities/${opportunity.id}/interest`,
-        { method: "PUT", body: JSON.stringify({ interested: next }) },
-        next ? "Interest sent to the requester" : "Interest withdrawn",
-      )
-    )
-      await interest.reload();
+    await run(
+      "interest",
+      `/opportunities/${opportunity.id}/interest`,
+      { method: "PUT", body: JSON.stringify({ interested: next }) },
+      next ? "Interest sent to the requester" : "Interest withdrawn",
+    );
+    await Promise.all([interest.reload(), match.reload(), reloadOpportunity()]);
   };
   if (match.error?.status === 404)
     return (
@@ -351,6 +413,13 @@ function YourFit({ opportunity }: { opportunity: OpportunityRecord }) {
     <Section title="Your fit">
       <Card>
         <CardPanel className="space-y-4 p-6">
+          {interest.error && (
+            <ErrorAlert
+              title="Your response could not be loaded"
+              message={interest.error.message}
+              onRetry={() => void interest.reload()}
+            />
+          )}
           {fit.data ? (
             <>
               <div className="flex flex-wrap items-center gap-2">
@@ -379,16 +448,55 @@ function YourFit({ opportunity }: { opportunity: OpportunityRecord }) {
               </ul>
             </div>
           )}
+          {error && (
+            <p role="alert" className="text-sm">
+              {error}
+            </p>
+          )}
+          {mine?.connected && (
+            <p className="text-sm">
+              You and the requester are interested. Agree on scope, timing,
+              compensation, and support before starting; this is not a work
+              assignment or delivery confirmation. Messaging is not available in
+              the app yet.
+            </p>
+          )}
+          {interested && !mine?.connected && (
+            <p role="status" className="text-sm">
+              Your interest has been shared. You are not assigned to this
+              project; wait for the requester’s response.
+            </p>
+          )}
+          {fit.status === "closed" && (
+            <p className="text-sm">
+              This opportunity is closed to new interest.
+            </p>
+          )}
           {(fit.data || interested) && (
             <div className="flex flex-wrap items-center gap-3 border-t pt-4">
-              <Button
+              <ConfirmButton
+                confirmVariant={interested ? "destructive" : "default"}
                 variant={interested ? "outline" : "default"}
                 loading={pending === "interest"}
-                disabled={!interested && fit.status !== "open"}
-                onClick={() => void toggle(!interested)}
-              >
-                {interested ? "Withdraw interest" : "I'm interested"}
-              </Button>
+                disabled={
+                  !!interest.error || (!interested && fit.status !== "open")
+                }
+                label={interested ? "Withdraw interest" : "Express interest"}
+                title={
+                  interested
+                    ? "Withdraw your interest?"
+                    : "Express interest in this opportunity?"
+                }
+                description={
+                  interested
+                    ? "The requester will no longer see you as interested. Any mutual connection will end."
+                    : "The requester will see your interest. You are not accepting a work assignment; a connection forms only if they are interested too."
+                }
+                confirmLabel={
+                  interested ? "Withdraw interest" : "Express interest"
+                }
+                onConfirm={() => void toggle(!interested)}
+              />
               <p className="text-xs text-muted-foreground">
                 {interested
                   ? "The requester can see you're interested."

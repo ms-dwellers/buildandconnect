@@ -39,9 +39,6 @@ export function RequesterOpportunities() {
 
   return (
     <div className="space-y-12">
-      <Button render={<a href="/voice" />}>
-        Describe a project with voice
-      </Button>
       <Section
         title="Your opportunities"
         description="Open opportunities with a map pin appear on the Calgary map."
@@ -56,9 +53,9 @@ export function RequesterOpportunities() {
               title="No opportunities yet"
               description="Post a paid or volunteer project to see developers ranked by growth fit."
               action={
-                <Button render={<a href="/opportunities/new" />}>
+                <Button render={<a href="/projects/new" />}>
                   <PlusIcon aria-hidden="true" />
-                  Post an opportunity
+                  Start a project
                 </Button>
               }
             />
@@ -176,6 +173,12 @@ export function InterestSection({
                       ? interest.developerName
                       : interest.requesterName}
                   </p>
+                  {interest.connected && (
+                    <p className="text-sm">
+                      You are both interested. Open the project to review scope
+                      and next steps.
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {interest.connected ? (

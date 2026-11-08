@@ -12,20 +12,37 @@ export function useApi<T>(path: string | null) {
   const [error, setError] = useState<ApiFailure | null>(null);
   const [loading, setLoading] = useState(path !== null);
   const request = useRef(0);
+  const controller = useRef<AbortController | null>(null);
   const reload = useCallback(async () => {
     if (path === null) return;
+    controller.current?.abort();
+    const active = new AbortController();
+    controller.current = active;
     const id = ++request.current;
     setLoading(true);
-    const result = await api<T>(path);
-    if (id !== request.current) return;
-    setLoading(false);
-    if (result.ok) {
-      setData(result.data);
-      setError(null);
-    } else setError({ status: result.status, message: result.error });
+    try {
+      const result = await api<T>(path, { signal: active.signal });
+      if (id !== request.current || active.signal.aborted) return;
+      if (result.ok) {
+        setData(result.data);
+        setError(null);
+      } else setError({ status: result.status, message: result.error });
+    } catch {
+      if (id === request.current && !active.signal.aborted)
+        setError({
+          status: 0,
+          message: "Check your connection and try again.",
+        });
+    } finally {
+      if (id === request.current && !active.signal.aborted) setLoading(false);
+    }
   }, [path]);
   useEffect(() => {
     void reload();
+    return () => {
+      controller.current?.abort();
+      request.current++;
+    };
   }, [reload]);
   return { data, error, loading, reload };
 }
@@ -37,32 +54,50 @@ export function usePaged<T>(path: string | null, limit = 20) {
   const [error, setError] = useState<ApiFailure | null>(null);
   const [loading, setLoading] = useState(path !== null);
   const request = useRef(0);
+  const controller = useRef<AbortController | null>(null);
   const fetchPage = useCallback(
     async (after: string, append: boolean) => {
       if (path === null) return;
+      controller.current?.abort();
+      const active = new AbortController();
+      controller.current = active;
       const id = ++request.current;
       setLoading(true);
       const separator = path.includes("?") ? "&" : "?";
-      const result = await api<Page<T>>(
-        `${path}${separator}limit=${limit}&after=${encodeURIComponent(after)}`,
-      );
-      if (id !== request.current) return;
-      setLoading(false);
-      if (!result.ok) {
-        setError({ status: result.status, message: result.error });
-        return;
+      try {
+        const result = await api<Page<T>>(
+          `${path}${separator}limit=${limit}&after=${encodeURIComponent(after)}`,
+          { signal: active.signal },
+        );
+        if (id !== request.current || active.signal.aborted) return;
+        if (!result.ok) {
+          setError({ status: result.status, message: result.error });
+          return;
+        }
+        setError(null);
+        setItems((current) =>
+          append ? [...current, ...result.data.data] : result.data.data,
+        );
+        setCursor(result.data.nextCursor);
+      } catch {
+        if (id === request.current && !active.signal.aborted)
+          setError({
+            status: 0,
+            message: "Check your connection and try again.",
+          });
+      } finally {
+        if (id === request.current && !active.signal.aborted) setLoading(false);
       }
-      setError(null);
-      setItems((current) =>
-        append ? [...current, ...result.data.data] : result.data.data,
-      );
-      setCursor(result.data.nextCursor);
     },
     [path, limit],
   );
   const reload = useCallback(() => fetchPage("", false), [fetchPage]);
   useEffect(() => {
     void reload();
+    return () => {
+      controller.current?.abort();
+      request.current++;
+    };
   }, [reload]);
   return {
     items,

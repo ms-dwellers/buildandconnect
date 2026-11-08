@@ -4,7 +4,6 @@ import "../components/map/map.css";
 import { MapJourneyProvider } from "@/components/map/map-journey";
 import { ToastProvider } from "@/components/ui/toast";
 import { SessionProvider } from "@/lib/session";
-import { OpportunityDraftProvider } from "@/lib/opportunity-draft-context";
 
 export const metadata: Metadata = {
   title: "Build & Connect",
@@ -23,11 +22,9 @@ export default function RootLayout({
       <body className="relative">
         <div className="relative isolate flex min-h-svh flex-col">
           <SessionProvider>
-            <OpportunityDraftProvider>
-              <ToastProvider>
-                <MapJourneyProvider>{children}</MapJourneyProvider>
-              </ToastProvider>
-            </OpportunityDraftProvider>
+            <ToastProvider>
+              <MapJourneyProvider>{children}</MapJourneyProvider>
+            </ToastProvider>
           </SessionProvider>
         </div>
       </body>

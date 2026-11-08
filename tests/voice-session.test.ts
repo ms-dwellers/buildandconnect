@@ -25,7 +25,7 @@ test("voice studio uses its permanent route and redirects the old WIP page", () 
   );
   assert.doesNotMatch(page, /local-only|prototype|wip/i);
   assert.match(legacy, /permanentRedirect\("\/voice"\)/);
-  assert.match(dashboard, /href="\/voice"/);
+  assert.match(dashboard, /href="\/projects\/new"/);
   assert.doesNotMatch(dashboard, /wip-voice-ai/);
 });
 
@@ -83,7 +83,7 @@ test("navigation stays above the unframed voice panel, with the transcript below
     /Enable microphone|Simulated conversation|speechSynthesis|replyFor|Local demo|voice-stage-top|Waveform|voice-timer/,
   );
   assert.match(source, /useVoiceConversation/);
-  assert.match(source, /initialBrief=\{brief\}/);
+  assert.match(source, /projectDraftFromBrief\(brief\)/);
   assert.match(source, /<RollingText/);
   assert.match(source, /aria-atomic="true"/);
   assert.match(

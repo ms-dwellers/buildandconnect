@@ -59,8 +59,9 @@ browser/backend mapper carries location into the editable city field and keeps
 work arrangements, technology preferences, and communities in the description.
 Budget and timeline become editable posting fields; no coordinates are inferred.
 Overlong fields are flagged rather than truncated. The response always requires
-confirmation and identifies the missing map pin. The existing frontend handoff
-uses the same mapper and stays in account-scoped memory; neither path publishes.
+confirmation and identifies the missing map pin. The frontend uses the same
+mapper to create an account-owned saved project draft; neither preparation path
+publishes anything. Only an explicit publishing action does so.
 
 The app holds audio only in memory while transcribing and does not store it in
 Convex, R2 or logs. ElevenLabs receives the audio, while OpenRouter and its model
