@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowUpRightIcon,
@@ -13,6 +20,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+  ToggleGroupSeparator,
+} from "@/components/ui/toggle-group";
 import { AppHeader } from "@/components/app/app-shell";
 import { ErrorAlert } from "@/components/app/require-role";
 import {
@@ -320,35 +332,39 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
             placing={placing}
             onPick={pickLocation}
             filters={
-              <div
-                role="group"
+              <ToggleGroup
+                variant="outline"
+                size="sm"
                 aria-label="Filter projects by type"
-                className="flex flex-wrap gap-2"
+                value={filter === "all" ? [] : [filter]}
+                onValueChange={(values) => {
+                  setFilter(
+                    FILTERS.find(({ value }) => value === values[0])?.value ??
+                      "all",
+                  );
+                  setSelectedId(null);
+                }}
               >
-                {FILTERS.map(({ value, label, marker, markerClass }) => (
-                  <Button
-                    key={value}
-                    size="sm"
-                    variant="outline"
-                    className="min-h-11 bg-card aria-pressed:border-primary aria-pressed:bg-secondary"
-                    aria-pressed={filter === value}
-                    onClick={() => {
-                      setFilter((current) =>
-                        current === value ? "all" : value,
-                      );
-                      setSelectedId(null);
-                    }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`map-key ${markerClass}`}
+                {FILTERS.map(({ value, label, marker, markerClass }, index) => (
+                  <Fragment key={value}>
+                    {index > 0 && <ToggleGroupSeparator />}
+                    <ToggleGroupItem
+                      value={value}
+                      className="min-h-11 bg-card text-xs data-pressed:border-primary data-pressed:bg-secondary data-pressed:text-secondary-foreground sm:text-sm"
                     >
-                      {marker}
-                    </span>
-                    {label}
-                  </Button>
+                      <span
+                        aria-hidden="true"
+                        className="hidden sm:inline-flex"
+                      >
+                        <span className={`map-key ${markerClass}`}>
+                          {marker}
+                        </span>
+                      </span>
+                      {label}
+                    </ToggleGroupItem>
+                  </Fragment>
                 ))}
-              </div>
+              </ToggleGroup>
             }
             renderActions={(job) => (
               <ListingActions
