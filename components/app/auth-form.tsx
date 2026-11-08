@@ -130,8 +130,8 @@ export function AuthForm({
                 />
                 <Button
                   variant="ghost"
-                  size="icon-sm"
-                  className="absolute end-1 top-0.5"
+                  size="icon-xs"
+                  className="absolute end-1 top-1/2 -translate-y-1/2"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   aria-pressed={showPassword}
                   onClick={() => setShowPassword((value) => !value)}
