@@ -8,6 +8,9 @@ enum Theme {
   static let muted = Color(red: 0.275, green: 0.373, blue: 0.329)
   static let wheat = Color(red: 0.965, green: 0.875, blue: 0.702)
   static let coral = Color(red: 0.922, green: 0.341, blue: 0.341)
+  static let teal = Color(red: 0.561, green: 0.702, blue: 0.675)
+  static let apricot = Color(red: 0.941, green: 0.639, blue: 0.271)
+  static let emerald = Color(red: 0.118, green: 0.388, blue: 0.282)
   static let error = Color(red: 0.620, green: 0.118, blue: 0.118)
   static let edge = Color(red: 0.047, green: 0.192, blue: 0.165)
   static func title(_ size: CGFloat = 32) -> Font {
@@ -25,12 +28,12 @@ struct RaisedButtonStyle: ButtonStyle {
   func makeBody(configuration: Configuration) -> some View {
     configuration.label
       .font(Theme.body().weight(.semibold))
-      .frame(maxWidth: .infinity, minHeight: 48)
-      .padding(.horizontal, 16)
+      .frame(maxWidth: .infinity, minHeight: 54)
+      .padding(.horizontal, 20)
       .foregroundStyle(Theme.canvas)
-      .background(Theme.pine, in: RoundedRectangle(cornerRadius: 12))
-      .shadow(color: Theme.edge, radius: 0, y: configuration.isPressed && enabled ? 0 : 3)
-      .offset(y: configuration.isPressed && enabled ? 3 : 0)
+      .background(Theme.pine, in: RoundedRectangle(cornerRadius: 18))
+      .shadow(color: Theme.edge, radius: 0, y: configuration.isPressed && enabled ? 0 : 2)
+      .offset(y: configuration.isPressed && enabled ? 2 : 0)
       .opacity(enabled ? 1 : 0.5)
       .animation(reduceMotion ? nil : .easeOut(duration: 0.1), value: configuration.isPressed)
   }
@@ -38,20 +41,30 @@ struct RaisedButtonStyle: ButtonStyle {
 
 extension View {
   func paperCard() -> some View {
-    self.padding(18).frame(maxWidth: .infinity, alignment: .leading)
-      .background(Theme.card, in: RoundedRectangle(cornerRadius: 16))
-      .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.pine.opacity(0.12)))
-      .shadow(color: Theme.pine.opacity(0.05), radius: 2, y: 2)
+    self.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+      .background(Theme.card, in: RoundedRectangle(cornerRadius: 24))
+      .overlay(RoundedRectangle(cornerRadius: 24).stroke(Theme.pine.opacity(0.08)))
+      .shadow(color: Theme.pine.opacity(0.045), radius: 8, y: 4)
   }
   func pageBackground() -> some View {
     self.scrollContentBackground(.hidden).scrollDismissesKeyboard(.interactively).background(
       Theme.canvas)
   }
-  @ViewBuilder func mapControlSurface() -> some View {
-    if #available(iOS 26, *) {
-      self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+  func mapControlSurface(cornerRadius: CGFloat = 24) -> some View {
+    modifier(LiquidSurface(cornerRadius: cornerRadius))
+  }
+}
+
+private struct LiquidSurface: ViewModifier {
+  let cornerRadius: CGFloat
+  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+  @ViewBuilder func body(content: Content) -> some View {
+    if reduceTransparency {
+      content.background(Theme.card, in: RoundedRectangle(cornerRadius: cornerRadius))
+    } else if #available(iOS 26, *) {
+      content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
     } else {
-      self.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+      content.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
     }
   }
 }
@@ -59,8 +72,11 @@ extension View {
 struct StatusBadge: View {
   let text: String
   var body: some View {
-    Text(text.capitalized).font(Theme.metadata).padding(.horizontal, 9).padding(.vertical, 6)
-      .foregroundStyle(Theme.pine).background(Theme.mint, in: RoundedRectangle(cornerRadius: 5))
+    Text(text.capitalized).font(Theme.metadata).padding(.horizontal, 10).padding(.vertical, 7)
+      .foregroundStyle(Theme.pine)
+      .background(
+        text.lowercased() == "claimed" ? Theme.wheat : Theme.mint.opacity(0.65),
+        in: RoundedRectangle(cornerRadius: 8))
   }
 }
 

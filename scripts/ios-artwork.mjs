@@ -4,6 +4,42 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { CommunityGarden } from "../components/landing/community-garden.tsx";
 
+// These asset sets are generated from the canonical web artwork. Do not hand-edit them.
+for (const [name, source] of [
+  ["BrandMark", "public/brand/campfire-clasped-hands.svg"],
+  ...[1, 2, 3, 4].map((i) => [`HeroTree${i}`, `public/sprites/tree-${i}.svg`]),
+  ...[1, 2, 3].map((i) => [`HeroCloud${i}`, `public/sprites/cloud-${i}.svg`]),
+  ["HeroGround1", "public/sprites/ground-1.svg"],
+  ["HeroFlower2", "public/sprites/flower-2.svg"],
+  ["HeroGrass1", "public/sprites/grass-1.svg"],
+]) {
+  const directory = `ios/Resources/Assets.xcassets/${name}.imageset`;
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(
+    `${directory}/Contents.json`,
+    JSON.stringify(
+      {
+        images: [{ filename: `${name}.png`, idiom: "universal" }],
+        info: { author: "xcode", version: 1 },
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  const result = spawnSync(
+    "resvg",
+    [
+      source,
+      `${directory}/${name}.png`,
+      "--width",
+      name === "BrandMark" ? "240" : "700",
+    ],
+    { stdio: "inherit" },
+  );
+  if (result.error || result.status !== 0)
+    throw new Error(`Could not render ${name}; install resvg.`);
+}
+
 const css = readFileSync("app/globals.css", "utf8");
 const root = css.slice(css.indexOf(":root {"), css.indexOf(".voice-studio"));
 const tokens = Object.fromEntries(
