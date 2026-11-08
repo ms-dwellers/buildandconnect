@@ -315,10 +315,6 @@ export function useCalgaryMap({
             new sdk.NavigationControl({ visualizePitch: true }),
             "bottom-right",
           );
-          instance.addControl(
-            new sdk.ScaleControl({ unit: "metric", maxWidth: 110 }),
-            "bottom-left",
-          );
           observer = new ResizeObserver(() => {
             instance.resize();
             if (loaded && !broken && overviewActive.current)
