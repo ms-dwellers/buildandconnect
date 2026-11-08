@@ -7,6 +7,7 @@ struct StartProjectView: View {
   @State private var action = ActionState()
   @State private var draftID = UUID().uuidString.lowercased()
   @State private var createdID: String?
+  @State private var voice = false
   var body: some View {
     Group {
       if let createdID {
@@ -28,6 +29,15 @@ struct StartProjectView: View {
                 .buttonStyle(AppButtonStyle.primary).buttonLoading(action.busy)
                 .accessibilityIdentifier("project.createDraft")
             }.paperCard()
+            VStack(alignment: .leading, spacing: 16) {
+              Text("Talk it through").font(Theme.title(24))
+              Text(
+                "Describe your idea out loud, then review and save a private draft. Nothing is published automatically."
+              )
+              Button("Start voice conversation") { voice = true }
+                .buttonStyle(AppButtonStyle()).disabled(action.busy)
+                .accessibilityIdentifier("project.startVoice")
+            }.paperCard()
             NavigationLink("Post a short local volunteer request instead", value: Route.newRequest)
               .buttonStyle(AppButtonStyle(variant: .ghost, fullWidth: true))
             if let error = action.error { FailureView(error: error) }
@@ -35,6 +45,13 @@ struct StartProjectView: View {
         }.pageBackground()
       }
     }.appNavigationTitle(createdID == nil ? "Start project" : "Project draft")
+      .sheet(isPresented: $voice) {
+        ProjectVoiceView { id in
+          createdID = id
+          voice = false
+          app.changed()
+        }
+      }
       .toolbar {
         if createdID == nil {
           AppToolbarItem(placement: .topBarLeading) {

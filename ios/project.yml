@@ -11,6 +11,9 @@ configFiles:
   Debug: Configuration.xcconfig
   Release: Configuration.xcconfig
 packages:
+  ElevenLabs:
+    url: https://github.com/elevenlabs/elevenlabs-swift-sdk.git
+    exactVersion: 3.4.0
   MapboxMaps:
     url: https://github.com/mapbox/mapbox-maps-ios.git
     exactVersion: 11.34.2
@@ -46,7 +49,7 @@ targets:
         APIBaseURL: $(API_BASE_URL)
         MBXAccessToken: $(MAPBOX_PUBLIC_TOKEN)
         NSLocationWhenInUseUsageDescription: Use your location to choose a project area. You can always place a pin manually.
-        NSMicrophoneUsageDescription: Animate the experimental voice studio using sound levels processed only on this device.
+        NSMicrophoneUsageDescription: Talk through your project with the voice assistant. Audio is sent to ElevenLabs only when you start a conversation.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         UIAppFonts:
@@ -60,6 +63,7 @@ targets:
           - UIInterfaceOrientationPortrait
         UIUserInterfaceStyle: Light
     dependencies:
+      - package: ElevenLabs
       - package: MapboxMaps
     settings:
       base:

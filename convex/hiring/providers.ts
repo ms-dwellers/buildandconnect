@@ -162,6 +162,53 @@ export async function signVoiceConversation(
   request: typeof fetch = fetch,
   signal?: AbortSignal,
 ) {
+  return voiceCredential(
+    env,
+    "get-signed-url",
+    (value) => {
+      const result = z
+        .object({ signed_url: z.string().max(4000).url() })
+        .parse(value);
+      const url = new URL(result.signed_url);
+      if (
+        url.protocol !== "wss:" ||
+        url.hostname !== "api.elevenlabs.io" ||
+        url.pathname !== "/v1/convai/conversation"
+      )
+        throw new Error("Invalid voice connection URL");
+      return { signedUrl: result.signed_url };
+    },
+    request,
+    signal,
+  );
+}
+
+export async function nativeVoiceToken(
+  env: HiringEnv,
+  request: typeof fetch = fetch,
+  signal?: AbortSignal,
+) {
+  return voiceCredential(
+    env,
+    "token",
+    (value) => {
+      const result = z
+        .object({ token: z.string().min(1).max(16000) })
+        .parse(value);
+      return { token: result.token };
+    },
+    request,
+    signal,
+  );
+}
+
+async function voiceCredential<T>(
+  env: HiringEnv,
+  endpoint: "token" | "get-signed-url",
+  parse: (value: unknown) => T,
+  request: typeof fetch,
+  signal?: AbortSignal,
+): Promise<T> {
   if (!env.ELEVENLABS_API_KEY || !env.ELEVENLABS_AGENT_ID)
     throw new HiringProviderError(
       "The voice agent is not configured yet.",
@@ -171,7 +218,7 @@ export async function signVoiceConversation(
     throw new HiringProviderError("Configure a valid ElevenLabs agent.", 503);
   try {
     const response = await request(
-      `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${env.ELEVENLABS_AGENT_ID}`,
+      `https://api.elevenlabs.io/v1/convai/conversation/${endpoint}?agent_id=${env.ELEVENLABS_AGENT_ID}`,
       {
         headers: {
           "xi-api-key": env.ELEVENLABS_API_KEY,
@@ -190,17 +237,7 @@ export async function signVoiceConversation(
         response.status === 429 ? 429 : 502,
       );
     }
-    const result = z
-      .object({ signed_url: z.string().max(4000).url() })
-      .parse(await response.json());
-    const url = new URL(result.signed_url);
-    if (
-      url.protocol !== "wss:" ||
-      url.hostname !== "api.elevenlabs.io" ||
-      url.pathname !== "/v1/convai/conversation"
-    )
-      throw new Error("Invalid voice connection URL");
-    return { signedUrl: result.signed_url };
+    return parse(await response.json());
   } catch (error) {
     if (error instanceof HiringProviderError) throw error;
     throw new HiringProviderError(

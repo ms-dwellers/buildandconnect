@@ -105,6 +105,16 @@ normal app. This is a manual visual preview, not a test runner.
 
 ## Connected pathways
 
+Start a project also offers a live ElevenLabs conversation. Native clients request
+a short-lived WebRTC token from the requester-only `/api/hiring/native-voice-session`
+route; provider API keys remain in Convex. Configure `ELEVENLABS_API_KEY` and
+`ELEVENLABS_AGENT_ID` there for voice, and `OPENROUTER_API_KEY` for brief summaries.
+The existing web signed-URL route is unchanged. Microphone permission is requested
+only after an explicit start and a provider availability check. Leaving the screen
+or backgrounding stops audio. Transcripts remain in memory until the user chooses
+to summarize or save; a transcript-only fallback skips AI summarization. Reviewed
+briefs become ordinary private drafts and still require explicit publication.
+
 Requester project entry uses private Convex drafts. Incomplete fields autosave
 after a short pause; Back and Save and exit wait for the latest save. A revision
 conflict stops autosaving and requires an explicit reload or leaving without the

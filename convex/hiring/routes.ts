@@ -12,6 +12,7 @@ import {
   HiringProviderError,
   transcribeAudio,
   signVoiceConversation,
+  nativeVoiceToken,
 } from "./providers.ts";
 import {
   confirmedBriefSchema,
@@ -147,6 +148,9 @@ export function createHiringRoutes(
     return c.json(
       await services.signVoiceConversation(c.env, fetch, c.req.raw.signal),
     );
+  });
+  routes.post("/native-voice-session", async (c) => {
+    return c.json(await nativeVoiceToken(c.env, fetch, c.req.raw.signal));
   });
   routes.post("/extract", async (c) => {
     const { messages, brief } = extractionRequestSchema.parse(
