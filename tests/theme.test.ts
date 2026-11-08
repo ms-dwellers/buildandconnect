@@ -89,6 +89,8 @@ test("theme text pairings meet WCAG AA normal-text contrast", () => {
     ["var(--muted-foreground)", "var(--background)"],
     ["var(--muted-foreground)", "var(--card)"],
     ["var(--card-foreground)", "var(--card)"],
+    ["var(--card-foreground)", "var(--dashboard-paper)"],
+    ["var(--muted-foreground)", "var(--dashboard-paper)"],
     ["var(--primary-foreground)", "var(--primary)"],
     ["var(--primary-foreground)", "var(--button-primary-hover)"],
     ["var(--secondary-foreground)", "var(--secondary)"],
@@ -114,6 +116,7 @@ test("focus and input tokens remain visible against light surfaces", () => {
     "var(--background)",
     "var(--card)",
     "var(--secondary)",
+    "var(--dashboard-paper)",
   ]) {
     for (const foreground of ["var(--ring)", "var(--input)"]) {
       const ratio = contrast(foreground, background);

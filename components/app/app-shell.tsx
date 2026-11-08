@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/session";
 import type { Role } from "@/lib/types";
 import { withNext } from "@/lib/navigation";
+import { DashboardGarden } from "@/components/dashboards/dashboard-garden";
 
 type NavItem = { href: string; label: string };
 
@@ -26,8 +27,8 @@ const NAVIGATION: Record<Role | "unassigned" | "guest", NavItem[]> = {
     { href: "/map", label: "Map" },
   ],
   developer: [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/career", label: "Career path" },
+    { href: "/dashboard", label: "Home" },
+    { href: "/career", label: "Find projects" },
     { href: "/map", label: "Map" },
     { href: "/profile", label: "Profile" },
   ],
@@ -177,15 +178,22 @@ export function AppShell({
   actions,
   children,
   width = "default",
+  variant = "default",
 }: {
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
   width?: "narrow" | "default";
+  variant?: "default" | "dashboard";
 }) {
   return (
-    <div className="flex min-h-svh flex-col bg-background">
+    <div
+      className={cn(
+        "flex min-h-svh flex-col bg-background",
+        variant === "dashboard" && "dashboard-surface",
+      )}
+    >
       <a href="#main-content" className="landing-skip-link">
         Skip to content
       </a>
@@ -195,21 +203,54 @@ export function AppShell({
         tabIndex={-1}
         className={cn(
           "mx-auto w-full flex-1 px-5 py-10 outline-none sm:px-8 sm:py-12",
-          width === "narrow" ? "max-w-2xl" : "max-w-5xl",
+          width === "narrow"
+            ? "max-w-2xl"
+            : variant === "dashboard"
+              ? "max-w-6xl"
+              : "max-w-5xl",
         )}
       >
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl space-y-2">
-            <h1 className="font-display text-4xl leading-tight tracking-tight">
+        <div
+          className={cn(
+            "mb-8 flex justify-between gap-4",
+            variant === "dashboard"
+              ? "items-center rounded-3xl border border-primary/15 bg-secondary px-6 pt-7 pb-8 sm:px-9 sm:pt-9"
+              : "flex-wrap items-end",
+          )}
+        >
+          <div
+            className={cn(
+              "max-w-2xl space-y-2",
+              variant === "dashboard" && "min-w-0 space-y-4",
+            )}
+          >
+            <h1
+              className={cn(
+                "font-display text-4xl leading-tight tracking-tight",
+                variant === "dashboard" && "max-w-lg text-balance sm:text-5xl",
+              )}
+            >
               {title}
             </h1>
             {description && (
-              <p className="text-sm leading-6 text-muted-foreground">
+              <p
+                className={cn(
+                  "text-sm leading-6 text-muted-foreground",
+                  variant === "dashboard" && "max-w-md text-base",
+                )}
+              >
                 {description}
               </p>
             )}
+            {variant === "dashboard" && actions && (
+              <div className="pt-2">{actions}</div>
+            )}
           </div>
-          {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+          {variant === "dashboard" ? (
+            <DashboardGarden />
+          ) : (
+            actions && <div className="flex flex-wrap gap-2">{actions}</div>
+          )}
         </div>
         {children}
       </main>

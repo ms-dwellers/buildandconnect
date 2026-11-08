@@ -6,8 +6,11 @@ import { ErrorAlert } from "@/components/app/require-role";
 import { useApi } from "@/lib/use-api";
 import type { ProjectDraftRecord } from "@/backend/project-drafts";
 
-export function DraftList() {
-  const drafts = useApi<ProjectDraftRecord[]>("/project-drafts");
+export function DraftList({
+  drafts,
+}: {
+  drafts: ReturnType<typeof useApi<ProjectDraftRecord[]>>;
+}) {
   if (drafts.error)
     return (
       <ErrorAlert
@@ -19,16 +22,16 @@ export function DraftList() {
   if (!drafts.data?.length) return null;
   return (
     <section className="space-y-4" aria-labelledby="drafts-heading">
-      <h2 id="drafts-heading" className="text-lg font-semibold">
-        Saved project drafts
+      <h2 id="drafts-heading" className="text-2xl font-semibold tracking-tight">
+        Saved drafts
       </h2>
-      <ul className="space-y-3">
+      <ul className="grid gap-4 sm:grid-cols-2">
         {drafts.data.map((draft) => (
           <li key={draft.id}>
-            <Card>
-              <CardPanel className="flex flex-wrap items-center justify-between gap-3 p-5">
+            <Card className="h-full border-dashed bg-transparent shadow-none">
+              <CardPanel className="flex flex-wrap items-center justify-between gap-4 p-6 [overflow-wrap:anywhere]">
                 <div>
-                  <h3 className="font-semibold">
+                  <h3 className="text-lg font-semibold">
                     {draft.content.title.trim() || "Untitled project"}
                   </h3>
                   <p className="text-xs text-muted-foreground">

@@ -38,14 +38,25 @@ returns to the project. The map remains available before setup is complete.
 
 ## Prioritize returning users
 
-- Requesters see saved drafts and responses before posting lists.
-- Developers see responses and accepted requests before career discovery.
+- The developer dashboard leads with **Find projects for my goals**, linking to
+  the existing career-target flow. Navigation calls this destination **Find
+  projects**. The dashboard shows responses and accepted requests before general
+  project discovery, with career target and profile status in a quieter sidebar.
+- Requesters land on **My projects**, with **Start a project** as the main action.
+  Responses come first, followed by private drafts and published projects. Empty
+  accounts see the describe/review/connect path instead of empty lists.
 - Incoming interest is first, mutual connections next, and sent interest last.
 - Open opportunities precede closed ones; claimed requests precede open and
   closed requests. Ordering applies to loaded pages and never mutates source data.
-- Empty response and accepted-work sections do not take over the dashboard.
-  Profile and availability controls remain in an expandable section and in the
-  full profile editor. A list refresh failure remains visible even with old rows.
+- Empty response, accepted-work, draft, and published-project sections are hidden.
+  Profile and availability changes stay in the profile editor. Local community
+  requests use a secondary disclosure; a requester's existing requests expand it
+  initially. A list refresh failure remains visible even with old rows.
+- Project cards use concrete descriptions rather than leading with match
+  percentages. Published-project management actions stay under **Project
+  options**; closing a project still requires explicit confirmation.
+- Interest withdrawn by both sides is labeled **Interest withdrawn**, never
+  **Waiting for a reply**. Mutual interest is not a delivery or work assignment.
 
 No notifications, messages, new matching rules, or automatic commitments are
 introduced by this flow. Pagination remains explicit through **Load more**.

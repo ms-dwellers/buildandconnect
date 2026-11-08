@@ -271,8 +271,14 @@
   --map-arterial: #dfc999;
   --map-label: #425f57;
   --cloud: var(--palette-cream);
+  --dashboard-paper: #fffdf5;
   --map-mist-light: #fbfcfa;
   --map-mist-shadow: #bcc9c8;
+}
+
+.dashboard-surface {
+  --card: var(--dashboard-paper);
+  --popover: var(--dashboard-paper);
 }
 
 .voice-studio {
@@ -335,6 +341,23 @@
 }
 
 @layer components {
+  .dashboard-disclosure {
+    @apply rounded-2xl border border-dashed p-5 sm:p-6;
+  }
+
+  .dashboard-disclosure > summary {
+    @apply cursor-pointer text-lg font-semibold;
+  }
+
+  .dashboard-options > summary {
+    @apply cursor-pointer text-sm text-muted-foreground;
+  }
+
+  .dashboard-disclosure > summary:focus-visible,
+  .dashboard-options > summary:focus-visible {
+    @apply rounded-sm outline-2 outline-offset-4 outline-ring;
+  }
+
   .landing-paper {
     background-image: repeating-linear-gradient(
       0deg,

@@ -17,15 +17,12 @@ test("voice studio uses its permanent route and redirects the old WIP page", () 
     "utf8",
   );
   const dashboard = readFileSync(
-    new URL(
-      "../components/dashboards/requester-opportunities.tsx",
-      import.meta.url,
-    ),
+    new URL("../app/dashboard/page.tsx", import.meta.url),
     "utf8",
   );
   assert.doesNotMatch(page, /local-only|prototype|wip/i);
   assert.match(legacy, /permanentRedirect\("\/voice"\)/);
-  assert.match(dashboard, /href="\/projects\/new"/);
+  assert.match(dashboard, /requester:\s*\{\s*href: "\/projects\/new"/);
   assert.doesNotMatch(dashboard, /wip-voice-ai/);
 });
 

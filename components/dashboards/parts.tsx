@@ -45,7 +45,7 @@ export function Section({
     <section aria-labelledby={id} className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <h2 id={id} className="text-lg font-semibold tracking-tight">
+          <h2 id={id} className="text-2xl font-semibold tracking-tight">
             {title}
           </h2>
           {description && (
@@ -61,8 +61,8 @@ export function Section({
 
 export function ItemCard({ children }: { children: ReactNode }) {
   return (
-    <Card>
-      <CardPanel className="flex flex-wrap items-start justify-between gap-4 p-5">
+    <Card className="h-full">
+      <CardPanel className="flex flex-wrap items-start justify-between gap-5 p-6 [overflow-wrap:anywhere]">
         {children}
       </CardPanel>
     </Card>
@@ -105,6 +105,7 @@ export function ListState<T>({
   empty,
   hasMore,
   onLoadMore,
+  layout = "list",
   children,
 }: {
   items: T[];
@@ -114,6 +115,7 @@ export function ListState<T>({
   empty: ReactNode;
   hasMore?: boolean;
   onLoadMore?: () => void;
+  layout?: "list" | "grid" | "rows";
   children: (item: T) => ReactNode;
 }) {
   if (error && !items.length)
@@ -135,7 +137,19 @@ export function ListState<T>({
           onRetry={onRetry}
         />
       )}
-      <ul className="space-y-3">{items.map(children)}</ul>
+      {layout === "rows" ? (
+        <Card render={<ul />} className="divide-y overflow-hidden">
+          {items.map(children)}
+        </Card>
+      ) : (
+        <ul
+          className={
+            layout === "grid" ? "grid gap-5 sm:grid-cols-2" : "space-y-4"
+          }
+        >
+          {items.map(children)}
+        </ul>
+      )}
       {hasMore && onLoadMore && (
         <Button variant="outline" loading={loading} onClick={onLoadMore}>
           Load more

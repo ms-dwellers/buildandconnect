@@ -1,19 +1,11 @@
 "use client";
 
-import {
-  BriefcaseBusinessIcon,
-  CompassIcon,
-  MapPinIcon,
-  UserRoundPenIcon,
-} from "lucide-react";
+import { ArrowRightIcon, MapPinIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ErrorAlert, LoadingBlock } from "@/components/app/require-role";
 import { useApi, usePaged } from "@/lib/use-api";
-import { withNext } from "@/lib/navigation";
 import type {
   Interest,
   NearbyRequest,
@@ -22,37 +14,33 @@ import type {
   RequestRecord,
 } from "@/lib/types";
 import { InterestSection } from "./requester-opportunities";
+import { DeveloperSidebar } from "./developer-sidebar";
 import {
   ConfirmButton,
-  EmptyState,
   ItemCard,
   ListState,
   Section,
-  plural,
   useMutation,
 } from "./parts";
 
 type Nearby = { data: NearbyRequest[]; total: number };
 
-export function DeveloperDashboard() {
-  const profile = useApi<OwnProfile>("/developers/me");
+export function DeveloperDashboard({
+  profile,
+}: {
+  profile: ReturnType<typeof useApi<OwnProfile>>;
+}) {
   if (profile.error?.status === 404)
     return (
-      <EmptyState
-        icon={UserRoundPenIcon}
-        title="Create your developer profile"
-        description="Add your skills, projects and what you want to learn. Matching and nearby requests start from your profile."
-        action={
-          <div className="flex flex-wrap gap-3">
-            <Button render={<a href={withNext("/onboarding", "/career")} />}>
-              Create your profile
-            </Button>
-            <Button render={<a href="/map" />} variant="outline">
-              Explore the map first
-            </Button>
-          </div>
-        }
-      />
+      <Card>
+        <CardPanel className="space-y-3 p-6">
+          <h2 className="text-2xl">A little about you first</h2>
+          <p className="max-w-lg text-sm leading-6 text-muted-foreground">
+            Add your skills and interests to get project recommendations. Your
+            profile stays private unless you choose otherwise.
+          </p>
+        </CardPanel>
+      </Card>
     );
   if (profile.error)
     return (
@@ -63,16 +51,10 @@ export function DeveloperDashboard() {
       />
     );
   if (!profile.data) return <LoadingBlock />;
-  return <Dashboard profile={profile.data} reload={profile.reload} />;
+  return <Dashboard profile={profile.data} />;
 }
 
-function Dashboard({
-  profile,
-  reload,
-}: {
-  profile: OwnProfile;
-  reload: () => Promise<void>;
-}) {
+function Dashboard({ profile }: { profile: OwnProfile }) {
   const nearby = useApi<Nearby>(
     profile.location ? "/requests/nearby?limit=20" : null,
   );
@@ -80,18 +62,6 @@ function Dashboard({
   const opportunities = usePaged<OpportunityRecord>("/opportunities", 6);
   const interests = usePaged<Interest>("/interests");
   const { pending, run } = useMutation();
-
-  const toggle = async (key: "available" | "discoverable", value: boolean) => {
-    if (
-      await run(
-        key,
-        "/developers/me",
-        { method: "PATCH", body: JSON.stringify({ [key]: value }) },
-        "Profile visibility updated",
-      )
-    )
-      await reload();
-  };
   const release = async (id: string) => {
     if (
       await run(
@@ -105,197 +75,145 @@ function Dashboard({
   };
 
   return (
-    <div className="space-y-12">
-      <InterestSection interests={interests} viewer="developer" />
-      <AcceptedRequests claimed={claimed} pending={pending} release={release} />
-      <Card>
-        <CardPanel className="flex flex-wrap items-center justify-between gap-4 p-6">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">
-              Work toward your next role
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Find projects that let you practice requirements from a target
-              job.
-            </p>
-          </div>
-          <Button render={<a href="/career" />}>
-            Explore your career path
-          </Button>
-        </CardPanel>
-      </Card>
-      <details className="space-y-4">
-        <summary className="cursor-pointer font-semibold">
-          Profile and availability
-        </summary>
-        <Card>
-          <CardPanel className="grid gap-6 p-6 md:grid-cols-[1fr_auto]">
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold">{profile.name}</h2>
-                <Badge variant="outline">{profile.city}</Badge>
-              </div>
-              <p className="line-clamp-2 max-w-xl text-sm text-muted-foreground">
-                {profile.bio}
-              </p>
-              <p className="flex items-center gap-1.5 text-sm">
-                <MapPinIcon
-                  aria-hidden="true"
-                  className="size-4 text-primary"
-                />
-                {profile.location
-                  ? `Finding requests within ${profile.location.radiusKm} km of your pin`
-                  : "No area set yet. Set one to see nearby requests."}
-              </p>
-              <Button
-                render={<a href="/profile" />}
-                variant="outline"
-                size="sm"
-              >
-                Edit profile and area
-              </Button>
-            </div>
-            <div className="space-y-4 md:min-w-64">
-              {(
-                [
-                  ["available", "Available for new work"],
-                  ["discoverable", "Visible to requesters"],
-                ] as const
-              ).map(([key, label]) => (
-                <div
-                  key={key}
-                  className="flex items-center justify-between gap-4"
-                >
-                  <Label htmlFor={`toggle-${key}`}>{label}</Label>
-                  <Switch
-                    id={`toggle-${key}`}
-                    checked={profile[key]}
-                    disabled={pending === key}
-                    onCheckedChange={(value) => void toggle(key, value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </CardPanel>
-        </Card>
-      </details>
-
-      <Section
-        title="Nearby requests"
-        description={
-          nearby.data
-            ? `${plural(nearby.data.total, "open request")} in your area, ranked by growth fit.`
-            : undefined
-        }
-        action={
-          <Button render={<a href="/map" />} variant="ghost" size="sm">
-            <CompassIcon aria-hidden="true" />
-            Open the map
-          </Button>
-        }
-      >
-        {!profile.location ? (
-          <EmptyState
-            icon={MapPinIcon}
-            title="Set your area"
-            description="Drop a pin and choose a radius to see community requests near you."
-            action={
-              <Button render={<a href="/profile#area" />}>Set your area</Button>
-            }
-          />
-        ) : (
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div className="min-w-0 space-y-9">
+        <InterestSection interests={interests} viewer="developer" />
+        <AcceptedRequests
+          claimed={claimed}
+          pending={pending}
+          release={release}
+        />
+        <Section
+          title="Explore projects"
+          action={
+            <Button render={<a href="/career" />} variant="ghost" size="sm">
+              Find by career goal <ArrowRightIcon aria-hidden="true" />
+            </Button>
+          }
+        >
           <ListState
-            items={nearby.data?.data ?? []}
-            loading={nearby.loading}
-            error={nearby.error}
-            onRetry={() => void nearby.reload()}
+            {...opportunities}
+            onRetry={() => void opportunities.reload()}
+            onLoadMore={() => void opportunities.loadMore()}
             empty={
-              <p className="text-sm text-muted-foreground">
-                No open requests in your area right now. Try a larger radius.
-              </p>
+              <Card>
+                <CardPanel className="space-y-3 p-6">
+                  <h3 className="text-lg font-semibold">
+                    No open projects right now
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    You can still set a career target or look for local
+                    community requests.
+                  </p>
+                  <Button
+                    render={<a href="/map" />}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Explore the map
+                  </Button>
+                </CardPanel>
+              </Card>
             }
           >
-            {(request) => (
-              <li key={request.requestId}>
+            {(opportunity) => (
+              <li key={opportunity.id}>
                 <ItemCard>
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary">
-                        {Math.round(request.score)}% fit
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {request.distanceKm} km away · {request.place}
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        {opportunity.kind === "paid"
+                          ? "Paid project"
+                          : "Volunteer project"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPinIcon aria-hidden="true" className="size-3.5" />
+                        {opportunity.remote
+                          ? "Remote"
+                          : (opportunity.place ?? opportunity.city)}
                       </span>
                     </div>
-                    <h3 className="font-semibold">{request.title}</h3>
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {request.description}
+                    <h3 className="text-xl font-semibold leading-tight">
+                      {opportunity.title}
+                    </h3>
+                    <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+                      {opportunity.description}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {request.explanation}
-                    </p>
+                    <Button
+                      render={<a href={`/opportunities/${opportunity.id}`} />}
+                      variant="outline"
+                      size="sm"
+                    >
+                      View project <ArrowRightIcon aria-hidden="true" />
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    render={<a href={`/requests/${request.requestId}`} />}
-                  >
-                    Review request
-                  </Button>
                 </ItemCard>
               </li>
             )}
           </ListState>
-        )}
-      </Section>
+        </Section>
+        {profile.location && <NearbyRequests nearby={nearby} />}
+      </div>
+      <DeveloperSidebar profile={profile} />
+    </div>
+  );
+}
 
-      <Section
-        title="Open opportunities"
-        description="Paid and volunteer projects posted by requesters."
-      >
+function NearbyRequests({
+  nearby,
+}: {
+  nearby: ReturnType<typeof useApi<Nearby>>;
+}) {
+  if (!nearby.loading && !nearby.error && !nearby.data?.data.length)
+    return null;
+  return (
+    <details className="dashboard-disclosure">
+      <summary>Nearby community requests</summary>
+      <div className="mt-5 space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Short local requests you can accept directly, without a
+          mutual-interest step.
+        </p>
         <ListState
-          {...opportunities}
-          onRetry={() => void opportunities.reload()}
-          onLoadMore={() => void opportunities.loadMore()}
-          empty={
-            <EmptyState
-              icon={BriefcaseBusinessIcon}
-              title="No open opportunities"
-              description="Check back soon, or explore community requests on the map."
-            />
-          }
+          items={nearby.data?.data ?? []}
+          loading={nearby.loading}
+          error={nearby.error}
+          onRetry={() => void nearby.reload()}
+          empty={null}
         >
-          {(opportunity) => (
-            <li key={opportunity.id}>
+          {(request) => (
+            <li key={request.requestId}>
               <ItemCard>
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline">
-                      {opportunity.kind === "paid" ? "Paid" : "Volunteer"}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {opportunity.remote
-                        ? "Remote"
-                        : (opportunity.place ?? opportunity.city)}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold">{opportunity.title}</h3>
-                  <p className="line-clamp-2 text-sm text-muted-foreground">
-                    {opportunity.description}
+                <div className="min-w-0 flex-1 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    {request.distanceKm} km away · {request.place}
                   </p>
+                  <h3 className="text-lg font-semibold">{request.title}</h3>
+                  <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+                    {request.description}
+                  </p>
+                  {request.skillsToDevelop.length > 0 && (
+                    <p className="text-sm">
+                      Practice: {request.skillsToDevelop.join(", ")}
+                    </p>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {request.explanation}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    render={<a href={`/requests/${request.requestId}`} />}
+                  >
+                    Review request <ArrowRightIcon aria-hidden="true" />
+                  </Button>
                 </div>
-                <Button
-                  render={<a href={`/opportunities/${opportunity.id}`} />}
-                  variant="outline"
-                  size="sm"
-                >
-                  See your fit
-                </Button>
               </ItemCard>
             </li>
           )}
         </ListState>
-      </Section>
-    </div>
+      </div>
+    </details>
   );
 }
 
@@ -310,10 +228,7 @@ function AcceptedRequests({
 }) {
   if (!claimed.loading && !claimed.error && !claimed.items.length) return null;
   return (
-    <Section
-      title="Accepted requests"
-      description="Community requests you've taken on."
-    >
+    <Section title="Accepted requests">
       <ListState
         {...claimed}
         onRetry={() => void claimed.reload()}
@@ -323,14 +238,14 @@ function AcceptedRequests({
         {(request) => (
           <li key={request.id}>
             <ItemCard>
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <h3 className="font-semibold">{request.title}</h3>
+              <div className="min-w-0 flex-1 basis-48 space-y-2">
+                <Badge variant="info">Accepted</Badge>
+                <h3 className="text-xl font-semibold">{request.title}</h3>
                 <p className="text-sm text-muted-foreground">
                   {request.ownerName} · {request.place}
                 </p>
-                <p className="line-clamp-2 text-sm">{request.description}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 <Button
                   render={<a href={`/requests/${request.id}`} />}
                   variant="outline"
