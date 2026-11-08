@@ -123,36 +123,23 @@ export function buildTaskChair(materials: Materials) {
   return group;
 }
 
-/** The partner's seat: a simple wooden café chair with a wheat cushion. */
+/**
+ * The partner's seat: a simple wooden café chair with a wheat cushion. The
+ * rear legs and back posts are single pieces and every leg is vertical, so
+ * nothing kinks at the seat or pokes through it.
+ */
 export function buildWoodenChair(materials: Materials) {
   const group = new THREE.Group();
   group.userData.id = "partner";
   group.add(box(0.44, 0.05, 0.44, materials.wood, 0, 0.46, 0, 0.015));
   group.add(box(0.4, 0.03, 0.4, materials.cushion, 0, 0.5, 0, 0.012));
-  for (const [sx, sz] of [
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-    [1, 1],
-  ]) {
-    const leg = box(
-      0.04,
-      0.46,
-      0.04,
-      materials.wood,
-      sx * 0.19,
-      0.23,
-      sz * 0.19,
-    );
-    leg.rotation.z = -sx * degrees(4);
-    leg.rotation.x = sz * degrees(4);
-    group.add(leg);
+  for (const side of [-1, 1]) {
+    group.add(box(0.04, 0.47, 0.04, materials.wood, side * 0.19, 0.235, 0.19));
+    group.add(box(0.04, 0.93, 0.04, materials.wood, side * 0.19, 0.465, -0.19));
   }
-  for (const side of [-1, 1])
-    group.add(box(0.04, 0.45, 0.04, materials.wood, side * 0.19, 0.69, -0.2));
-  group.add(box(0.44, 0.06, 0.04, materials.wood, 0, 0.9, -0.2, 0.012));
-  group.add(box(0.36, 0.035, 0.025, materials.wood, 0, 0.72, -0.2));
-  group.add(box(0.36, 0.035, 0.025, materials.wood, 0, 0.6, -0.2));
+  group.add(box(0.44, 0.06, 0.04, materials.wood, 0, 0.9, -0.19, 0.012));
+  group.add(box(0.34, 0.035, 0.025, materials.wood, 0, 0.72, -0.19));
+  group.add(box(0.34, 0.035, 0.025, materials.wood, 0, 0.6, -0.19));
   return group;
 }
 

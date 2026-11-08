@@ -24,18 +24,26 @@ import {
 export type PickTarget = "developer" | "partner" | "monitor";
 export type LabelTarget = Exclude<PickTarget, "monitor">;
 
+/** A rectangle in CSS pixels. */
+export type Rect = { x: number; y: number; width: number; height: number };
+
 /**
- * How the canvas grows during the approach: from its box on the page (viewport
- * coordinates) to the whole viewport. The camera keeps the furniture where it
- * was on screen while the frame expands around it.
+ * How the canvas grows during the approach: it was `canvas` on the page (in
+ * viewport coordinates) and becomes the whole viewport. The camera keeps the
+ * furniture where it was on screen while the frame expands around it.
  */
 export type ApproachExpansion = {
-  box: { x: number; y: number; width: number; height: number };
+  canvas: Rect;
   viewport: { width: number; height: number };
 };
 
 export type HomeSceneController = {
-  resize(width: number, height: number, pixelRatio: number): void;
+  /**
+   * Size the renderer. `band` is the part of the canvas (relative to it) that
+   * the furniture is framed into; the rest of the canvas shows the empty white
+   * space above, so copy can share the hero with the scene.
+   */
+  resize(width: number, height: number, pixelRatio: number, band?: Rect): void;
   /** Normalised pointer position (-1..1) for the parallax; (0, 0) when away. */
   setPointer(x: number, y: number): void;
   pick(x: number, y: number): PickTarget | null;
@@ -173,6 +181,7 @@ export function createHomeScene(
   let width = 1;
   let height = 1;
   let aspect = 1;
+  let band: Rect | null = null;
   let rig: CameraRig = cameraRig(aspect);
   let motion = true;
   const pointer = { x: 0, y: 0 };
@@ -181,10 +190,34 @@ export function createHomeScene(
     start: number;
     from: Pose;
     to: Pose;
-    expansion: ApproachExpansion | null;
+    box: Rect;
+    viewport: { width: number; height: number };
   } | null = null;
   let reset: { pose: Pose; start: number } | null = null;
   let currentPose: Pose = restPose(rig);
+
+  /**
+   * The camera frames the band; the canvas shows that frame plus whatever
+   * surrounds it, through a view offset, so the furniture keeps its scale and
+   * sits at the bottom of the hero while the copy floats in the space above.
+   */
+  function applyBand() {
+    if (band) {
+      camera.aspect = band.width / band.height;
+      camera.setViewOffset(
+        band.width,
+        band.height,
+        -band.x,
+        -band.y,
+        width,
+        height,
+      );
+    } else {
+      camera.clearViewOffset();
+      camera.aspect = aspect;
+    }
+    camera.updateProjectionMatrix();
+  }
 
   function applyPose(pose: Pose, yaw: number, pitch: number) {
     const [tx, ty, tz] = pose.target;
@@ -204,12 +237,15 @@ export function createHomeScene(
   }
 
   /**
-   * While the canvas grows from its box to the viewport, render the box's
-   * original framing through a view offset so the furniture stays put, and
-   * relax that offset to a plain full-viewport projection as the dolly ends.
+   * While the canvas covers the viewport, start from the band's original
+   * framing at its old viewport position and relax to a plain full-viewport
+   * projection as the dolly ends.
    */
-  function applyExpansion(expansion: ApproachExpansion, progress: number) {
-    const { box, viewport } = expansion;
+  function applyExpansion(
+    box: Rect,
+    viewport: { width: number; height: number },
+    progress: number,
+  ) {
     const fullWidth = box.width + (viewport.width - box.width) * progress;
     const fullHeight = box.height + (viewport.height - box.height) * progress;
     camera.aspect = fullWidth / fullHeight;
@@ -232,7 +268,7 @@ export function createHomeScene(
         now - approach.start,
         options.approachMs,
       );
-      if (approach.expansion) applyExpansion(approach.expansion, progress);
+      applyExpansion(approach.box, approach.viewport, progress);
       applyPose(
         {
           position: lerpVec3(
@@ -288,13 +324,14 @@ export function createHomeScene(
   }
 
   return {
-    resize(nextWidth, nextHeight, pixelRatio) {
+    resize(nextWidth, nextHeight, pixelRatio, nextBand) {
       width = Math.max(1, nextWidth);
       height = Math.max(1, nextHeight);
       aspect = width / height;
-      rig = cameraRig(aspect);
-      camera.aspect = aspect;
-      camera.updateProjectionMatrix();
+      if (nextBand && nextBand.width > 0 && nextBand.height > 0)
+        band = nextBand;
+      rig = cameraRig(band ? band.width / band.height : aspect);
+      applyBand();
       renderer.setPixelRatio(pixelRatio);
       renderer.setSize(width, height, false);
     },
@@ -328,14 +365,22 @@ export function createHomeScene(
       }
     },
     startApproach(now, expansion) {
-      const endAspect = expansion
-        ? expansion.viewport.width / expansion.viewport.height
-        : aspect;
+      const viewport = expansion?.viewport ?? { width, height };
+      const origin = expansion?.canvas ?? { x: 0, y: 0, width, height };
+      const box: Rect = band
+        ? {
+            x: origin.x + band.x,
+            y: origin.y + band.y,
+            width: band.width,
+            height: band.height,
+          }
+        : origin;
       approach = {
         start: now,
         from: currentPose,
-        to: screenPose(rig, endAspect),
-        expansion: expansion ?? null,
+        to: screenPose(rig, viewport.width / viewport.height),
+        box,
+        viewport,
       };
       reset = null;
       this.setHover(null);
@@ -343,9 +388,7 @@ export function createHomeScene(
     resetApproach(now) {
       if (!approach) return;
       approach = null;
-      camera.clearViewOffset();
-      camera.aspect = aspect;
-      camera.updateProjectionMatrix();
+      applyBand();
       reset = { pose: currentPose, start: now };
     },
     render,

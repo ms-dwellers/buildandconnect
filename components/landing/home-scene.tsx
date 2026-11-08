@@ -16,22 +16,26 @@ import type {
   HomeSceneController,
   LabelTarget,
   PickTarget,
+  Rect,
 } from "./home-scene/scene";
 import "./home-scene.css";
 
 type Renderer = "pending" | "webgl" | "fallback";
 
 /**
- * The landing hero: two chairs around a monitor showing a campfire. Each chair
- * carries its call to action as a real button, so the chairs and the buttons
- * are one choice. three.js loads lazily on the client; the server renders the
- * buttons in a plain row under an empty band so nothing waits for WebGL.
+ * The landing hero scene: two chairs around a monitor showing a campfire. The
+ * canvas covers the whole hero, so the furniture shares the page with the
+ * heading instead of sitting in a box; an in-flow spacer marks the band the
+ * camera frames the furniture into. Each chair carries its call to action as a
+ * real button, so the chairs and the buttons are one choice. three.js loads
+ * lazily on the client; the server renders the buttons in a plain row.
  */
 export function HomeScene() {
   const router = useRouter();
   const journey = useMapJourney();
   const wrapper = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const band = useRef<HTMLDivElement>(null);
   const labels = useRef<Record<LabelTarget, HTMLDivElement | null>>({
     developer: null,
     partner: null,
@@ -50,7 +54,8 @@ export function HomeScene() {
   useEffect(() => {
     const element = canvas.current;
     const host = wrapper.current;
-    if (!element || !host) return;
+    const spacer = band.current;
+    if (!element || !host || !spacer) return;
     const root = getComputedStyle(document.documentElement);
     const tokens = readSceneTokens((name) => root.getPropertyValue(name));
     if (!tokens) {
@@ -70,6 +75,31 @@ export function HomeScene() {
     let hover: PickTarget | null = null;
     let press: { x: number; y: number; time: number } | null = null;
 
+    /** The band the furniture is framed into, relative to the canvas. */
+    const measureBand = (): Rect => {
+      const canvasRect = element.getBoundingClientRect();
+      const bandRect = spacer.getBoundingClientRect();
+      return {
+        x: bandRect.left - canvasRect.left,
+        y: bandRect.top - canvasRect.top,
+        width: bandRect.width,
+        height: bandRect.height,
+      };
+    };
+    const fit = () => {
+      if (!api) return;
+      const { ratio } = sceneResolution(
+        element.clientWidth,
+        element.clientHeight,
+        window.devicePixelRatio,
+      );
+      api.resize(
+        element.clientWidth,
+        element.clientHeight,
+        ratio,
+        measureBand(),
+      );
+    };
     const placeLabels = () => {
       for (const id of ["developer", "partner"] as const) {
         const node = labels.current[id];
@@ -106,13 +136,8 @@ export function HomeScene() {
       registerRef.current(should ? { durationMs: approachTiming.dolly } : null);
     };
     const resize = new ResizeObserver(() => {
-      if (!api) return;
-      const { ratio } = sceneResolution(
-        element.clientWidth,
-        element.clientHeight,
-        window.devicePixelRatio,
-      );
-      api.resize(element.clientWidth, element.clientHeight, ratio);
+      if (phaseRef.current !== "idle") return;
+      fit();
       kick();
     });
     const intersection = new IntersectionObserver(
@@ -217,14 +242,10 @@ export function HomeScene() {
         }
         controller.current = api;
         api.setMotion(!preference.matches);
-        const { ratio } = sceneResolution(
-          element.clientWidth,
-          element.clientHeight,
-          window.devicePixelRatio,
-        );
-        api.resize(element.clientWidth, element.clientHeight, ratio);
+        fit();
         resize.observe(element);
-        intersection.observe(element);
+        resize.observe(spacer);
+        intersection.observe(spacer);
         preference.addEventListener("change", motionChanged);
         document.addEventListener("visibilitychange", visibilityChanged);
         element.addEventListener("webglcontextlost", contextLost);
@@ -249,11 +270,12 @@ export function HomeScene() {
     const api = controller.current;
     const host = wrapper.current;
     const element = canvas.current;
-    if (!api || !host || !element) return;
+    const spacer = band.current;
+    if (!api || !host || !element || !spacer) return;
     if (journey.phase === "approaching") {
-      // Measure the box before the canvas breaks out to the whole viewport, so
-      // the furniture stays where it was while the frame grows around it.
-      const box = element.getBoundingClientRect();
+      // Measure before the canvas breaks out to the whole viewport, so the
+      // furniture stays where it was while the frame grows around it.
+      const rect = element.getBoundingClientRect();
       const viewport = { width: window.innerWidth, height: window.innerHeight };
       host.dataset.expanded = "true";
       const { ratio } = sceneResolution(
@@ -263,17 +285,29 @@ export function HomeScene() {
       );
       api.resize(viewport.width, viewport.height, ratio);
       api.startApproach(performance.now(), {
-        box: { x: box.left, y: box.top, width: box.width, height: box.height },
+        canvas: {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height,
+        },
         viewport,
       });
     } else if (journey.phase === "idle") {
       delete host.dataset.expanded;
+      const canvasRect = element.getBoundingClientRect();
+      const bandRect = spacer.getBoundingClientRect();
       const { ratio } = sceneResolution(
         element.clientWidth,
         element.clientHeight,
         window.devicePixelRatio,
       );
-      api.resize(element.clientWidth, element.clientHeight, ratio);
+      api.resize(element.clientWidth, element.clientHeight, ratio, {
+        x: bandRect.left - canvasRect.left,
+        y: bandRect.top - canvasRect.top,
+        width: bandRect.width,
+        height: bandRect.height,
+      });
       api.resetApproach(performance.now());
     }
     schedule.current();
@@ -293,47 +327,50 @@ export function HomeScene() {
   });
 
   return (
-    <div
-      ref={wrapper}
-      className="home-scene"
-      data-renderer={renderer}
-      data-ready={ready || undefined}
-      data-phase={journey.phase}
-    >
-      {renderer !== "fallback" && <canvas ref={canvas} aria-hidden="true" />}
-      <div className="home-scene-labels">
-        <div {...chairProps("developer")}>
-          <MapJourneyLink
-            variant="highlight"
-            size="lg"
-            className="home-scene-action"
-          >
-            <span className="home-scene-action-who">
-              {homeCopy.chairs.developer}
-            </span>
-            <span className="home-scene-action-what">
-              {homeCopy.ctas.find.label}
-              <ArrowRightIcon aria-hidden="true" />
-            </span>
-          </MapJourneyLink>
-        </div>
-        <div {...chairProps("partner")}>
-          <Button
-            render={<a href={homeCopy.ctas.post.href} />}
-            variant="outline"
-            size="lg"
-            className="home-scene-action"
-          >
-            <span className="home-scene-action-who">
-              {homeCopy.chairs.partner}
-            </span>
-            <span className="home-scene-action-what">
-              {homeCopy.ctas.post.label}
-              <ArrowRightIcon aria-hidden="true" />
-            </span>
-          </Button>
+    <>
+      <div
+        ref={wrapper}
+        className="home-scene"
+        data-renderer={renderer}
+        data-ready={ready || undefined}
+        data-phase={journey.phase}
+      >
+        {renderer !== "fallback" && <canvas ref={canvas} aria-hidden="true" />}
+        <div className="home-scene-labels">
+          <div {...chairProps("developer")}>
+            <MapJourneyLink
+              variant="highlight"
+              size="lg"
+              className="home-scene-action"
+            >
+              <span className="home-scene-action-who">
+                {homeCopy.chairs.developer}
+              </span>
+              <span className="home-scene-action-what">
+                {homeCopy.ctas.find.label}
+                <ArrowRightIcon aria-hidden="true" />
+              </span>
+            </MapJourneyLink>
+          </div>
+          <div {...chairProps("partner")}>
+            <Button
+              render={<a href={homeCopy.ctas.post.href} />}
+              variant="outline"
+              size="lg"
+              className="home-scene-action"
+            >
+              <span className="home-scene-action-who">
+                {homeCopy.chairs.partner}
+              </span>
+              <span className="home-scene-action-what">
+                {homeCopy.ctas.post.label}
+                <ArrowRightIcon aria-hidden="true" />
+              </span>
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+      <div ref={band} className="home-scene-band" aria-hidden="true" />
+    </>
   );
 }
