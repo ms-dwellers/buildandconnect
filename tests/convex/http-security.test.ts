@@ -38,7 +38,7 @@ test("HTTP writes reject forged fields, oversized bodies, cookie CSRF, and unaut
         await runtime.fetch("/api/me/role", {
           method: "PUT",
           headers: auth,
-          body: JSON.stringify({ role: "company" }),
+          body: JSON.stringify({ role: "requester" }),
         })
       ).status,
     ).toBe(200);
@@ -73,7 +73,10 @@ test("HTTP writes reject forged fields, oversized bodies, cookie CSRF, and unaut
       await runtime.fetch("/api/me/role", {
         method: "PUT",
         headers: owner.auth,
-        body: JSON.stringify({ role: "company", sessionId: "forged-session" }),
+        body: JSON.stringify({
+          role: "requester",
+          sessionId: "forged-session",
+        }),
       })
     ).status,
   ).toBe(400);
@@ -91,7 +94,7 @@ test("HTTP writes reject forged fields, oversized bodies, cookie CSRF, and unaut
       await runtime.fetch("/api/me/role", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Cookie: owner.cookie },
-        body: JSON.stringify({ role: "company" }),
+        body: JSON.stringify({ role: "requester" }),
       })
     ).status,
   ).toBe(403);
