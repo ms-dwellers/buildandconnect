@@ -6,20 +6,17 @@ paid contracts, or completed work.
 
 ## Seed and sign in
 
-The seed posts profiles and projects through the ordinary API, which analyses
-them with Workers AI from the Convex deployment. Set `WORKERS_AI_ENABLED=true`,
-`WORKERS_AI_ACCOUNT_ID`, and `WORKERS_AI_API_TOKEN` on the selected development
-deployment first (see [the backend guide](backend.md)), start the development
-server, then run the seed from another terminal:
+Configure Fireworks in the development Convex deployment, then run the seed
+from another terminal:
 
 ```sh
-bun run dev
+bun run dev:remote
 bun run seed:demo
 ```
 
 The seed reads `.env.local`. `SITE_URL` must be the running localhost or private
 Tailscale origin, and `CONVEX_DEPLOYMENT` must select development. Deploy keys
-and public production origins are refused. Workers AI and the configured career
+and public production origins are refused. Fireworks and the configured career
 analysis provider make real inference calls; provider usage may be billable.
 
 Generated sign-in credentials and record IDs are stored only in ignored

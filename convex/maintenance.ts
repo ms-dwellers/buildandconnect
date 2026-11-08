@@ -1,6 +1,71 @@
 import { v } from "convex/values";
-import { internalMutation } from "./_generated/server";
-import { components } from "./_generated/api";
+import {
+  internalAction,
+  internalMutation,
+  internalQuery,
+} from "./_generated/server";
+import { components, internal } from "./_generated/api";
+import { analyzeDeveloper } from "../backend/ai.ts";
+import { EMBEDDING_MODEL } from "../backend/models.ts";
+import { vectorSchema } from "../backend/schemas.ts";
+import { fireworksAI } from "./ai";
+
+// Operator-only migration; never exposed through application HTTP routes.
+export const outdatedDeveloperEmbeddings = internalQuery({
+  args: {},
+  handler: async (ctx) =>
+    ctx.db
+      .query("developers")
+      .filter((q) => q.neq(q.field("embeddingModel"), EMBEDDING_MODEL))
+      .take(25),
+});
+
+export const replaceDeveloperEmbedding = internalMutation({
+  args: {
+    id: v.id("developers"),
+    expectedUpdatedAt: v.number(),
+    expectedModel: v.string(),
+    embedding: v.array(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.id);
+    if (
+      !row ||
+      row.updatedAt !== args.expectedUpdatedAt ||
+      row.embeddingModel !== args.expectedModel
+    )
+      return false;
+    await ctx.db.patch(row._id, {
+      embedding: vectorSchema.parse(args.embedding),
+      embeddingModel: EMBEDDING_MODEL,
+    });
+    return true;
+  },
+});
+
+export const refreshDeveloperEmbeddings = internalAction({
+  args: {},
+  handler: async (ctx): Promise<{ updated: number; skipped: number }> => {
+    const rows = await ctx.runQuery(
+      internal.maintenance.outdatedDeveloperEmbeddings,
+      {},
+    );
+    let updated = 0;
+    for (const row of rows) {
+      const embedding = await analyzeDeveloper(fireworksAI(), row.profile);
+      if (
+        await ctx.runMutation(internal.maintenance.replaceDeveloperEmbedding, {
+          id: row._id,
+          expectedUpdatedAt: row.updatedAt,
+          expectedModel: row.embeddingModel,
+          embedding,
+        })
+      )
+        updated++;
+    }
+    return { updated, skipped: rows.length - updated };
+  },
+});
 
 // Operator-only cleanup for accounts created by the opt-in live verification suite.
 export const cleanupVerification = internalMutation({

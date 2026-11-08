@@ -2,11 +2,11 @@ import { z } from "zod";
 import type { HiringEnv } from "./env";
 
 import {
-  DEFAULT_GEMINI_MODEL,
+  DEFAULT_ANALYSIS_MODEL,
   DEFAULT_SCRIBE_MODEL,
 } from "../../backend/hiring/models.ts";
 export {
-  DEFAULT_GEMINI_MODEL,
+  DEFAULT_ANALYSIS_MODEL,
   DEFAULT_SCRIBE_MODEL,
 } from "../../backend/hiring/models.ts";
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
@@ -26,7 +26,7 @@ export class HiringProviderError extends Error {
   }
 }
 
-export async function geminiJson<T>(
+export async function fireworksJson<T>(
   env: HiringEnv,
   options: {
     name: string;
@@ -37,25 +37,21 @@ export async function geminiJson<T>(
   },
   request: typeof fetch = fetch,
 ) {
-  if (!env.OPENROUTER_API_KEY)
-    throw new HiringProviderError("Gemini is not configured yet.", 503);
-  const model = env.OPENROUTER_MODEL || DEFAULT_GEMINI_MODEL;
-  if (
-    !model.startsWith("google/gemini-") ||
-    model.includes(":") ||
-    model.includes("image")
-  )
+  if (!env.FIREWORKS_API_KEY)
+    throw new HiringProviderError("Fireworks is not configured yet.", 503);
+  const model = env.FIREWORKS_MODEL || DEFAULT_ANALYSIS_MODEL;
+  if (!/^accounts\/[a-z0-9-]+\/models\/[a-z0-9_.-]+$/.test(model))
     throw new HiringProviderError(
-      "Configure a Gemini text model for matching.",
+      "Configure a Fireworks text model for matching.",
       503,
     );
   try {
     const response = await request(
-      "https://openrouter.ai/api/v1/chat/completions",
+      "https://api.fireworks.ai/inference/v1/chat/completions",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${env.FIREWORKS_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -72,7 +68,6 @@ export async function geminiJson<T>(
               schema: z.toJSONSchema(options.schema, { io: "input" }),
             },
           },
-          provider: { require_parameters: true, data_collection: "deny" },
           temperature: 0.2,
           max_tokens: options.maxTokens ?? 3000,
           stream: false,
@@ -84,8 +79,8 @@ export async function geminiJson<T>(
       await response.body?.cancel();
       throw new HiringProviderError(
         response.status === 429
-          ? "Gemini is busy. Try again shortly."
-          : "Gemini could not complete this request. Try again.",
+          ? "Fireworks is busy. Try again shortly."
+          : "Fireworks could not complete this request. Try again.",
         response.status === 429 ? 429 : 502,
       );
     }
@@ -107,7 +102,7 @@ export async function geminiJson<T>(
   } catch (error) {
     if (error instanceof HiringProviderError) throw error;
     throw new HiringProviderError(
-      "Gemini returned an incomplete response. Your draft has not changed; try again.",
+      "Fireworks returned an incomplete response. Your draft has not changed; try again.",
     );
   }
 }

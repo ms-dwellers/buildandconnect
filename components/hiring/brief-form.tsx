@@ -254,8 +254,8 @@ export function BriefForm({
               disabled={pending || disabled}
             />
             <Label htmlFor="hiring-consent" className="text-sm leading-6">
-              I’ve reviewed this brief and agree to send it to the configured AI
-              provider for developer suggestions.
+              I’ve reviewed this brief and agree to send it to Fireworks for
+              developer suggestions.
             </Label>
           </div>
           <FieldMessage>{error}</FieldMessage>

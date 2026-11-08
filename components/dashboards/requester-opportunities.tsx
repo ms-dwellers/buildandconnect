@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRightIcon, MapPinIcon } from "lucide-react";
+import { StartChatButton } from "@/components/chat/start-chat-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePaged } from "@/lib/use-api";
@@ -162,6 +163,12 @@ export function InterestSection({
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                {interest.connected && (
+                  <StartChatButton
+                    opportunityId={interest.opportunityId}
+                    developerId={interest.developerId}
+                  />
+                )}
                 {state === "connected" ? (
                   <Badge variant="success">Connected</Badge>
                 ) : state === "needs-response" ? (

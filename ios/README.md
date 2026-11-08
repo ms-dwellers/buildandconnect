@@ -1,6 +1,6 @@
 # iPhone app
 
-Native SwiftUI client for the Convex HTTP API, Better Auth, Workers AI,
+Native SwiftUI client for the Convex HTTP API, Better Auth, Fireworks,
 and Mapbox. Minimum iOS 18. No application database or server credential is bundled
 with the app.
 
@@ -108,7 +108,7 @@ normal app. This is a manual visual preview, not a test runner.
 Start a project also offers a live ElevenLabs conversation. Native clients request
 a short-lived WebRTC token from the requester-only `/api/hiring/native-voice-session`
 route; provider API keys remain in Convex. Configure `ELEVENLABS_API_KEY` and
-`ELEVENLABS_AGENT_ID` there for voice, and `OPENROUTER_API_KEY` for brief summaries.
+`ELEVENLABS_AGENT_ID` there for voice, and `FIREWORKS_API_KEY` for brief summaries.
 The existing web signed-URL route is unchanged. Microphone permission is requested
 only after an explicit start and a provider availability check. Leaving the screen
 or backgrounding stops audio. Transcripts remain in memory until the user chooses
@@ -209,7 +209,7 @@ This is not yet App Store ready:
 - Closing a request clears its claimant in the current service. The owner sees
   closed history, but a former claimant does not have a persistent closure receipt.
   A minimal receipt needs an agreed retention/access policy.
-- Real Workers AI inference, email delivery, physical-device mapping, accessibility
+- Real Fireworks inference, email delivery, physical-device mapping, accessibility
   assistive-technology checks, and production privacy disclosures need verification.
 
 The app privacy manifest covers first-party profile, contact, location, and user

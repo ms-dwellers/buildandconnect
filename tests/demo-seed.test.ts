@@ -122,12 +122,9 @@ test("inference credentials live in Convex, not in the Worker or Vite config", (
   );
   assert.doesNotMatch(binding, /bindings\.ai\(|WORKERS_AI/);
   assert.doesNotMatch(vite, /WORKERS_AI_REMOTE/);
-  for (const name of [
-    "WORKERS_AI_ENABLED",
-    "WORKERS_AI_ACCOUNT_ID",
-    "WORKERS_AI_API_TOKEN",
-  ])
-    assert.match(convexAI, new RegExp(`process\\.env\\.${name}`));
+  // Analysis and embeddings run through Fireworks from the Convex environment.
+  assert.match(convexAI, /process\.env\.FIREWORKS_API_KEY/);
+  assert.doesNotMatch(convexAI, /WORKERS_AI/);
   assert.doesNotMatch(guide, /WORKERS_AI_REMOTE/);
-  assert.match(guide, /WORKERS_AI_ENABLED/);
+  assert.match(guide, /Fireworks/);
 });

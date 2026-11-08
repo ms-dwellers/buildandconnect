@@ -19,8 +19,9 @@ It reuses existing development secrets rather
 than rotating them. The script refuses production selections and deploy keys.
 An optional argument changes the local origin: `bun run setup:backend http://localhost:5173`.
 
-`BETTER_AUTH_SECRET` exists only in Convex's environment. No bridge secret or
-Convex JWT exchange is needed by the application. The public Convex URLs may be
+`BETTER_AUTH_SECRET` exists only in Convex's environment. No bridge secret is
+needed. The messages stream uses Better Auth's short-lived Convex JWT on the web
+host, never a deploy key or browser-supplied session ID. The public Convex URLs may be
 browser-visible. Set Convex's `SITE_URL` to the website's exact origin. The web
 host needs only that origin and `VITE_CONVEX_SITE_URL` for forwarding. No
 production deployment is part of local setup.
@@ -52,18 +53,20 @@ with `?error=account_not_linked` and a plain-language explanation. OAuth tokens
 are encrypted at rest.
 
 Run `bun run dev` in a second terminal for the website. Browser requests stay on
-`/api`, forwarded without application logic to Convex HTTP actions. Native apps
+`/api`, forwarded without application logic to Convex HTTP actions. The messages
+stream is a transport-only exception: the web host forwards a Convex reactive
+subscription as server-sent events. Native apps
 call `https://<deployment>.convex.site/api/...` directly and do not need the website
 or Vite running. Use the HTTP `.convex.site` URL, not the `.convex.cloud` RPC URL.
 Internal Convex functions enforce live sessions, ownership, roles, and atomic
 transitions. Clients cannot call them or submit trusted analysis/embeddings.
 
-Convex calls Workers AI through REST; there is no Worker AI binding. Set
-`WORKERS_AI_ACCOUNT_ID` and a minimally scoped `WORKERS_AI_API_TOKEN` only in the
-Convex environment, plus `WORKERS_AI_ENABLED=true` to opt into billable inference.
-Neither provider credential belongs in web settings, `.xcconfig`, or client code.
-Without opt-in, analysis returns 503 rather than fabricated data. Only authorized
-profile/posting requests can invoke models.
+Convex calls Fireworks for structured analysis and Qwen3 embeddings. Set
+`FIREWORKS_API_KEY` only in the Convex environment. Set `ELEVENLABS_API_KEY`
+and `ELEVENLABS_AGENT_ID` there for voice. None of these credentials belongs in
+web settings, `.xcconfig`, or client code. Missing configuration returns 503
+rather than fabricated data. Only authorized profile/posting requests can invoke
+models. No Cloudflare Workers AI credentials or binding are used.
 
 ## Deployment
 
@@ -92,7 +95,7 @@ Developers can `GET /api/developers/me/career-target` to read their private targ
 sourceUrl?, expectedUpdatedAt?}` to replace it. The browser sends the revision
 it loaded (`0` for a new target), so a stale edit returns 409 before inference.
 Source text is 30-6000 characters; URLs must use HTTP
-or HTTPS and are never fetched. Workers AI extracts the title and requirements,
+or HTTPS and are never fetched. Fireworks extracts the title and requirements,
 including normalized skills, unique IDs and verbatim supporting quotes. Clients
 cannot submit trusted requirements or another developer's ID. Analysis failure
 saves nothing; concurrent replacement returns 409 rather than overwriting a
@@ -124,6 +127,50 @@ availability, location, volunteer, time and essential-technology gates still
 apply. `actionIneligibleReasons` retains existing claim/interest restrictions,
 including discovery consent: a private recommendation does not bypass them.
 
+## Project messages
+
+Web users open **Message** from a mutual connection or opportunity, then use
+`/messages` to return to conversations. A thread belongs to one opportunity and
+one developer. Both interest flags must be true to start a thread or send a new
+message. Closing an opportunity keeps existing conversations usable; withdrawing
+either side's interest pauses sending for both, but preserves participant-only
+history. Reconnecting the same pair reuses its thread. Local community request
+claims are not connected to this messaging flow.
+
+| Method | Path                                            | Input and response                                                                                                   |
+| ------ | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/chat/conversations`                       | `{opportunityId,developerId?}`; requester supplies the developer, developer acts only for themselves; returns `{id}` |
+| POST   | `/api/chat/conversations/:id/messages`          | `{body,clientId}`; trimmed plain text, 1-4000 characters, UUID retry key; returns the saved message                  |
+| GET    | `/api/chat/conversations/:id/messages?before=N` | Up to 50 earlier messages in ascending sequence order and `hasMore`                                                  |
+| PUT    | `/api/chat/conversations/:id/read`              | `{sequence}`; advances only this participant's read position, never beyond the latest saved message                  |
+| GET    | `/api/chat/stream?conversation=ID&limit=20`     | Web-only, same-origin SSE; `snapshot`, `connection`, and terminal `unavailable` events                               |
+
+The stream uses the existing `VITE_CONVEX_SITE_URL` and `SITE_URL` configuration.
+Convex's built-in `CONVEX_CLOUD_URL` supplies the subscription address; there are
+no new service bindings or secrets. The web host obtains a short-lived JWT from
+the authenticated `/api/chat/stream-session` action and holds it only for that
+stream. Convex's read-only `chat:watch` query derives its live session and member
+role from that signed identity and validates thread membership. Writes stay
+internal and revalidate live sessions, ownership, and mutual interest atomically.
+Session revocation invalidates the subscription. Streams close at session expiry
+or after five minutes and reconnect with fresh credentials; no database polling
+is used. Client disconnects and slow consumers release the subscription/socket.
+
+Snapshots include the newest 50 messages, unread counts, and the peer's read
+sequence. The inbox loads 20 conversations at a time, up to 200 most recent;
+older threads remain reachable from their project connection. Earlier message
+pages use stable sequence cursors. The UI marks messages read only when the
+visible, focused thread is at its latest messages. Message text is rendered as
+plain text, not HTML or Markdown. Sending is limited to 30 new messages per
+sender per minute across projects. Retrying an identical `clientId` returns the
+same message without consuming the quota; changing its text returns 409.
+
+This rollout adds two tables and indexes without modifying existing rows. Sync
+Convex functions/schema to the chosen development deployment and run the updated
+web host before using chat. This does not add payments, attachments, typing or
+presence indicators, email/push notifications, blocking/reporting, or native chat.
+Add abuse controls before offering messaging at public-registration scale.
+
 ## Browser QA console
 
 Run `bun run dev --host 127.0.0.1` and open `/debug` on the printed local
@@ -147,7 +194,7 @@ dashboard: all calls retain backend authorization, including expected 401, 403,
 400 and 409 failures. It is marked `noindex`, but remains a public web route;
 restrict access at deployment if the console should not be publicly reachable.
 
-Use the local setup above first. Without remote Workers AI, valid profile saves
+Use the local setup above first. Without Fireworks configured, valid profile saves
 and job posts return 503, with no partial persistence. This console does not seed
 fake data or substitute models. `QA walkthrough` on the page covers the matching
 and mutual-interest flow when AI is available.
@@ -358,7 +405,7 @@ Opportunities accept optional listing fields: `compensation` and `commitment`
 (each up to 80 characters), and a map pin given as `place`, `latitude` and
 `longitude` together (all three or none). Unpinned opportunities stay off the map.
 Edits replace the whole record and re-run analysis, so they return 503 and save
-nothing when Workers AI is unavailable.
+nothing when Fireworks is unavailable.
 
 Nothing is deleted through the API yet. Requests close and opportunities close or
 reopen; archive-versus-delete policy and account deletion await a product decision.
@@ -400,4 +447,10 @@ For a direct-HTTP smoke test against a disposable development deployment, enable
 their records through an operator-only internal function. Do not enable cleanup
 in production. Normal `check`, `build`, and `smoke` never push Convex functions.
 The public health endpoint stays a minimal liveness check, not a connectivity test.
-Live Workers AI inference still requires Cloudflare credentials and explicit opt-in.
+Live inference requires Fireworks credentials in the selected Convex deployment.
+
+When changing embedding models, re-embed existing rows before mixing them with
+new vectors. The operator-only `maintenance:refreshDeveloperEmbeddings` action
+refreshes up to 25 profiles per invocation and skips concurrent profile changes.
+It does not alter profile fields or reset their revisions. Existing opportunity
+and request embeddings must also be regenerated if those tables contain older models.

@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowUpRightIcon,
@@ -14,8 +21,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardPanel } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CITY_LABEL } from "@/lib/format";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+  ToggleGroupSeparator,
+} from "@/components/ui/toggle-group";
 import { AppHeader } from "@/components/app/app-shell";
 import { ErrorAlert } from "@/components/app/require-role";
 import {
@@ -31,11 +42,25 @@ import { CalgaryCanvas } from "./calgary-canvas";
 import { listingLabel, markerIcon } from "./job-marker";
 import { ListingActions } from "./listing-actions";
 
-const FILTERS: { value: MapFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "paid", label: "Paid" },
-  { value: "volunteer", label: "Volunteer" },
-  { value: "request", label: "Community" },
+const FILTERS: {
+  value: Exclude<MapFilter, "all">;
+  label: string;
+  marker: string;
+  markerClass: string;
+}[] = [
+  { value: "paid", label: "Paid", marker: "P", markerClass: "map-key-paid" },
+  {
+    value: "volunteer",
+    label: "Volunteer",
+    marker: "V",
+    markerClass: "map-key-volunteer",
+  },
+  {
+    value: "request",
+    label: "Community",
+    marker: "R",
+    markerClass: "map-key-community",
+  },
 ];
 
 const POST_TARGET: Partial<Record<Role, { path: string; label: string }>> = {
@@ -156,24 +181,6 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                 />
               </div>
             </div>
-            <ToggleGroup
-              aria-label="Filter projects by type"
-              size="sm"
-              className="flex-wrap"
-              value={[filter]}
-              onValueChange={(next) => {
-                const choice = FILTERS.find((item) => item.value === next[0]);
-                if (!choice) return;
-                setFilter(choice.value);
-                setSelectedId(null);
-              }}
-            >
-              {FILTERS.map(({ value, label }) => (
-                <ToggleGroupItem key={value} value={value}>
-                  {label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
           </div>
           <div className="flex items-center justify-between gap-3 px-5 pb-3 text-xs text-muted-foreground sm:px-6">
             <p role="status">
@@ -325,6 +332,41 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
             onSelect={selectJob}
             placing={placing}
             onPick={pickLocation}
+            filters={
+              <ToggleGroup
+                variant="outline"
+                size="sm"
+                aria-label="Filter projects by type"
+                value={filter === "all" ? [] : [filter]}
+                onValueChange={(values) => {
+                  setFilter(
+                    FILTERS.find(({ value }) => value === values[0])?.value ??
+                      "all",
+                  );
+                  setSelectedId(null);
+                }}
+              >
+                {FILTERS.map(({ value, label, marker, markerClass }, index) => (
+                  <Fragment key={value}>
+                    {index > 0 && <ToggleGroupSeparator />}
+                    <ToggleGroupItem
+                      value={value}
+                      className="min-h-11 bg-card text-xs data-pressed:border-primary data-pressed:bg-secondary data-pressed:text-secondary-foreground sm:text-sm"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="hidden sm:inline-flex"
+                      >
+                        <span className={`map-key ${markerClass}`}>
+                          {marker}
+                        </span>
+                      </span>
+                      {label}
+                    </ToggleGroupItem>
+                  </Fragment>
+                ))}
+              </ToggleGroup>
+            }
             renderActions={(job) => (
               <ListingActions
                 job={job}

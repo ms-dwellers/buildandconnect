@@ -128,6 +128,33 @@ export const request = v.object({
 });
 
 export default defineSchema({
+  conversations: defineTable({
+    opportunityId: v.string(),
+    requesterId: v.string(),
+    developerId: v.string(),
+    requesterName: v.string(),
+    developerName: v.string(),
+    title: v.string(),
+    lastSequence: v.number(),
+    requesterReadSequence: v.number(),
+    developerReadSequence: v.number(),
+    lastMessage: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_pair", ["opportunityId", "developerId"])
+    .index("by_requester", ["requesterId", "updatedAt"])
+    .index("by_developer", ["developerId", "updatedAt"]),
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderId: v.string(),
+    clientId: v.string(),
+    body: v.string(),
+    sequence: v.number(),
+    sentAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId", "sequence"])
+    .index("by_submission", ["conversationId", "senderId", "clientId"])
+    .index("by_sender", ["senderId", "sentAt"]),
   projectDrafts: defineTable({
     id: v.string(),
     ownerId: v.string(),

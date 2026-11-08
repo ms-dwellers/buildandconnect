@@ -249,6 +249,7 @@
   --illustration-flower: var(--palette-coral);
   --map-land: #d7e5d8;
   --map-block: #c4d8c8;
+  --map-building: var(--map-block);
   --map-road: var(--palette-cream);
   --map-park: #a4c2ad;
   --map-water: var(--palette-teal);

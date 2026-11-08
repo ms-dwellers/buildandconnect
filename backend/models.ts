@@ -1,3 +1,5 @@
-export const ANALYSIS_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-export const EMBEDDING_MODEL = "@cf/baai/bge-small-en-v1.5";
+import { DEFAULT_ANALYSIS_MODEL } from "./hiring/models.ts";
+
+export const ANALYSIS_MODEL = DEFAULT_ANALYSIS_MODEL;
+export const EMBEDDING_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
 export const ANALYSIS_VERSION = "job-v2";

@@ -8,7 +8,7 @@
 | API routing and authorization | Convex HTTP actions, `convex/api.ts` | Implemented                     |
 | Accounts and sessions         | Better Auth's Convex component       | Email/password, Google, GitHub  |
 | Application and auth data     | Convex, `convex/schema.ts`           | Implemented                     |
-| Job analysis and embeddings   | Convex actions and Workers AI REST   | Requires Cloudflare access      |
+| Job analysis and embeddings   | Convex actions and Fireworks REST    | Requires Fireworks credentials  |
 | Growth matching               | `backend/matching.ts`                | Deterministic, versioned        |
 | Mutual interest               | Convex interest records              | Opportunity-specific, revocable |
 | Role views                    | `app/dashboard`, `components/`       | One dashboard per account type  |
@@ -33,9 +33,9 @@ remains a minimal public liveness route, not a provider-readiness check.
    company/recruiter records are read as requesters, preserving ownership and
    existing data; the old roles cannot be selected or submitted anymore.
 3. Developers submit explicit skills, projects, interests, learning goals, and
-   discovery consent. BGE Small embeds demonstrated experience, not aspirations.
-4. Requesters post opportunities. Llama produces schema-constrained job analysis;
-   Zod validates it. BGE Small embeds the structured requirements. Only after both
+   discovery consent. Qwen3 embeds demonstrated experience, not aspirations.
+4. Requesters post opportunities. Fireworks produces schema-constrained job analysis;
+   Zod validates it. Qwen3 embeds the structured requirements. Only after both
    succeed is the complete record written to Convex. A failure returns 503 and saves
    nothing. Updating a profile similarly preserves its previous version on failure.
 5. Requesters fetch ranked candidates for their own opportunities. Convex narrows
@@ -96,7 +96,11 @@ colluding-account abuse prevention is outside this MVP.
   not emails, auth records, embeddings, or private exposure counts. Only an
   opportunity owner sees its full candidate ranking. Only participants see their
   connections and pending interests. Visibility/availability can be changed without
-  inference. There is no messaging or automatic contact-detail release.
+  inference. Opportunity chat is available only to mutual-interest participants;
+  there is no automatic contact-detail release. `convex/chat.ts` owns threads,
+  messages, unread/read positions, and authorization. Internal mutations use the
+  existing HTTP facade. A read-only JWT-authenticated query supplies reactive
+  updates through the same-origin SSE bridge in `lib/chat-stream.ts`.
 - Use same-origin cookie requests. Mutation origins are checked; Better Auth
   retains its own CSRF/cookie protections. API responses are never shared-cached.
   Request bodies are capped at 32 KB and input fields/collections are bounded.
@@ -114,7 +118,7 @@ colluding-account abuse prevention is outside this MVP.
 - Owners can revise opportunity details and open request details. Profile updates regenerate
   embeddings; matching always uses the latest profile. Embeddings use mean pooling,
   384 dimensions, and a bounded 1,800-character summary. Long profiles lose detail.
-- No payment, messaging, verified project outcomes, identity verification, or
+- No payment, community-request messaging, verified project outcomes, identity verification, or
   account deletion UI is implemented here. Local request accept is exclusive and
   does not require requester confirmation before the claim.
 
@@ -122,8 +126,10 @@ colluding-account abuse prevention is outside this MVP.
 
 See [backend.md](backend.md) for Convex setup and the HTTP contract.
 `convex/http.ts` registers authentication and application HTTP actions.
-`convex/ai.ts` calls Workers AI REST using credentials stored only in Convex and an
-explicit `WORKERS_AI_ENABLED=true` opt-in. `cloudflare.config.ts` contains only
+`convex/ai.ts` calls Fireworks using `FIREWORKS_API_KEY` stored only in Convex.
+GLM 5.3 Flash handles extraction; Qwen3 Embedding 8B supplies normalized 384-dimensional
+embeddings. Fireworks receives the full JSON schema and Zod enforces all output
+constraints before persistence. `cloudflare.config.ts` contains only
 website hosting and forwarding configuration. Nothing is provisioned or deployed
 by the checks. The isolated native test server uses an ephemeral Convex test runtime
 and scripted inference, never a cloud database or paid model.

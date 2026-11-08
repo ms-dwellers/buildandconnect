@@ -7,9 +7,9 @@ A hackathon app connecting early-career developers with non-technical requesters
 through shared interests and social-impact projects.
 
 **Current state:** a Three.js landing scene, Mapbox nearby-request UI, `/api/health`, and a
-Convex backend with Better Auth (email/password, Google, GitHub), Convex HTTP actions, Workers AI analysis, growth-oriented
+Convex backend with Better Auth (email/password, Google, GitHub), Convex HTTP actions, Fireworks analysis, growth-oriented
 matching, consent-based developer discovery, opportunity-specific mutual interest, and exclusive
-local-request claims. See [the backend guide](docs/backend.md) for setup and API
+local-request claims, and real-time opportunity chat after mutual interest. See [the backend guide](docs/backend.md) for setup and API
 examples. For browser-based backend QA, run the frontend and open `/debug`.
 Signed-in users land on a role dashboard at `/dashboard` (developer or requester).
 The public Calgary `/map` shows live requests and
@@ -144,13 +144,13 @@ separate built-in `bun test` runner.
 ## Architecture and service setup
 
 Requester accounts can use `/hire` for [project intake](docs/employer-voice-intake.md):
-ElevenLabs transcribes recorded answers, and Gemini through OpenRouter drafts a
+ElevenLabs transcribes recorded answers, and Fireworks drafts a
 reviewable brief and suggests up to ten developers. Both integrations require
 server-only provider keys; no opportunity is posted automatically.
 
 The [voice studio](docs/voice-prototype.md) at `/wip-voice-ai` connects a private
 ElevenLabs interviewer to the microphone and displays its words over the aurora.
-A separate Gemini agent fills the project brief in the background. Requesters
+A separate Fireworks call fills the project brief in the background. Requesters
 review the brief before requesting developer suggestions.
 
 The component foundation is [coss ui](https://coss.com/ui/docs), with the supplied
@@ -159,8 +159,8 @@ emerald, cream, wheat, apricot, and coral palette. See
 
 See [docs/architecture.md](docs/architecture.md) for ownership and integration
 steps. React/Vinext App Router and Tailwind run on the web host. Convex owns the
-HTTP API, application data, authentication, and AI execution. Workers AI supplies Llama analysis and
-BGE Small embeddings; TypeScript owns deterministic matching. Mapbox powers
+HTTP API, application data, authentication, and AI execution. Fireworks supplies structured analysis and
+Qwen3 embeddings; TypeScript owns deterministic matching. Mapbox powers
 location search and nearby maps. Convex is the only application database; the
 Worker remains the browser-facing API.
 

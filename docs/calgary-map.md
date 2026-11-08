@@ -23,7 +23,11 @@ The account-entry screen reuses the pixel-art garden scene.
 The map shows live Convex records through the public `GET /api/map` feed: open
 requester opportunities that have a map pin, and open community requests. No demo
 data remains. Select a pin or list entry to open its details; search by skill,
-title, organisation or neighbourhood, and filter Paid, Volunteer or Community.
+title, organisation or neighbourhood, and filter Paid, Volunteer or Community
+using the buttons at the bottom of the map. Select the active category again to
+show all types. These controls also work in the illustrated fallback. **City
+overview** clears the selected pin and resets the live map camera without
+changing the category or search.
 
 ## Who sees what
 

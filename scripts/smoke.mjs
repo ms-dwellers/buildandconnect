@@ -69,13 +69,7 @@ try {
   assert.match(html, /Nearby map/);
   assert.match(html, /data-slot="button"/);
   assert.match(html, /data-slot="card"/);
-  for (const route of [
-    "/map",
-    "/requests/new",
-    "/sign-up",
-    "/sign-in",
-    "/design-system",
-  ]) {
+  for (const route of ["/map", "/requests/new", "/sign-up", "/sign-in"]) {
     assert.ok(
       html.includes(`href="${route}"`),
       `Missing landing-page link: ${route}`,

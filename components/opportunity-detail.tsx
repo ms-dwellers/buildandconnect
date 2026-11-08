@@ -10,6 +10,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { StartChatButton } from "@/components/chat/start-chat-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
 import {
@@ -353,9 +354,8 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
                     </div>
                     {current?.connected && (
                       <p className="text-sm">
-                        You are both interested. Agree on scope, timing, and
-                        support before starting; no work assignment or messaging
-                        is created automatically.
+                        You are both interested. Message the developer to agree
+                        on scope, timing, and support before starting.
                       </p>
                     )}
                     {interested && !current?.connected && (
@@ -369,32 +369,40 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
                     </p>
                     <Scores scores={match.scores} />
                   </div>
-                  <ConfirmButton
-                    confirmVariant={interested ? "destructive" : "default"}
-                    variant={interested ? "outline" : "default"}
-                    size="sm"
-                    loading={pending === match.developerId}
-                    disabled={!!interest.error}
-                    label={
-                      interested ? "Withdraw interest" : "Express interest"
-                    }
-                    title={
-                      interested
-                        ? "Withdraw your interest?"
-                        : `Express interest in ${match.name}?`
-                    }
-                    description={
-                      interested
-                        ? "Any mutual connection with this developer will end."
-                        : "The developer can see your interest. This does not assign work or send an invitation outside the app."
-                    }
-                    confirmLabel={
-                      interested ? "Withdraw interest" : "Express interest"
-                    }
-                    onConfirm={() =>
-                      void toggle(match.developerId, !interested)
-                    }
-                  />
+                  <div className="flex flex-wrap items-start gap-2">
+                    {current?.connected && (
+                      <StartChatButton
+                        opportunityId={opportunity.id}
+                        developerId={match.developerId}
+                      />
+                    )}
+                    <ConfirmButton
+                      confirmVariant={interested ? "destructive" : "default"}
+                      variant={interested ? "outline" : "default"}
+                      size="sm"
+                      loading={pending === match.developerId}
+                      disabled={!!interest.error}
+                      label={
+                        interested ? "Withdraw interest" : "Express interest"
+                      }
+                      title={
+                        interested
+                          ? "Withdraw your interest?"
+                          : `Express interest in ${match.name}?`
+                      }
+                      description={
+                        interested
+                          ? "Any mutual connection with this developer will end."
+                          : "The developer can see your interest. This does not assign work or send an invitation outside the app."
+                      }
+                      confirmLabel={
+                        interested ? "Withdraw interest" : "Express interest"
+                      }
+                      onConfirm={() =>
+                        void toggle(match.developerId, !interested)
+                      }
+                    />
+                  </div>
                 </ItemCard>
               </li>
             );
@@ -509,12 +517,14 @@ function YourFit({
           )}
           <FieldMessage>{error}</FieldMessage>
           {mine?.connected && (
-            <p className="text-sm">
-              You and the requester are interested. Agree on scope, timing,
-              compensation, and support before starting; this is not a work
-              assignment or delivery confirmation. Messaging is not available in
-              the app yet.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm">
+                Agree on scope, timing, compensation, and support before
+                starting. A connection is not a work assignment or delivery
+                confirmation.
+              </p>
+              <StartChatButton opportunityId={opportunity.id} />
+            </div>
           )}
           {interested && !mine?.connected && (
             <p role="status" className="text-sm">
