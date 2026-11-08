@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useOpportunityDraft } from "@/lib/opportunity-draft-context";
 import { MicIcon, SquareIcon } from "lucide-react";
 import { RequireRole, ErrorAlert } from "@/components/app/require-role";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,8 @@ export function EmployerIntake({
 }
 
 function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
+  const router = useRouter();
+  const opportunityDraft = useOpportunityDraft();
   const config = useApi<{ transcription: boolean; matching: boolean }>(
     "/hiring/status",
   );
@@ -419,7 +423,12 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
             No invitations have been sent. Use your dashboard to post an
             opportunity and express interest.
           </p>
-          <Button render={<a href="/opportunities/new" />}>
+          <Button
+            onClick={() => {
+              const id = opportunityDraft.stage(brief);
+              router.push(`/opportunities/new?draft=${encodeURIComponent(id)}`);
+            }}
+          >
             Post an opportunity
           </Button>
         </section>

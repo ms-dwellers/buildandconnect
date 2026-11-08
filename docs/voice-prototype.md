@@ -50,6 +50,14 @@ Existing extracted fields are kept; pending AI updates are canceled so they cann
 overwrite manual edits. Editing does not require microphone access or configured
 voice services. Developer suggestions still require Gemini and explicit consent.
 
+After suggestions, **Post an opportunity** opens a prefilled opportunity form
+using the latest reviewed brief. Title, description, location, pay, hours, causes,
+and timeline carry over. Technology preferences and communities served are kept
+in the description; preferences never become mandatory technology filters.
+You can edit everything before explicitly posting. This handoff stays in memory,
+is scoped to the signed-in requester, and uses only a random draft ID in the URL.
+Reloading loses the handoff; a normal new-opportunity link still opens a blank form.
+
 Navigation remains above the full-screen voice panel. There is no preview label,
 timer, atmosphere control, waveform, voice-style bar, or separate microphone row.
 The transcript and project brief sit below the first viewport. Reduced-motion

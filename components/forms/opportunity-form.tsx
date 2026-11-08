@@ -13,6 +13,7 @@ import { MapPinPicker, type Pin } from "@/components/MapPinPicker";
 import { ErrorAlert } from "@/components/app/require-role";
 import { api } from "@/lib/api";
 import type { OpportunityInput, OpportunityRecord } from "@/lib/types";
+import type { OpportunityDraft } from "@/lib/opportunity-draft";
 import {
   FormSection,
   TextAreaField,
@@ -60,18 +61,25 @@ export function ChoiceGroup<T extends string>({
 export function OpportunityForm({
   initial,
   defaultPin,
+  draft,
+  onSubmitted,
+  onCancel,
 }: {
   initial?: OpportunityRecord;
   defaultPin?: Pin | null;
+  draft?: OpportunityDraft;
+  onSubmitted?: () => void;
+  onCancel?: () => void;
 }) {
   const router = useRouter();
-  const [kind, setKind] = useState<OpportunityInput["kind"]>(
-    initial?.kind ?? "volunteer",
+  const values = initial ?? draft;
+  const [kind, setKind] = useState<OpportunityInput["kind"] | "">(
+    values?.kind ?? (draft ? "" : "volunteer"),
   );
   const [collaboration, setCollaboration] = useState<
     OpportunityInput["collaboration"]
-  >(initial?.collaboration ?? "flexible");
-  const [remote, setRemote] = useState(initial?.remote ?? false);
+  >(values?.collaboration ?? "flexible");
+  const [remote, setRemote] = useState(values?.remote ?? false);
   const [pin, setPin] = useState<Pin | null>(
     initial?.latitude !== undefined && initial.longitude !== undefined
       ? {
@@ -88,6 +96,11 @@ export function OpportunityForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
+    if (!kind) {
+      setFailure("Choose whether this opportunity is paid or volunteer.");
+      return;
+    }
     const data = new FormData(event.currentTarget);
     const optional = (name: string) => {
       const value = String(data.get(name) ?? "").trim();
@@ -127,6 +140,7 @@ export function OpportunityForm({
       title: initial ? "Opportunity updated" : "Opportunity posted",
       type: "success",
     });
+    onSubmitted?.();
     router.push(`/opportunities/${result.data.id}`);
   }
 
@@ -140,7 +154,7 @@ export function OpportunityForm({
               label="Title"
               required
               maxLength={100}
-              defaultValue={initial?.title}
+              defaultValue={values?.title}
               placeholder="An events calendar for our community centre"
             />
             <TextAreaField
@@ -151,7 +165,7 @@ export function OpportunityForm({
               minLength={30}
               maxLength={6000}
               rows={7}
-              defaultValue={initial?.description}
+              defaultValue={values?.description}
             />
             <ChoiceGroup
               label="Opportunity type"
@@ -168,7 +182,7 @@ export function OpportunityForm({
                   name="compensation"
                   label="Compensation"
                   maxLength={80}
-                  defaultValue={initial?.compensation}
+                  defaultValue={values?.compensation}
                   placeholder="$1,200 project"
                 />
               )}
@@ -176,7 +190,7 @@ export function OpportunityForm({
                 name="commitment"
                 label="Expected commitment"
                 maxLength={80}
-                defaultValue={initial?.commitment}
+                defaultValue={values?.commitment}
                 placeholder="3-4 weeks"
               />
             </div>
@@ -187,14 +201,14 @@ export function OpportunityForm({
               name="essentialTechnologies"
               label="Essential technologies"
               description="Only list true requirements, separated by commas. Developers without them won't be matched."
-              defaultValue={initial?.essentialTechnologies.join(", ")}
+              defaultValue={values?.essentialTechnologies?.join(", ")}
               placeholder="React"
             />
             <TextField
               name="interests"
               label="Causes and interests"
               description="Separated by commas. Shared interests improve the match."
-              defaultValue={initial?.interests.join(", ")}
+              defaultValue={values?.interests?.join(", ")}
               placeholder="community, sustainability"
             />
             <TextField
@@ -204,7 +218,7 @@ export function OpportunityForm({
               required
               min={1}
               max={80}
-              defaultValue={initial?.minimumWeeklyHours ?? 4}
+              defaultValue={values?.minimumWeeklyHours ?? (draft ? "" : 4)}
               className="w-full sm:max-w-48"
             />
             <ChoiceGroup
@@ -235,7 +249,7 @@ export function OpportunityForm({
               label="City"
               required
               maxLength={100}
-              defaultValue={initial?.city ?? "Calgary"}
+              defaultValue={values?.city ?? (draft ? "" : "Calgary")}
               description={
                 remote
                   ? undefined
@@ -297,7 +311,11 @@ export function OpportunityForm({
             <Button type="submit" loading={pending}>
               {initial ? "Save changes" : "Post opportunity"}
             </Button>
-            <Button render={<a href="/dashboard" />} variant="ghost">
+            <Button
+              render={<a href="/dashboard" />}
+              variant="ghost"
+              onClick={onCancel}
+            >
               Cancel
             </Button>
           </div>
