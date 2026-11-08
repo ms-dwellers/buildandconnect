@@ -55,6 +55,15 @@ enum Route: Hashable {
   case setupProfileFor(ProfileReturn)
   case profileFor(ProfileReturn)
   case areaFor(ProfileReturn)
+  case startProject
+  case projectDraft(String)
+
+  var managesDraftBack: Bool {
+    switch self {
+    case .startProject, .newOpportunity, .projectDraft: true
+    default: false
+    }
+  }
 }
 
 enum ProfileReturn: Hashable {
@@ -373,7 +382,7 @@ struct AppNavigation<Content: View>: View {
             case .setupProfile: DeveloperOnboardingView()
             case .area: AreaEditorView()
             case .newRequest: RequestEditorView()
-            case .newOpportunity: OpportunityEditorView()
+            case .newOpportunity: StartProjectView()
             case .editRequest(let id): RequestEditorView(id: id)
             case .editOpportunity(let id): OpportunityEditorView(id: id)
             case .map(let id): ExploreView(focus: id)
@@ -384,6 +393,8 @@ struct AppNavigation<Content: View>: View {
             case .connections: ConnectionsView()
             case .myOpportunities: RequesterOpportunitiesView()
             case .career: CareerView()
+            case .startProject: StartProjectView()
+            case .projectDraft(let id): ProjectDraftEditorView(id: id)
             case .setupProfileFor(let target): DeveloperOnboardingView(returnTo: target)
             case .profileFor(let target): ProfileView(returnTo: target)
             case .areaFor(let target): AreaEditorView(returnTo: target)
@@ -391,12 +402,14 @@ struct AppNavigation<Content: View>: View {
           }
           .navigationBarBackButtonHidden()
           .toolbar {
-            AppToolbarItem(placement: .topBarLeading) {
-              Button {
-                if !path.isEmpty { path.removeLast() }
-              } label: {
-                Label("Back", systemImage: "chevron.left")
-              }.buttonStyle(AppButtonStyle(variant: .ghost))
+            if !route.managesDraftBack {
+              AppToolbarItem(placement: .topBarLeading) {
+                Button {
+                  if !path.isEmpty { path.removeLast() }
+                } label: {
+                  Label("Back", systemImage: "chevron.left")
+                }.buttonStyle(AppButtonStyle(variant: .ghost))
+              }
             }
           }
           .environment(\.appPalette, route == .voice ? .voice : .standard)

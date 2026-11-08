@@ -140,10 +140,13 @@ struct RequesterHomeView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
         FeatureBanner(title: "Small ideas.\nReal possibilities.", symbol: "lightbulb.fill")
-        NavigationLink("Post a request", value: Route.newRequest).buttonStyle(
+        NavigationLink("Start a project", value: Route.startProject).buttonStyle(
           AppButtonStyle.primary)
+        ProjectDraftList()
         NavigationLink("Manage opportunities", value: Route.myOpportunities)
           .buttonStyle(AppButtonStyle(variant: .outline, fullWidth: true))
+        NavigationLink("Post a short local request", value: Route.newRequest).buttonStyle(
+          AppButtonStyle(variant: .ghost))
         AppSegmentedControl(
           title: "Status", selection: $status,
           options: [
@@ -158,7 +161,7 @@ struct RequesterHomeView: View {
             message: "Post a local problem and pin where help is needed.")
         }
       }.padding(20)
-    }.pageBackground().appNavigationTitle("My requests")
+    }.pageBackground().appNavigationTitle("My projects")
       .task(id: app.revision) { await load(true) }.refreshable { await load(true) }
   }
   private func load(_ reset: Bool) async { await requests.load(api, "/requests", reset: reset) }
@@ -173,7 +176,7 @@ struct RequesterOpportunitiesView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
         FeatureBanner(title: "Build with\nthe right people.", symbol: "person.2.fill")
-        NavigationLink("Post an opportunity", value: Route.newOpportunity).buttonStyle(
+        NavigationLink("Start a project", value: Route.startProject).buttonStyle(
           AppButtonStyle.primary)
         AppSegmentedControl(
           title: "Status", selection: $status,

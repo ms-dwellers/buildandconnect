@@ -3,6 +3,27 @@ import XCTest
 @testable import BuildConnect
 
 final class ModelTests: XCTestCase {
+  func testPrivateDraftPreservesIncompleteFieldsAndExplicitNullPin() throws {
+    let content = ProjectDraftContent()
+    XCTAssertFalse(content.readyToPublish)
+    let data = try JSONEncoder().encode(content)
+    let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    XCTAssertTrue(json["pin"] is NSNull)
+    XCTAssertEqual(try JSONDecoder().decode(ProjectDraftContent.self, from: data), content)
+  }
+
+  func testDraftPublicationRequiresExplicitTypeHoursAndDetails() {
+    var content = ProjectDraftContent()
+    content.title = "Community calendar"
+    content.description = "Build an accessible calendar for a local community group."
+    content.city = "Calgary"
+    XCTAssertFalse(content.readyToPublish)
+    content.kind = "volunteer"
+    content.minimumWeeklyHours = "4"
+    XCTAssertTrue(content.readyToPublish)
+    content.minimumWeeklyHours = "0"
+    XCTAssertFalse(content.readyToPublish)
+  }
   func testDraftsRoundTripWithAccountIsolation() throws {
     let key = "test/\(UUID().uuidString)"
     defer { DraftCache.remove(key: key) }

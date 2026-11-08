@@ -105,6 +105,13 @@ normal app. This is a manual visual preview, not a test runner.
 
 ## Connected pathways
 
+Requester project entry uses private Convex drafts. Incomplete fields autosave
+after a short pause; Back and Save and exit wait for the latest save. A revision
+conflict stops autosaving and requires an explicit reload or leaving without the
+unsaved edits. Discard requires confirmation. Publish saves first, then explicitly
+runs analysis; failure keeps the draft available. If a publish response is lost,
+the editor checks the draft's linked opportunity before offering a retry.
+
 - Guest welcome and Calgary browsing; authentication returns to a pending posting.
 - Email/password sign-up and sign-in, one-time role choice, session restoration,
   and server sign-out. Native credentials are signed bearer sessions in Keychain.

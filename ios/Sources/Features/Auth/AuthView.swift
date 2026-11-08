@@ -296,7 +296,8 @@ struct RoleSelectionView: View {
       await app.refreshSession(resumeNavigation: false)
       if let error = app.sessionError { throw error }
       if !app.needsProfileSetup {
-        app.selectedTab = .explore
+        app.selectedTab = .home
+        if app.pendingRoute == nil && app.role == .requester { app.pendingRoute = .startProject }
         app.resumePendingRoute()
       }
     }
