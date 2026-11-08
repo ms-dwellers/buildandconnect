@@ -44,6 +44,12 @@ Earlier extracted facts are retained in the previous brief.
    review and matching flow. Suggestions require explicit review/consent. Nothing
    is published and no invitations are sent automatically.
 
+**Fill out manually** skips the interview and opens the editable form immediately,
+even with an empty brief. You can also switch to manual entry during a conversation.
+Existing extracted fields are kept; pending AI updates are canceled so they cannot
+overwrite manual edits. Editing does not require microphone access or configured
+voice services. Developer suggestions still require Gemini and explicit consent.
+
 Navigation remains above the full-screen voice panel. There is no preview label,
 timer, atmosphere control, waveform, voice-style bar, or separate microphone row.
 The transcript and project brief sit below the first viewport. Reduced-motion

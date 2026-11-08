@@ -29,18 +29,20 @@ export function BriefForm({
   disabled,
   onSubmit,
   preview = false,
+  submitDisabled = false,
 }: {
   brief: HiringBrief;
   pending: boolean;
   disabled: boolean;
   onSubmit: (brief: HiringBrief) => void;
   preview?: boolean;
+  submitDisabled?: boolean;
 }) {
   const [error, setError] = useState("");
   const [consent, setConsent] = useState(false);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!consent) return;
+    if (!consent || pending || disabled || submitDisabled) return;
     const data = new FormData(event.currentTarget);
     const text = (name: string) => String(data.get(name) ?? "").trim() || null;
     const number = (name: string) =>
@@ -250,7 +252,7 @@ export function BriefForm({
           </p>
           <Button
             type="submit"
-            disabled={!consent || disabled}
+            disabled={!consent || disabled || submitDisabled}
             loading={pending}
           >
             Find up to 10 developers

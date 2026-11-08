@@ -289,6 +289,14 @@ export function useVoiceConversation() {
     if (debounce.current) clearTimeout(debounce.current);
   }, []);
 
+  function prepareReview() {
+    disconnect();
+    clearDraftWork();
+    setExtracting(false);
+    setBriefError("");
+    setPhase("ended");
+  }
+
   function reset() {
     disconnect();
     clearDraftWork();
@@ -346,6 +354,7 @@ export function useVoiceConversation() {
     resume: () => void start(),
     pause,
     end,
+    prepareReview,
     reset,
     toggleSound,
     retryBrief: () => void extract(),

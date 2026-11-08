@@ -71,6 +71,26 @@ test("navigation stays above the unframed voice panel, with the transcript below
   assert.match(css, /animation-delay: var\(--word-delay\)/);
   assert.match(source, /phase === "speaking" &&/);
   assert.match(source, /conversation\.interrupt\(\)/);
+  assert.match(source, /Fill out manually/);
+  assert.match(source, /conversation\.prepareReview\(\)/);
+});
+
+test("manual review stops extraction before allowing edits", () => {
+  const hook = readFileSync(
+    new URL("../app/wip-voice-ai/use-voice-conversation.ts", import.meta.url),
+    "utf8",
+  );
+  const review = hook.match(/function prepareReview\(\) \{([^}]+)\}/)?.[1];
+  assert.ok(review);
+  assert.match(review, /disconnect\(\)/);
+  assert.match(review, /clearDraftWork\(\)/);
+  assert.match(review, /setExtracting\(false\)/);
+  const intake = readFileSync(
+    new URL("../components/hiring/employer-intake.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(intake, /disabled=\{false\}/);
+  assert.match(intake, /submitDisabled=\{!config\.data\?\.matching\}/);
 });
 
 test("the interview agent ignores talk-over instead of interrupting automatically", () => {

@@ -359,7 +359,8 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
             <BriefForm
               brief={brief}
               pending={busy}
-              disabled={!config.data?.matching}
+              disabled={false}
+              submitDisabled={!config.data?.matching}
               onSubmit={(confirmed) => void findDevelopers(confirmed)}
             />
           </CardPanel>

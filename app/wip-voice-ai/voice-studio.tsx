@@ -72,7 +72,7 @@ function Studio() {
   }
 
   function review() {
-    conversation.end();
+    conversation.prepareReview();
     setReviewing(true);
     briefPanel.current?.scrollIntoView({ behavior: "instant", block: "start" });
     briefPanel.current?.focus({ preventScroll: true });
@@ -154,6 +154,7 @@ function Studio() {
                     ref={conversationControl}
                     size="xl"
                     className="voice-start"
+                    disabled={reviewing}
                     onClick={
                       phase === "paused"
                         ? conversation.resume
@@ -201,14 +202,11 @@ function Studio() {
                   {conversation.error}
                 </p>
               )}
-              {brief.title && brief.description && !reviewing && (
-                <Button
-                  variant="ghost"
-                  className="mt-3"
-                  onClick={review}
-                  disabled={conversation.extracting}
-                >
-                  Review project brief
+              {!reviewing && (
+                <Button variant="ghost" className="mt-3" onClick={review}>
+                  {messages.length
+                    ? "Review project brief"
+                    : "Fill out manually"}
                 </Button>
               )}
             </div>
@@ -293,16 +291,8 @@ function Studio() {
                 Project brief
               </h2>
               {!reviewing && (
-                <Button
-                  variant="outline"
-                  onClick={review}
-                  disabled={
-                    conversation.extracting ||
-                    !brief.title ||
-                    !brief.description
-                  }
-                >
-                  Review and edit
+                <Button variant="outline" onClick={review}>
+                  {messages.length ? "Review and edit" : "Fill out manually"}
                 </Button>
               )}
             </div>
