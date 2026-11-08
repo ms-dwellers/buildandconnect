@@ -378,6 +378,33 @@ struct AppStepper: View {
   }
 }
 
+struct AppDisclosureStyle: DisclosureGroupStyle {
+  @Environment(\.appPalette) private var palette
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func makeBody(configuration: Configuration) -> some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Button {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) {
+          configuration.isExpanded.toggle()
+        }
+      } label: {
+        HStack(spacing: 12) {
+          configuration.label
+          Spacer(minLength: 8)
+          Image(systemName: configuration.isExpanded ? "chevron.down" : "chevron.right")
+            .font(.system(size: 14, weight: .medium)).accessibilityHidden(true)
+        }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+          .foregroundStyle(palette.ink).contentShape(Rectangle())
+      }.buttonStyle(.plain)
+        .accessibilityValue(configuration.isExpanded ? "Expanded" : "Collapsed")
+      if configuration.isExpanded {
+        configuration.content.frame(maxWidth: .infinity, alignment: .leading)
+      }
+    }.frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
 /// Keep native slider input and accessibility with the web's opaque track and thumb.
 struct AppSlider: UIViewRepresentable {
   @Environment(\.appPalette) private var palette

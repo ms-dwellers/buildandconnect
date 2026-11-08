@@ -36,6 +36,7 @@ struct BuildConnectApp: App {
         .buttonStyle(AppButtonStyle())
         .textFieldStyle(AppTextFieldStyle())
         .toggleStyle(AppSwitchStyle())
+        .disclosureGroupStyle(AppDisclosureStyle())
         .onOpenURL { app.open($0) }
     }
   }
@@ -45,7 +46,8 @@ enum Route: Hashable {
   case opportunity(String)
   case request(String)
   case developer(String)
-  case profile, setupProfile, area, newRequest, newOpportunity, voice, discovery
+  case profile, setupProfile, area, newRequest, newOpportunity, voice, discovery, dashboard,
+    connections
   case editRequest(String)
   case editOpportunity(String)
   case map(String)
@@ -368,6 +370,8 @@ struct AppNavigation<Content: View>: View {
             case .account: AccountView()
             case .voice: VoiceStudioView()
             case .discovery: DiscoveryView()
+            case .dashboard: DashboardView()
+            case .connections: ConnectionsView()
             }
           }
           .navigationBarBackButtonHidden()

@@ -19,8 +19,8 @@ struct OpportunityEditorView: View {
   private var draftKey: String { "\(app.identity)/opportunity/new" }
   var body: some View {
     Group {
-      if app.role != .company {
-        WrongRoleView(message: "Only company accounts can post opportunities.")
+      if app.role != .requester {
+        WrongRoleView(message: "Only requester accounts can post opportunities.")
       } else if !initialized {
         ProgressView().task { await load() }
       } else if let error = resource.error {

@@ -71,7 +71,7 @@ configuration. This permission does not make the chat itself a secret vault.
 
 ## Development
 
-- Use Git and preserve existing worktree changes. Commit locally;
+- Use jj in this Git-backed repository and preserve existing worktree changes. Commit locally;
   publish or deploy only when requested. Never add AI co-author attribution.
 - Do not run tests unless the user explicitly requests testing. Building,
   formatting, installing, and capturing app previews remain allowed.
