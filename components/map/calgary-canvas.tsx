@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { CompassIcon, LayersIcon, RotateCcwIcon } from "lucide-react";
+import { BoxIcon, CompassIcon, LayersIcon, RotateCcwIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { mapboxToken } from "@/lib/api";
 import {
@@ -41,16 +41,17 @@ export function CalgaryCanvas({
   const selectedJob = jobs.find((job) => job.id === selectedId);
   const preview = previewViewport(size.width, size.height, selectedJob);
   const token = mapboxToken();
-  const { live, failed, warning, camera, showCity, retry } = useCalgaryMap({
-    container,
-    token,
-    jobs,
-    selectedJob,
-    placing,
-    arriving: phase !== "idle",
-    onPick,
-    onSelect,
-  });
+  const { live, failed, warning, camera, showCity, retry, togglePerspective } =
+    useCalgaryMap({
+      container,
+      token,
+      jobs,
+      selectedJob,
+      placing,
+      arriving: phase !== "idle",
+      onPick,
+      onSelect,
+    });
   const mode = cityMapMode({
     hasToken: Boolean(token),
     ready: Boolean(live),
@@ -148,9 +149,36 @@ export function CalgaryCanvas({
           actions={renderActions?.(selectedJob)}
         />
       )}
-      <div className="pointer-events-none absolute start-4 top-4 flex items-center gap-2 rounded-xl border bg-card/95 px-4 py-3 shadow-sm">
-        <CompassIcon aria-hidden="true" className="size-5 text-primary" />
-        <span className="text-sm font-semibold">Calgary, AB</span>
+      <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-3 sm:inset-x-5 sm:top-5">
+        <div className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl border bg-card/95 px-3 shadow-card backdrop-blur-sm sm:px-4">
+          <CompassIcon aria-hidden="true" className="size-5 text-primary" />
+          <span className="text-sm font-semibold">
+            Calgary<span className="hidden sm:inline">, AB</span>
+          </span>
+        </div>
+        {live && (
+          <div className="pointer-events-auto flex gap-2">
+            <Button
+              variant="outline"
+              className="min-h-11 bg-card aria-pressed:border-primary aria-pressed:bg-secondary"
+              aria-label="3D view"
+              aria-pressed={camera.pitch >= 30}
+              onClick={togglePerspective}
+            >
+              <BoxIcon aria-hidden="true" />
+              3D<span className="hidden sm:inline"> view</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="min-h-11 bg-card"
+              aria-label="All Calgary"
+              onClick={showCity}
+            >
+              <RotateCcwIcon aria-hidden="true" />
+              <span className="hidden sm:inline">All Calgary</span>
+            </Button>
+          </div>
+        )}
       </div>
       {loading && phase === "idle" && (
         <div className="map-loading" data-testid="map-loading" role="status">
@@ -158,17 +186,7 @@ export function CalgaryCanvas({
         </div>
       )}
       {live && (
-        <Button
-          variant="outline"
-          className="absolute end-4 top-4 bg-card"
-          onClick={showCity}
-        >
-          <RotateCcwIcon aria-hidden="true" />
-          All Calgary
-        </Button>
-      )}
-      {live && (
-        <div className="pointer-events-none absolute start-4 bottom-12 flex max-w-[calc(100%-4.5rem)] flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border bg-card/95 px-3 py-2 text-xs shadow-sm">
+        <div className="pointer-events-none absolute start-3 bottom-12 flex max-w-[calc(100%-5rem)] flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border bg-card/95 px-3 py-2.5 text-xs shadow-card backdrop-blur-sm sm:start-5">
           <span className="flex items-center gap-1.5">
             <span className="map-key map-key-paid">P</span>Paid
           </span>
@@ -176,7 +194,7 @@ export function CalgaryCanvas({
             <span className="map-key map-key-volunteer">V</span>Volunteer
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="map-key map-key-volunteer">R</span>Community
+            <span className="map-key map-key-community">R</span>Community
           </span>
           <span className="flex items-center gap-1.5 text-muted-foreground">
             <LayersIcon aria-hidden="true" className="size-3.5" />
@@ -188,7 +206,7 @@ export function CalgaryCanvas({
         {live && selectedJob
           ? camera.moving
             ? `Flying to ${selectedJob.neighbourhood}.`
-            : `3D neighbourhood view of ${selectedJob.neighbourhood}.`
+            : `${camera.pitch >= 30 ? "3D neighbourhood" : "Overhead"} view of ${selectedJob.neighbourhood}.`
           : ""}
       </p>
       {!loading && (!live || warning) && (

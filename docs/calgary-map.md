@@ -54,6 +54,24 @@ Dashboards link to `/map?focus=<id>` to select a listing on arrival.
 
 ## Mapbox and the credential-free preview
 
+The explorer uses a warm-paper project panel and a framed map. Mapbox Standard's
+documented runtime configuration applies cream land, sage greenspace and buildings,
+teal water, wheat main roads, and contrast-safe pine labels. Roads and buildings
+remain actual Mapbox data, not decorative geometry. Daylight and real 3D objects
+remain enabled. Paid, volunteer and community markers have distinct labeled fills
+and soft halos; hovering a point enlarges it without a continuous animation loop.
+
+**3D view** toggles between an overhead view and a 55-degree perspective without
+changing the selected place or zoom. Selecting a project still flies to the
+existing 60-degree neighbourhood view. The toggle exposes its pressed state,
+and **All Calgary** clears selection and resets the citywide overhead view.
+Reduced motion makes perspective changes immediate. These controls are absent
+from the explicitly labeled illustrated fallback.
+
+Resizing the browser refits the full city while the overview is active. Mapbox's
+resize camera events do not count as manual navigation; deliberate panning,
+zooming, project selection and perspective changes retain their camera position.
+
 Set a restricted `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` in an ignored `.env.local` and
 restart Vite to use Mapbox Standard. It is intentionally browser-visible; never
 use a private Mapbox token. The initial overhead view fits Calgary citywide;

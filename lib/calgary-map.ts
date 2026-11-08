@@ -28,14 +28,72 @@ export type MapPalette = {
   primary: string;
   surface: string;
   secondary: string;
+  community: string;
   foreground: string;
   primaryForeground: string;
 };
+
+export type CityMapPalette = {
+  land: string;
+  water: string;
+  greenspace: string;
+  roads: string;
+  motorways: string;
+  buildings: string;
+  labels: string;
+};
+
+export function cityMapConfig(colors: CityMapPalette) {
+  return {
+    theme: "default",
+    lightPreset: "day",
+    font: "Manrope",
+    show3dObjects: true,
+    showPointOfInterestLabels: false,
+    showTransitLabels: false,
+    showAdminBoundaries: false,
+    colorLand: colors.land,
+    colorWater: colors.water,
+    colorGreenspace: colors.greenspace,
+    colorRoads: colors.roads,
+    colorMotorways: colors.motorways,
+    colorTrunks: colors.motorways,
+    colorBuildings: colors.buildings,
+    colorPlaceLabels: colors.labels,
+    colorRoadLabels: colors.labels,
+  };
+}
+
+export function cityPerspective(tilted: boolean, reducedMotion: boolean) {
+  return {
+    pitch: tilted ? 55 : 0,
+    bearing: tilted ? -20 : 0,
+    duration: reducedMotion ? 0 : 900,
+    essential: false,
+  };
+}
+
+export function isMapInteraction(originalEvent?: { type: string }) {
+  return Boolean(originalEvent && originalEvent.type !== "resize");
+}
 
 export function jobLayers(colors: MapPalette): LayerSpecification[] {
   const clusters: FilterSpecification = ["has", "point_count"];
   const points: FilterSpecification = ["!", ["has", "point_count"]];
   return [
+    {
+      id: `${CLUSTER_LAYER}-halo`,
+      type: "circle",
+      source: JOB_SOURCE,
+      slot: "top",
+      filter: clusters,
+      paint: {
+        "circle-radius": ["step", ["get", "point_count"], 29, 10, 34],
+        "circle-color": colors.primary,
+        "circle-opacity": 0.14,
+        "circle-emissive-strength": 1,
+      },
+    },
     {
       id: CLUSTER_LAYER,
       type: "circle",
@@ -43,7 +101,7 @@ export function jobLayers(colors: MapPalette): LayerSpecification[] {
       slot: "top",
       filter: clusters,
       paint: {
-        "circle-radius": ["step", ["get", "point_count"], 19, 10, 23],
+        "circle-radius": ["step", ["get", "point_count"], 21, 10, 26],
         "circle-color": colors.primary,
         "circle-stroke-color": colors.surface,
         "circle-stroke-width": 3,
@@ -67,21 +125,47 @@ export function jobLayers(colors: MapPalette): LayerSpecification[] {
       },
     },
     {
+      id: `${POINT_LAYER}-halo`,
+      type: "circle",
+      source: JOB_SOURCE,
+      slot: "top",
+      filter: points,
+      paint: {
+        "circle-radius": 23,
+        "circle-color": colors.primary,
+        "circle-opacity": 0.12,
+        "circle-emissive-strength": 1,
+      },
+    },
+    {
       id: POINT_LAYER,
       type: "circle",
       source: JOB_SOURCE,
       slot: "top",
       filter: points,
       paint: {
-        "circle-radius": 13,
+        "circle-radius": [
+          "case",
+          ["boolean", ["feature-state", "hover"], false],
+          19,
+          16,
+        ],
         "circle-color": [
           "match",
-          ["get", "kind"],
-          "paid",
+          ["get", "label"],
+          "P",
           colors.primary,
+          "R",
+          colors.community,
           colors.secondary,
         ],
-        "circle-stroke-color": colors.surface,
+        "circle-stroke-color": [
+          "match",
+          ["get", "label"],
+          "P",
+          colors.surface,
+          colors.primary,
+        ],
         "circle-stroke-width": 2,
         "circle-emissive-strength": 1,
       },
@@ -94,7 +178,7 @@ export function jobLayers(colors: MapPalette): LayerSpecification[] {
       filter: points,
       layout: {
         "text-field": ["get", "label"],
-        "text-size": 11,
+        "text-size": 12,
         "text-allow-overlap": true,
       },
       paint: {

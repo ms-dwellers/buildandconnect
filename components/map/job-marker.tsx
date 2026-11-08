@@ -44,7 +44,7 @@ export function JobMarker({
           <Button
             variant={job.kind === "paid" ? "default" : "secondary"}
             size="icon-lg"
-            className={`map-job-marker ${selected ? "map-job-marker-selected" : ""}`}
+            className={`map-job-marker ${job.source === "request" ? "map-job-marker-community" : ""} ${selected ? "map-job-marker-selected" : ""}`}
             aria-label={`${job.title} in ${job.neighbourhood}`}
             onClick={(event) => event.stopPropagation()}
           />
@@ -55,7 +55,7 @@ export function JobMarker({
       <PopoverPopup
         side="top"
         sideOffset={14}
-        className="w-80 max-w-[calc(100vw-2rem)] rounded-2xl"
+        className="w-80 max-w-[calc(100vw-2rem)] rounded-2xl [overflow-wrap:anywhere]"
       >
         <div className="space-y-4 pe-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -87,13 +87,9 @@ export function JobMarker({
             </div>
           </dl>
           {job.skills.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {job.skills.map((skill) => (
-                <Badge variant="outline" key={skill}>
-                  {skill}
-                </Badge>
-              ))}
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {job.skills.join(" · ")}
+            </p>
           )}
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <MapPinIcon aria-hidden="true" className="size-3.5" />

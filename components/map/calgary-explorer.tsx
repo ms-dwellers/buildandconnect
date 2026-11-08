@@ -95,21 +95,21 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
   const approximate = visibleJobs.some((job) => !job.precise);
 
   return (
-    <div className="flex min-h-svh flex-col bg-background lg:h-svh lg:min-h-[42rem] lg:overflow-hidden">
+    <div className="map-workspace flex min-h-svh flex-col bg-background lg:h-svh lg:min-h-[42rem] lg:overflow-hidden">
       <a href="#calgary-map-title" className="landing-skip-link">
         Skip to projects
       </a>
       <AppHeader />
-      <main className="grid flex-1 lg:min-h-0 lg:grid-cols-[23rem_minmax(0,1fr)] lg:overflow-hidden">
+      <main className="grid flex-1 gap-3 p-3 lg:min-h-0 lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-4 lg:overflow-hidden lg:p-4">
         <aside
-          className="order-2 flex min-h-0 flex-col border-t bg-card lg:order-1 lg:border-t-0 lg:border-e"
+          className="order-2 flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-card lg:order-1"
           aria-label="Calgary projects"
         >
-          <div className="space-y-5 p-6">
+          <div className="space-y-5 p-5 sm:p-6">
             <h1
               id="calgary-map-title"
               tabIndex={-1}
-              className="font-display text-[2.5rem] leading-[1.08] tracking-tight outline-none"
+              className="font-display text-4xl leading-[1.08] tracking-tight outline-none"
             >
               Good work.
               <br />
@@ -118,10 +118,6 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
             <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
               <MapPinIcon aria-hidden="true" className="size-3.5" />
               Calgary, Alberta
-            </p>
-            <p className="text-sm leading-6 text-muted-foreground">
-              A new skill, a shared purpose, a neighbour worth knowing. Find
-              your starting point.
             </p>
             {post && (
               <Button
@@ -136,20 +132,26 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
               </Button>
             )}
             <div className="space-y-2">
-              <Label htmlFor="city-job-search" className="sr-only">
+              <Label htmlFor="city-job-search" className="text-xs">
                 Search Calgary projects
               </Label>
-              <Input
-                id="city-job-search"
-                type="search"
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setSelectedId(null);
-                }}
-                placeholder="Try React, Inglewood, or design"
-                className="bg-background"
-              />
+              <div className="relative">
+                <SearchIcon
+                  aria-hidden="true"
+                  className="pointer-events-none absolute start-3 top-1/2 z-1 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  id="city-job-search"
+                  type="search"
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setSelectedId(null);
+                  }}
+                  placeholder="Try React, Inglewood, or design"
+                  className="bg-card ps-9"
+                />
+              </div>
             </div>
             <div
               role="group"
@@ -160,7 +162,8 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                 <Button
                   key={value}
                   size="sm"
-                  variant={filter === value ? "secondary" : "ghost"}
+                  variant="ghost"
+                  className="aria-pressed:bg-secondary aria-pressed:text-secondary-foreground"
                   aria-pressed={filter === value}
                   onClick={() => {
                     setFilter(value);
@@ -172,18 +175,32 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
               ))}
             </div>
           </div>
-          <div className="flex items-center justify-between border-y px-6 py-3 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between gap-3 px-5 pb-3 text-xs text-muted-foreground sm:px-6">
             <p role="status">
               {feed.data
-                ? `${visibleJobs.length} ${visibleJobs.length === 1 ? "project" : "projects"} in Calgary`
+                ? `${visibleJobs.length} ${visibleJobs.length === 1 ? "project" : "projects"}${feed.data.truncated ? " shown" : " in Calgary"}`
                 : feed.loading
                   ? "Loading projects…"
                   : ""}
             </p>
-            {visibleJobs.length > 0 && <span>Select a pin for 3D</span>}
           </div>
+          {feed.data && feed.error && (
+            <div className="px-5 pb-3">
+              <ErrorAlert
+                title="Projects could not be refreshed"
+                message={feed.error.message}
+                onRetry={() => void feed.reload()}
+              />
+            </div>
+          )}
+          {feed.data?.truncated && (
+            <p className="px-5 pb-3 text-xs text-muted-foreground">
+              More projects are available. These filters search the loaded
+              results.
+            </p>
+          )}
           <ol
-            className="max-h-[32rem] min-h-0 flex-1 divide-y overflow-y-auto overscroll-contain lg:max-h-none"
+            className="max-h-[32rem] min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3 lg:max-h-none"
             aria-label="Project list"
             aria-busy={feed.loading || undefined}
           >
@@ -244,7 +261,7 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                   <li key={job.id}>
                     <Button
                       variant="ghost"
-                      className={`h-auto w-full items-start justify-start gap-3 rounded-none px-6 py-5 text-start whitespace-normal ${selectedId === job.id ? "bg-accent" : ""}`}
+                      className="h-auto w-full items-start justify-start gap-3 rounded-xl border border-transparent px-3 py-4 text-start whitespace-normal hover:bg-secondary/30 aria-pressed:border-primary/25 aria-pressed:bg-secondary/60"
                       aria-label={`View ${job.title}`}
                       aria-pressed={selectedId === job.id}
                       onClick={() =>
@@ -252,16 +269,16 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                       }
                     >
                       <span
-                        className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${job.kind === "paid" ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"}`}
+                        className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${job.source === "request" ? "bg-(--map-community) text-foreground" : job.kind === "paid" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
                       >
                         <Icon aria-hidden="true" className="size-4" />
                       </span>
                       <span className="min-w-0 flex-1 space-y-2">
+                        <span className="block text-base leading-5 font-semibold">
+                          {job.title}
+                        </span>
                         <span className="block text-xs font-normal text-muted-foreground">
                           {job.neighbourhood} · {job.organization}
-                        </span>
-                        <span className="block text-sm leading-5 font-semibold">
-                          {job.title}
                         </span>
                         <span className="block text-xs font-normal text-primary">
                           {job.source === "request"
@@ -276,8 +293,8 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                           </span>
                         </span>
                         {job.skills.length > 0 && (
-                          <span className="block text-[.65rem] font-normal text-muted-foreground">
-                            {job.skills.join(" / ")}
+                          <span className="block text-xs font-normal text-muted-foreground">
+                            {job.skills.join(" · ")}
                           </span>
                         )}
                       </span>
@@ -301,7 +318,7 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
         <section
           ref={mapSection}
           aria-label="Calgary job map"
-          className="relative order-1 h-[65svh] min-h-[27rem] lg:order-2 lg:h-full lg:min-h-0"
+          className="relative order-1 h-[65svh] min-h-[27rem] overflow-hidden rounded-2xl border border-primary/15 shadow-card lg:order-2 lg:h-full lg:min-h-0"
         >
           <CalgaryCanvas
             jobs={visibleJobs}

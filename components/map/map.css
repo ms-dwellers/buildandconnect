@@ -35,6 +35,46 @@
   background: var(--secondary);
   color: var(--secondary-foreground);
 }
+.map-key-community {
+  background: var(--map-community);
+  color: var(--foreground);
+}
+
+.map-job-marker-community {
+  background: var(--map-community);
+}
+
+.map-workspace .mapboxgl-ctrl-group {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card);
+  box-shadow: 0 3px 10px --alpha(var(--primary) / 10%);
+}
+
+.map-workspace .mapboxgl-ctrl-group button {
+  width: 40px;
+  height: 40px;
+}
+
+.map-workspace .mapboxgl-ctrl-group button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -3px;
+}
+
+.map-workspace .mapboxgl-ctrl-scale {
+  border-color: var(--primary);
+  background: var(--card);
+  color: var(--foreground);
+  border-radius: 0 0 0.25rem 0.25rem;
+}
+
+@media (pointer: coarse) {
+  .map-workspace .mapboxgl-ctrl-group button {
+    width: 44px;
+    height: 44px;
+  }
+}
 
 .map-journey {
   position: fixed;

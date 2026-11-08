@@ -263,13 +263,16 @@
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
   --map-land: #d7e5d8;
+  --map-base: #ececda;
+  --map-building: #b7c5ae;
+  --map-community: var(--palette-wheat);
   --map-block: #c4d8c8;
   --map-road: var(--palette-cream);
   --map-park: #a4c2ad;
   --map-water: var(--palette-teal);
   --map-water-edge: #719b92;
   --map-arterial: #dfc999;
-  --map-label: #425f57;
+  --map-label: var(--muted-foreground);
   --cloud: var(--palette-cream);
   --dashboard-paper: #fffdf5;
   --map-mist-light: #fbfcfa;
@@ -277,6 +280,11 @@
 }
 
 .dashboard-surface {
+  --card: var(--dashboard-paper);
+  --popover: var(--dashboard-paper);
+}
+
+.map-workspace {
   --card: var(--dashboard-paper);
   --popover: var(--dashboard-paper);
 }

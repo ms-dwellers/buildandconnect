@@ -10,6 +10,9 @@ import {
   cityMapMode,
   cityBounds,
   cityOverviewPadding,
+  cityMapConfig,
+  cityPerspective,
+  isMapInteraction,
   jobCamera,
   jobFeatures,
   jobLayers,
@@ -81,6 +84,7 @@ test("cluster and point layers share a source and include non-colour labels", ()
     primary: "primary",
     surface: "surface",
     secondary: "secondary",
+    community: "community",
     foreground: "foreground",
     primaryForeground: "on-primary",
   };
@@ -105,4 +109,75 @@ test("cluster and point layers share a source and include non-colour labels", ()
   const labels = layers.find((layer) => layer.id === `${POINT_LAYER}-label`);
   assert.ok(labels?.type === "symbol");
   assert.deepEqual(labels.layout?.["text-field"], ["get", "label"]);
+});
+
+test("the city theme uses semantic colors and retains real 3D objects in daylight", () => {
+  const colors = {
+    land: "paper",
+    water: "teal",
+    greenspace: "sage",
+    roads: "cream",
+    motorways: "wheat",
+    buildings: "stone",
+    labels: "pine",
+  };
+  const config = cityMapConfig(colors);
+  assert.equal(config.lightPreset, "day");
+  assert.equal(config.show3dObjects, true);
+  assert.equal(config.showPointOfInterestLabels, false);
+  assert.equal(config.showTransitLabels, false);
+  assert.equal(config.colorLand, colors.land);
+  assert.equal(config.colorWater, colors.water);
+  assert.equal(config.colorGreenspace, colors.greenspace);
+  assert.equal(config.colorBuildings, colors.buildings);
+  assert.equal(config.colorPlaceLabels, colors.labels);
+});
+
+test("perspective toggles preserve location and zoom, and skip motion when requested", () => {
+  const tilted = cityPerspective(true, false);
+  assert.equal(tilted.pitch, 55);
+  assert.equal(tilted.bearing, -20);
+  assert.equal(tilted.essential, false);
+  assert.ok(tilted.duration > 0 && tilted.duration <= 1000);
+  assert.deepEqual(cityPerspective(false, true), {
+    pitch: 0,
+    bearing: 0,
+    duration: 0,
+    essential: false,
+  });
+  assert.equal(cityPerspective(true, true).duration, 0);
+  assert.equal("center" in tilted, false);
+  assert.equal("zoom" in tilted, false);
+});
+
+test("window resizing keeps city overview framing while a real map gesture takes control", () => {
+  assert.equal(isMapInteraction(undefined), false);
+  assert.equal(isMapInteraction({ type: "resize" }), false);
+  for (const type of ["mousedown", "touchmove", "wheel", "keydown"]) {
+    assert.equal(isMapInteraction({ type }), true);
+  }
+});
+
+test("project pins distinguish community requests without replacing their text labels", () => {
+  const layers = jobLayers({
+    primary: "pine",
+    surface: "paper",
+    secondary: "mint",
+    community: "wheat",
+    foreground: "ink",
+    primaryForeground: "cream",
+  });
+  const points = layers.find((layer) => layer.id === POINT_LAYER);
+  assert.ok(points?.type === "circle");
+  assert.deepEqual(points.paint?.["circle-color"], [
+    "match",
+    ["get", "label"],
+    "P",
+    "pine",
+    "R",
+    "wheat",
+    "mint",
+  ]);
+  assert.ok(layers.some((layer) => layer.id === `${CLUSTER_LAYER}-halo`));
+  assert.ok(layers.some((layer) => layer.id === `${POINT_LAYER}-halo`));
 });

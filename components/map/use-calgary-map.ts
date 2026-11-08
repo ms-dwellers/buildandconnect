@@ -16,6 +16,9 @@ import {
   POINT_LAYER,
   cityBounds,
   cityOverviewPadding,
+  cityMapConfig,
+  cityPerspective,
+  isMapInteraction,
   jobCamera,
   jobFeatures,
   jobLayers,
@@ -128,17 +131,30 @@ export function useCalgaryMap({
       .then(({ default: sdk }) => {
         if (disposed || broken || !container.current) return;
         try {
+          const styles = getComputedStyle(container.current);
+          const color = (name: string) => styles.getPropertyValue(name).trim();
+          const palette = {
+            primary: color("--primary"),
+            surface: color("--card"),
+            secondary: color("--secondary"),
+            community: color("--map-community"),
+            foreground: color("--foreground"),
+            primaryForeground: color("--primary-foreground"),
+          };
           const instance = new sdk.Map({
             container: container.current,
             accessToken: token,
             style: CITY_MAP_STYLE,
             config: {
-              basemap: {
-                lightPreset: "day",
-                theme: "faded",
-                show3dObjects: true,
-                showPointOfInterestLabels: false,
-              },
+              basemap: cityMapConfig({
+                land: color("--map-base"),
+                water: color("--map-water"),
+                greenspace: color("--map-park"),
+                roads: color("--map-road"),
+                motorways: color("--map-arterial"),
+                buildings: color("--map-building"),
+                labels: color("--map-label"),
+              }),
             },
             bounds: cityBounds(),
             fitBoundsOptions: {
@@ -173,16 +189,6 @@ export function useCalgaryMap({
                   : (current.current.selectedJob?.id ?? null),
               });
           };
-          const styles = getComputedStyle(container.current);
-          const color = (name: string) => styles.getPropertyValue(name).trim();
-          const palette = {
-            primary: color("--primary"),
-            surface: color("--card"),
-            secondary: color("--secondary"),
-            foreground: color("--foreground"),
-            primaryForeground: color("--primary-foreground"),
-          };
-
           instance.on("style.load", () => {
             if (disposed || broken) return;
             if (instance.getSource(JOB_SOURCE)) return;
@@ -205,7 +211,8 @@ export function useCalgaryMap({
             snapshot();
           });
           instance.on("movestart", (event) => {
-            if (event.originalEvent) overviewActive.current = false;
+            if (isMapInteraction(event.originalEvent))
+              overviewActive.current = false;
             snapshot();
           });
           instance.on("moveend", snapshot);
@@ -273,6 +280,30 @@ export function useCalgaryMap({
                 : "";
             });
           }
+          let hoveredId: string | number | undefined;
+          instance.on("mousemove", POINT_LAYER, (event) => {
+            const id = event.features?.[0]?.id;
+            if (id === hoveredId) return;
+            if (hoveredId !== undefined)
+              instance.setFeatureState(
+                { source: JOB_SOURCE, id: hoveredId },
+                { hover: false },
+              );
+            hoveredId = id;
+            if (id !== undefined)
+              instance.setFeatureState(
+                { source: JOB_SOURCE, id },
+                { hover: true },
+              );
+          });
+          instance.on("mouseleave", POINT_LAYER, () => {
+            if (hoveredId !== undefined)
+              instance.setFeatureState(
+                { source: JOB_SOURCE, id: hoveredId },
+                { hover: false },
+              );
+            hoveredId = undefined;
+          });
           // A bad token or lost WebGL context is fatal. An isolated tile error is not.
           instance.on("error", (event) => {
             const status = (event.error as Error & { status?: number }).status;
@@ -333,6 +364,12 @@ export function useCalgaryMap({
   function retry() {
     setAttempt((value) => value + 1);
   }
+  function togglePerspective() {
+    if (!live) return;
+    overviewActive.current = false;
+    live.map.stop();
+    live.map.easeTo(cityPerspective(live.map.getPitch() < 30, reducedMotion()));
+  }
   return {
     live: failed ? null : live,
     failed,
@@ -340,5 +377,6 @@ export function useCalgaryMap({
     camera,
     showCity,
     retry,
+    togglePerspective,
   };
 }
