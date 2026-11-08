@@ -18,6 +18,7 @@ import { useChatStream } from "@/lib/use-chat-stream";
 import { cn } from "@/lib/utils";
 import { withNext } from "@/lib/navigation";
 import type { ChatHistory, ChatMessage, Conversation } from "@/lib/chat-types";
+import { ConversationPicker } from "./conversation-picker";
 
 export function Messages({ conversationId }: { conversationId?: string }) {
   return (
@@ -45,7 +46,7 @@ function Inbox({
     conversationId,
     limit,
   );
-  const live = status === "live";
+  const live = status === "live" || status === "polling";
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -54,16 +55,18 @@ function Inbox({
             <ArrowLeftIcon aria-hidden="true" /> All conversations
           </Button>
         ) : (
-          <span />
+          <ConversationPicker userId={userId} />
         )}
         <p role="status" className="text-sm text-muted-foreground">
-          {live
-            ? "Live"
-            : status === "connecting"
-              ? "Connecting…"
-              : status === "reconnecting"
-                ? "Reconnecting…"
-                : "Disconnected"}
+          {status === "polling"
+            ? "Connected · Checking for updates"
+            : status === "live"
+              ? "Live"
+              : status === "connecting"
+                ? "Connecting…"
+                : status === "reconnecting"
+                  ? "Reconnecting…"
+                  : "Disconnected"}
         </p>
       </div>
       {error && (
@@ -454,7 +457,13 @@ function Thread({
       <Composer
         conversation={conversation}
         live={live}
-        onSent={() => setAtBottom(true)}
+        onSent={(message) => {
+          setReceived((current) => [
+            ...current.filter((item) => item.id !== message.id),
+            message,
+          ]);
+          setAtBottom(true);
+        }}
       />
     </section>
   );
@@ -467,7 +476,7 @@ function Composer({
 }: {
   conversation: Conversation;
   live: boolean;
-  onSent: () => void;
+  onSent: (message: ChatMessage) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
@@ -493,7 +502,7 @@ function Composer({
     if (result.ok) {
       setDraft("");
       submission.current = null;
-      onSent();
+      onSent(result.data);
     } else setError(result.error);
     setPending(false);
     input.current?.focus();

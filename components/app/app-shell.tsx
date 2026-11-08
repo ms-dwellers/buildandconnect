@@ -4,7 +4,12 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOutIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  LogOutIcon,
+  MenuIcon,
+  UserRoundIcon,
+} from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { MapJourneyLink } from "@/components/map/map-journey";
@@ -15,6 +20,21 @@ import type { Role } from "@/lib/types";
 import { withNext } from "@/lib/navigation";
 import { AccountLinks } from "./account-links";
 import { DashboardGarden } from "@/components/dashboards/dashboard-garden";
+import {
+  Menu,
+  MenuTrigger,
+  MenuPopup,
+  MenuLinkItem,
+  MenuItem,
+} from "@/components/ui/menu";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogPopup,
+  DialogHeader,
+  DialogTitle,
+  DialogPanel,
+} from "@/components/ui/dialog";
 
 type NavItem = { href: string; label: string };
 
@@ -129,28 +149,43 @@ function SiteNavigation() {
   const { session, signOut } = useSession();
   const member = knownAccount(session);
   const items = navigationFor(member ? member.role : undefined);
-  return (
-    <nav
-      aria-label="Main"
-      className="flex flex-wrap items-center gap-x-1 gap-y-2"
-    >
-      {items.map((item) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => setMobileOpen(false), [pathname]);
+  async function leave() {
+    setSigningOut(true);
+    setSignOutError("");
+    try {
+      await signOut();
+      setMobileOpen(false);
+    } catch {
+      setSignOutError("Sign out failed. Check your connection and retry.");
+    } finally {
+      setSigningOut(false);
+    }
+  }
+  function navigationLinks(mobile = false) {
+    return items
+      .filter((item) => mobile || item.href !== "/profile")
+      .map((item) => {
         const current =
           pathname === item.href ||
           (item.href !== "/map" && pathname.startsWith(`${item.href}/`));
-        if (item.href === "/map") {
+        const className = cn(
+          "fieldbook-nav-link",
+          mobile && "min-h-12 w-full justify-start px-4 text-base",
+        );
+        if (item.href === "/map")
           return (
             <MapJourneyLink
               key={item.href}
               variant="ghost"
               size="sm"
               aria-current={current ? "page" : undefined}
-              className="fieldbook-nav-link"
+              className={className}
             >
               {item.label}
             </MapJourneyLink>
           );
-        }
         return (
           <Button
             key={item.href}
@@ -166,49 +201,70 @@ function SiteNavigation() {
             variant="ghost"
             size="sm"
             aria-current={current ? "page" : undefined}
-            className="fieldbook-nav-link"
+            className={className}
+            onClick={() => setMobileOpen(false)}
           >
             {item.label}
           </Button>
         );
-      })}
+      });
+  }
+  return (
+    <div className="flex items-center gap-2 sm:gap-4">
+      <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
+        {navigationLinks()}
+      </nav>
       {member ? (
-        <span className="ms-2 flex items-center gap-3 border-s ps-3">
-          <span className="text-sm leading-tight">
-            <span className="block font-medium">{member.user.name}</span>
-            {member.role && (
-              <span className="block text-xs text-muted-foreground">
-                {ROLE_LABELS[member.role]}
+        <div className="hidden border-s ps-4 lg:block">
+          <Menu>
+            <MenuTrigger
+              render={<Button variant="ghost" className="h-auto gap-3 py-2" />}
+              aria-label="Account menu"
+            >
+              <span
+                aria-hidden="true"
+                className="flex size-9 items-center justify-center rounded-lg bg-secondary text-sm font-semibold"
+              >
+                {member.user.name
+                  .trim()
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join("")}
               </span>
-            )}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            loading={signingOut}
-            onClick={async () => {
-              setSigningOut(true);
-              setSignOutError("");
-              try {
-                await signOut();
-              } catch {
-                setSignOutError(
-                  "Sign out failed. Check your connection and retry.",
-                );
-              } finally {
-                setSigningOut(false);
-              }
-            }}
-          >
-            <LogOutIcon aria-hidden="true" />
-            Sign out
-          </Button>
-          <FieldMessage className="max-w-52 text-xs">
-            {signOutError}
-          </FieldMessage>
-        </span>
+              <span className="max-w-36 text-start text-sm">
+                <span className="block truncate">{member.user.name}</span>
+                <span className="block text-xs font-normal text-muted-foreground">
+                  {member.role
+                    ? ROLE_LABELS[member.role]
+                    : "Choose account type"}
+                </span>
+              </span>
+              <ChevronDownIcon aria-hidden="true" className="size-4" />
+            </MenuTrigger>
+            <MenuPopup align="end" className="w-56">
+              {member.role === "developer" && (
+                <MenuLinkItem render={<Link href="/profile" />}>
+                  <UserRoundIcon aria-hidden="true" />
+                  Your profile
+                </MenuLinkItem>
+              )}
+              {!member.role && (
+                <MenuLinkItem
+                  render={<Link href={withNext("/role", destination)} />}
+                >
+                  Choose account type
+                </MenuLinkItem>
+              )}
+              <MenuItem disabled={signingOut} onClick={() => void leave()}>
+                <LogOutIcon aria-hidden="true" />
+                {signingOut ? "Signing out…" : "Sign out"}
+              </MenuItem>
+            </MenuPopup>
+          </Menu>
+        </div>
       ) : session.status === "guest" ? (
-        <span className="ms-2 flex items-center gap-2">
+        <span className="flex items-center gap-2">
           <Button
             render={<Link href={withNext("/sign-in", destination)} />}
             variant="ghost"
@@ -220,12 +276,71 @@ function SiteNavigation() {
             render={<Link href={withNext("/sign-up", destination)} />}
             variant="default"
             size="sm"
+            className="hidden min-[420px]:inline-flex"
           >
             Get started
           </Button>
         </span>
       ) : null}
-    </nav>
+      <div className="lg:hidden">
+        <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+          <DialogTrigger
+            render={<Button variant="ghost" size="icon" />}
+            aria-label="Open navigation"
+          >
+            <MenuIcon aria-hidden="true" />
+          </DialogTrigger>
+          <DialogPopup bottomStickOnMobile={false} className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Navigation</DialogTitle>
+              {member && (
+                <p className="text-sm text-muted-foreground">
+                  {member.user.name}
+                  {member.role && ` · ${ROLE_LABELS[member.role]}`}
+                </p>
+              )}
+              {session.status === "guest" && (
+                <Button
+                  render={<Link href={withNext("/sign-up", destination)} />}
+                  className="mt-4 w-full"
+                >
+                  Get started
+                </Button>
+              )}
+              <FieldMessage className="mt-3 text-sm">
+                {signOutError}
+              </FieldMessage>
+            </DialogHeader>
+            <DialogPanel>
+              <nav
+                aria-label="Mobile"
+                className="flex flex-col gap-1"
+                onClick={(event) => {
+                  if ((event.target as Element).closest("a"))
+                    setMobileOpen(false);
+                }}
+              >
+                {navigationLinks(true)}
+              </nav>
+              {member && (
+                <Button
+                  variant="ghost"
+                  loading={signingOut}
+                  onClick={() => void leave()}
+                  className="mt-4 min-h-12 w-full justify-start border-t"
+                >
+                  <LogOutIcon aria-hidden="true" />
+                  Sign out
+                </Button>
+              )}
+            </DialogPanel>
+          </DialogPopup>
+        </Dialog>
+      </div>
+      <FieldMessage className="hidden max-w-52 text-xs lg:block">
+        {signOutError}
+      </FieldMessage>
+    </div>
   );
 }
 

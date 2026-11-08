@@ -145,6 +145,25 @@ export async function handleApi(
     if (path === "/map" && method === "GET")
       return json(await ctx.runQuery(internal.data.mapListings, { sessionId }));
     const actor = await ctx.runQuery(internal.data.me, { sessionId });
+    if (path === "/chat/snapshot" && method === "GET") {
+      const input = z
+        .object({
+          conversation: z
+            .string()
+            .regex(/^[a-z0-9]{20,64}$/)
+            .optional(),
+          limit: z.coerce.number().int().min(20).max(200).default(20),
+        })
+        .strict()
+        .parse(Object.fromEntries(url.searchParams));
+      return json(
+        await ctx.runQuery(internal.chat.snapshot, {
+          sessionId,
+          conversationId: input.conversation,
+          inboxLimit: input.limit,
+        }),
+      );
+    }
     if (path === "/chat/stream-session" && method === "GET") {
       if (!actor.role) fail(403, "Choose an account type to use messages");
       const { token } = await createAuth(ctx).api.getConvexToken({

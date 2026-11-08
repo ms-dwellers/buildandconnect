@@ -86,14 +86,15 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
   const [filter, setFilter] = useState<MapFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
-  const mapSection = useRef<HTMLElement>(null);
+  const projectPanel = useRef<HTMLElement>(null);
+  const detailHeading = useRef<HTMLHeadingElement>(null);
   const role = session.status === "member" ? session.role : null;
   const post = role ? POST_TARGET[role] : undefined;
 
   const selectJob = useCallback((id: string | null) => {
     setSelectedId(id);
     if (id && window.matchMedia("(max-width: 1023px)").matches)
-      mapSection.current?.scrollIntoView({
+      projectPanel.current?.scrollIntoView({
         block: "start",
         behavior: "instant",
       });
@@ -102,6 +103,10 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
     () => filterCityJobs(jobs, query, filter),
     [jobs, query, filter],
   );
+  const selectedJob = visibleJobs.find((job) => job.id === selectedId);
+  useEffect(() => {
+    if (selectedId) detailHeading.current?.focus({ preventScroll: true });
+  }, [selectedId]);
   const focused = useRef(false);
   useEffect(() => {
     if (focused.current || !focus || !jobs.some((job) => job.id === focus))
@@ -130,24 +135,37 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
       <AppHeader />
       <main className="grid flex-1 gap-3 p-3 lg:min-h-0 lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-4 lg:overflow-hidden lg:p-4">
         <aside
+          ref={projectPanel}
           className="order-2 flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-card lg:order-1"
           aria-label="Calgary projects"
         >
           <div className="space-y-5 p-5 sm:p-6">
+            {selectedJob && (
+              <Button variant="ghost" size="sm" onClick={() => selectJob(null)}>
+                Back to all projects
+              </Button>
+            )}
             <h1
+              ref={detailHeading}
               id="calgary-map-title"
               tabIndex={-1}
-              className="font-display text-4xl leading-[1.08] tracking-tight outline-none"
+              className={`font-display leading-[1.08] tracking-tight outline-none ${selectedJob ? "text-2xl" : "text-4xl"}`}
             >
-              Good work.
-              <br />
-              Close to home.
+              {selectedJob ? (
+                selectedJob.title
+              ) : (
+                <>
+                  Good work.
+                  <br />
+                  Close to home.
+                </>
+              )}
             </h1>
             <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
               <MapPinIcon aria-hidden="true" className="size-3.5" />
               {CITY_LABEL}
             </p>
-            {post && (
+            {post && !selectedJob && (
               <Button
                 className="w-full"
                 onClick={() => {
@@ -159,28 +177,30 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                 {post.label}
               </Button>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="city-job-search" className="text-xs">
-                Search Calgary projects
-              </Label>
-              <div className="relative">
-                <SearchIcon
-                  aria-hidden="true"
-                  className="pointer-events-none absolute start-3 top-1/2 z-1 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  id="city-job-search"
-                  type="search"
-                  value={query}
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    setSelectedId(null);
-                  }}
-                  placeholder="Try React, Inglewood, or design"
-                  className="bg-card ps-9"
-                />
+            {!selectedJob && (
+              <div className="space-y-2">
+                <Label htmlFor="city-job-search" className="text-xs">
+                  Search Calgary projects
+                </Label>
+                <div className="relative">
+                  <SearchIcon
+                    aria-hidden="true"
+                    className="pointer-events-none absolute start-3 top-1/2 z-1 size-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                  <Input
+                    id="city-job-search"
+                    type="search"
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      setSelectedId(null);
+                    }}
+                    placeholder="Try React, Inglewood, or design"
+                    className="bg-card ps-9"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="flex items-center justify-between gap-3 px-5 pb-3 text-xs text-muted-foreground sm:px-6">
             <p role="status">
@@ -208,10 +228,43 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
           )}
           <ol
             className="max-h-[32rem] min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3 lg:max-h-none"
-            aria-label="Project list"
+            aria-label={selectedJob ? "Selected project" : "Project list"}
             aria-busy={feed.loading || undefined}
           >
-            {feed.error && !feed.data ? (
+            {selectedJob ? (
+              <li className="space-y-5 px-3 pb-4 text-sm">
+                <p className="font-medium">{selectedJob.organization}</p>
+                <p className="whitespace-pre-line leading-7">
+                  {selectedJob.description}
+                </p>
+                <dl className="space-y-3 border-y py-4">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">
+                      Compensation
+                    </dt>
+                    <dd className="mt-1">{selectedJob.compensation}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">
+                      Commitment
+                    </dt>
+                    <dd className="mt-1">{selectedJob.commitment}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Location</dt>
+                    <dd className="mt-1">{selectedJob.neighbourhood}</dd>
+                  </div>
+                </dl>
+                {selectedJob.skills.length > 0 && (
+                  <p>{selectedJob.skills.join(" · ")}</p>
+                )}
+                <ListingActions
+                  job={selectedJob}
+                  session={session}
+                  onChanged={() => void feed.reload()}
+                />
+              </li>
+            ) : feed.error && !feed.data ? (
               <li className="p-6">
                 <ErrorAlert
                   title="Projects could not be loaded"
@@ -322,7 +375,6 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
           )}
         </aside>
         <section
-          ref={mapSection}
           aria-label="Calgary job map"
           className="relative order-1 h-[65svh] min-h-[27rem] overflow-hidden rounded-2xl border border-primary/15 shadow-card lg:order-2 lg:h-full lg:min-h-0"
         >
@@ -374,6 +426,7 @@ export function CalgaryExplorer({ focus }: { focus: string | null }) {
                 onChanged={() => void feed.reload()}
               />
             )}
+            showMarkerDetails={false}
           />
           {placing && post && (
             <Card className="absolute start-1/2 top-20 z-10 w-[min(27rem,calc(100%-2rem))] -translate-x-1/2 shadow-card">

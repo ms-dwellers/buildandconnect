@@ -167,53 +167,69 @@ export const watch = query({
       "requester",
     ]);
     if (actor.user.id !== identity.subject) fail(401, "Sign in to continue");
-    if (
-      !Number.isInteger(args.inboxLimit) ||
-      args.inboxLimit < 20 ||
-      args.inboxLimit > 200
-    )
-      fail(400, "Choose between 20 and 200 conversations");
-    const rows =
-      actor.role === "requester"
-        ? await ctx.db
-            .query("conversations")
-            .withIndex("by_requester", (q) =>
-              q.eq("requesterId", actor.user.id),
-            )
-            .order("desc")
-            .take(args.inboxLimit + 1)
-        : await ctx.db
-            .query("conversations")
-            .withIndex("by_developer", (q) =>
-              q.eq("developerId", actor.user.id),
-            )
-            .order("desc")
-            .take(args.inboxLimit + 1);
-    const inbox = rows
-      .slice(0, args.inboxLimit)
-      .map((row) => summary(row, actor));
-    if (!args.conversationId)
-      return {
-        inbox,
-        hasMore: rows.length > args.inboxLimit,
-        conversation: null,
-      };
-    const row = await participant(ctx, args.conversationId, actor);
+    return readSnapshot(ctx, args, actor);
+  },
+});
+
+export const snapshot = internalQuery({
+  args: {
+    sessionId,
+    conversationId: v.optional(conversationId),
+    inboxLimit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const actor = await access(ctx, args.sessionId, ["developer", "requester"]);
+    return readSnapshot(ctx, args, actor);
+  },
+});
+
+async function readSnapshot(
+  ctx: QueryCtx,
+  args: { conversationId?: string; inboxLimit: number },
+  actor: Actor,
+) {
+  if (
+    !Number.isInteger(args.inboxLimit) ||
+    args.inboxLimit < 20 ||
+    args.inboxLimit > 200
+  )
+    fail(400, "Choose between 20 and 200 conversations");
+  const rows =
+    actor.role === "requester"
+      ? await ctx.db
+          .query("conversations")
+          .withIndex("by_requester", (q) => q.eq("requesterId", actor.user.id))
+          .order("desc")
+          .take(args.inboxLimit + 1)
+      : await ctx.db
+          .query("conversations")
+          .withIndex("by_developer", (q) => q.eq("developerId", actor.user.id))
+          .order("desc")
+          .take(args.inboxLimit + 1);
+  const inbox = rows
+    .slice(0, args.inboxLimit)
+    .map((row) => summary(row, actor));
+  if (!args.conversationId)
     return {
       inbox,
       hasMore: rows.length > args.inboxLimit,
-      conversation: {
-        ...summary(row, actor),
-        ...(await connection(ctx, row)),
-        ...(await history(ctx, row._id)),
-        peerReadSequence:
-          actor.role === "requester"
-            ? row.developerReadSequence
-            : row.requesterReadSequence,
-      },
+      conversation: null,
     };
-  },
-});
+  const row = await participant(ctx, args.conversationId, actor);
+  return {
+    inbox,
+    hasMore: rows.length > args.inboxLimit,
+    conversation: {
+      ...summary(row, actor),
+      ...(await connection(ctx, row)),
+      ...(await history(ctx, row._id)),
+      peerReadSequence:
+        actor.role === "requester"
+          ? row.developerReadSequence
+          : row.requesterReadSequence,
+    },
+  };
+}
 
 export const older = internalQuery({
   args: { sessionId, conversationId, before: v.number() },

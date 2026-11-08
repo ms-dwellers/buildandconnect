@@ -39,22 +39,25 @@ export function ListingActions({
   if (job.source === "opportunity")
     return (
       <Button
-        render={<a href={`/opportunities/${job.id}`} />}
+        render={<a href={`/opportunities/${encodeURIComponent(job.id)}`} />}
         size="sm"
         variant={job.viewerIsOwner ? "outline" : "default"}
         className="w-full"
       >
-        {job.viewerIsOwner
-          ? "View candidates"
-          : session.role === "developer"
-            ? "See your fit"
-            : "View details"}
+        View full project
       </Button>
     );
 
   if (job.viewerIsOwner)
     return (
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          render={<a href={`/requests/${encodeURIComponent(job.id)}`} />}
+          size="sm"
+          className="w-full"
+        >
+          View full request
+        </Button>
         {job.status === "open" && (
           <Button
             render={<a href={`/requests/${job.id}/edit`} />}
@@ -76,14 +79,19 @@ export function ListingActions({
       </div>
     );
 
-  if (session.role !== "developer") return null;
+  if (session.role !== "developer")
+    return (
+      <p className="text-xs leading-5 text-muted-foreground">
+        Only developers and the requester can open the full request details.
+      </p>
+    );
   return (
     <Button
       size="sm"
       className="w-full"
       render={<a href={`/requests/${encodeURIComponent(job.id)}`} />}
     >
-      {job.viewerHasClaimed ? "View accepted request" : "Review request"}
+      {job.viewerHasClaimed ? "View accepted request" : "View full request"}
     </Button>
   );
 }

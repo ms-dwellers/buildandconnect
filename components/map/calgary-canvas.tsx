@@ -30,6 +30,7 @@ export function CalgaryCanvas({
   onPick,
   renderActions,
   filters,
+  showMarkerDetails = true,
 }: {
   jobs: CityJob[];
   selectedId: string | null;
@@ -38,6 +39,7 @@ export function CalgaryCanvas({
   onPick: (point: CityPoint) => void;
   renderActions?: (job: CityJob) => ReactNode;
   filters?: ReactNode;
+  showMarkerDetails?: boolean;
 }) {
   const { phase, ready } = useMapJourney();
   const frame = useRef<HTMLDivElement>(null);
@@ -135,6 +137,7 @@ export function CalgaryCanvas({
                   <JobMarker
                     job={job}
                     selected={selectedId === job.id}
+                    showDetails={showMarkerDetails}
                     onSelect={onSelect}
                     actions={renderActions?.(job)}
                   />
@@ -149,7 +152,11 @@ export function CalgaryCanvas({
           key={selectedJob.id}
           live={live}
           job={selectedJob}
-          showDetails={!camera.moving && camera.settledJobId === selectedJob.id}
+          showDetails={
+            showMarkerDetails &&
+            !camera.moving &&
+            camera.settledJobId === selectedJob.id
+          }
           onSelect={onSelect}
           actions={renderActions?.(selectedJob)}
         />
@@ -192,7 +199,9 @@ export function CalgaryCanvas({
         </div>
       )}
       {(live || filters) && (
-        <div className="absolute start-3 bottom-36 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2 rounded-xl border bg-card/95 p-2 text-xs shadow-card backdrop-blur-sm sm:start-5 sm:bottom-12 sm:max-w-[calc(100%-5rem)]">
+        <div
+          className={`absolute start-3 bottom-36 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2 rounded-xl border bg-card/95 p-2 text-xs shadow-card backdrop-blur-sm sm:start-5 sm:max-w-[calc(100%-5rem)] ${!live || warning ? "sm:bottom-24" : "sm:bottom-12"}`}
+        >
           {filters ?? (
             <div className="flex flex-wrap items-center gap-3 px-1">
               <span className="flex items-center gap-1.5">
