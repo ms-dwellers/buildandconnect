@@ -356,10 +356,22 @@
     padding-block: clamp(1.25rem, 3.5svh, 3rem) clamp(1.5rem, 4svh, 3.5rem);
   }
 
+  /* Below 40rem the chair actions sit in a row under the scene instead. */
+  @media (max-width: 40rem) {
+    .landing-hero {
+      padding-bottom: 9rem;
+    }
+  }
+
   @media (min-width: 64rem) {
     .landing-hero {
       --home-scene-height: clamp(20rem, 52svh, 36rem);
     }
+  }
+
+  .landing-hero-copy {
+    position: relative;
+    z-index: 1;
   }
 
   .landing-hero-heading {

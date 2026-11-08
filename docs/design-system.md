@@ -68,8 +68,9 @@ percentages enforced on every component or the map.
   action: a lazily loaded Three.js scene (`components/landing/home-scene.tsx`)
   with two procedural chairs, a task chair for the developer and a wooden chair
   for the person who needs one, angled toward a monitor that plays a
-  canvas-drawn campfire. The scene is centred in a box up to 72rem wide and the
-  camera frames the furniture to fill it. Every colour comes from `--palette-*`
+  canvas-drawn campfire. The canvas covers the whole hero rather than a box: a
+  camera view offset frames the furniture into the band beneath the copy at full
+  size while the heading floats in the same space. Every colour comes from `--palette-*`
   and `--scene-*` tokens read at runtime; no asset files are loaded. The header
   and hero fill at least the first viewport; the remaining sections scroll
   below. Typography adapts to viewport width and height.
