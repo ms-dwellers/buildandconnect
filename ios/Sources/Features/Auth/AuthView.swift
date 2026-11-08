@@ -1,6 +1,22 @@
 import SwiftUI
 
+struct AuthSheet: View {
+  let mode: AuthMode
+  var body: some View {
+    ScrollView {
+      VStack(spacing: 0) {
+        HeroLandscape(compact: true).frame(height: 170)
+        AuthView(initialMode: mode).padding(16).padding(.top, -24)
+      }
+    }.scrollDismissesKeyboard(.interactively)
+      .background(Theme.softAccent).presentationDragIndicator(.visible)
+      .preferredColorScheme(.light)
+      .presentationBackground(Theme.canvas).presentationCornerRadius(20)
+  }
+}
+
 struct AuthView: View {
+  @ScaledMetric(relativeTo: .body) private var fieldHeight = 44
   let initialMode: AuthMode
   var onClose: (() -> Void)?
   @Environment(AppModel.self) private var app
@@ -142,7 +158,7 @@ struct AuthView: View {
           width: 20
         ).accessibilityHidden(true)
         content().textFieldStyle(.plain)
-      }.padding(.horizontal, 12).frame(minHeight: 44)
+      }.padding(.horizontal, 12).frame(minHeight: fieldHeight)
         .modifier(AppInputSurface(focused: isFocused))
     }
   }

@@ -10,6 +10,7 @@
     @State private var showRequesterShell = false
     @State private var showAuth = false
     @State private var showControls = false
+    @State private var showInputs = false
 
     var body: some View {
       Group {
@@ -20,11 +21,15 @@
         }
       }.environment(app).environment(app.api)
         .sheet(isPresented: $showAuth) {
-          AuthView(initialMode: .signIn).environment(app).environment(app.api)
-            .presentationBackground(Theme.canvas).presentationDetents([.large])
+          AuthSheet(mode: .signIn).environment(app).environment(app.api)
+            .presentationDetents([.large])
         }
         .sheet(isPresented: $showControls) {
           DesignControlStatesPreview()
+            .presentationBackground(Theme.canvas).presentationDetents([.large])
+        }
+        .sheet(isPresented: $showInputs) {
+          DesignInputStatesPreview()
             .presentationBackground(Theme.canvas).presentationDetents([.large])
         }
     }
@@ -35,6 +40,7 @@
           Text("Fictional data. No live backend requests or account changes.")
             .font(Theme.caption)
           Button("Control states") { showControls = true }
+          Button("Input and focus states") { showInputs = true }
           Button("Authentication states") { showAuth = true }
           Button("Requester tabs") {
             app = Self.makeModel(role: .requester)
@@ -120,6 +126,40 @@
             true)
           ConfirmAction(
             label: "Discard changes", consequence: "This removes the fictional draft.",
+            destructive: true
+          ) {}
+        }.padding(24)
+      }.pageBackground()
+    }
+  }
+
+  private struct DesignInputStatesPreview: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @State private var selection = 0
+    @State private var hours = 4
+    @State private var available = true
+    var body: some View {
+      ScrollView {
+        VStack(alignment: .leading, spacing: 24) {
+          Text("Input and focus states").font(Theme.title(28))
+          Button("Done") { dismiss() }.buttonStyle(AppButtonStyle(variant: .ghost))
+          AppField(title: "Project name") {
+            TextField("Project name", text: $text).textFieldStyle(AppTextFieldStyle())
+              .accessibilityIdentifier("preview.input")
+          }
+          AppSelect(
+            title: "Preferred way to collaborate", selection: $selection,
+            options: [
+              (0, "Flexible collaboration with community volunteers"),
+              (1, "Regular scheduled sessions with a project mentor"),
+              (2, "Independent work with occasional feedback"),
+            ])
+          AppStepper(title: "\(hours) hours per week", value: $hours, range: 1...40)
+          Toggle("Available for community projects", isOn: $available).toggleStyle(AppSwitchStyle())
+          ConfirmAction(
+            label: "Discard changes",
+            consequence: "This removes the fictional draft. Your live account will not change.",
             destructive: true
           ) {}
         }.padding(24)

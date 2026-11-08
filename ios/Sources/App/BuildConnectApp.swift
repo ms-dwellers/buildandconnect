@@ -253,15 +253,7 @@ struct RootView: View {
       onDismiss: { if !app.signedIn { app.pendingRoute = nil } }
     ) {
       mode in
-      ScrollView {
-        VStack(spacing: 0) {
-          HeroLandscape(compact: true).frame(height: 170)
-          AuthView(initialMode: mode).padding(16).padding(.top, -24)
-        }
-      }.background(Theme.softAccent).presentationDragIndicator(.visible).preferredColorScheme(
-        .light
-      )
-      .presentationBackground(Theme.canvas).presentationCornerRadius(20)
+      AuthSheet(mode: mode)
     }
     .sheet(
       isPresented: Binding(get: { app.notice != nil }, set: { if !$0 { app.notice = nil } })

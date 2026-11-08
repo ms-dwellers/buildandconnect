@@ -82,6 +82,7 @@ struct AppButtonStyle: ButtonStyle {
       .underline(variant == .link && (hovering || pressed))
       .opacity(loading ? 0 : 1)
       .padding(.horizontal, size == .icon ? 0 : size == .large ? 20 : size == .small ? 10 : 16)
+      .padding(.vertical, dynamicTypeSize.isAccessibilitySize && size != .icon ? 10 : 0)
       .frame(
         minWidth: size == .icon ? 44 : nil, maxWidth: fullWidth ? .infinity : nil,
         minHeight: size.height
@@ -195,10 +196,11 @@ struct AppSection<Content: View>: View {
 
 private struct AppFieldSurface: ViewModifier {
   @FocusState private var focused: Bool
+  @ScaledMetric(relativeTo: .body) private var minimumHeight = 44
   nonisolated init() {}
   func body(content: Content) -> some View {
     content.focused($focused).font(Theme.body(16)).padding(.horizontal, 12).padding(.vertical, 10)
-      .frame(minHeight: 44)
+      .frame(minHeight: minimumHeight)
       .modifier(AppInputSurface(focused: focused))
   }
 }
@@ -327,6 +329,9 @@ private struct AppFlowLayout: Layout {
 
 struct AppSelect<Value: Hashable>: View {
   @Environment(\.appPalette) private var palette
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+  @ScaledMetric(relativeTo: .body) private var minimumHeight = 44
+  @FocusState private var focused: Bool
   let title: String
   @Binding var selection: Value
   let options: [(Value, String)]
@@ -338,20 +343,28 @@ struct AppSelect<Value: Hashable>: View {
         expanded = true
       } label: {
         HStack(spacing: 8) {
-          Text(options.first { $0.0 == selection }?.1 ?? title).lineLimit(1)
+          Text(options.first { $0.0 == selection }?.1 ?? title)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+            .multilineTextAlignment(.leading)
           Spacer()
           Image(systemName: "chevron.up.chevron.down").font(.system(size: 12, weight: .medium))
         }.font(Theme.body(16)).foregroundStyle(palette.ink)
-          .padding(.horizontal, 12).frame(minHeight: 44)
-          .modifier(AppInputSurface(focused: expanded))
+          .padding(.horizontal, 12).padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 10 : 0)
+          .frame(minHeight: minimumHeight)
+          .modifier(AppInputSurface(focused: focused || expanded))
           .contentShape(RoundedRectangle(cornerRadius: 12))
       }.buttonStyle(.plain)
+        .focusable().focused($focused).focusEffectDisabled()
         .accessibilityLabel(title).accessibilityValue(options.first { $0.0 == selection }?.1 ?? "")
     }.sheet(isPresented: $expanded) {
       VStack(alignment: .leading, spacing: 16) {
-        HStack {
+        let headerLayout =
+          dynamicTypeSize.isAccessibilitySize
+          ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+          : AnyLayout(HStackLayout())
+        headerLayout {
           Text(title).font(Theme.title(24))
-          Spacer()
+          if !dynamicTypeSize.isAccessibilitySize { Spacer() }
           Button("Done") { expanded = false }.buttonStyle(AppButtonStyle(variant: .ghost))
         }
         ScrollView {
@@ -362,18 +375,23 @@ struct AppSelect<Value: Hashable>: View {
                 expanded = false
               } label: {
                 HStack {
-                  Text(options[index].1)
+                  Text(options[index].1).multilineTextAlignment(.leading)
                   Spacer()
-                  if selection == options[index].0 { Image(systemName: "checkmark") }
+                  if selection == options[index].0 {
+                    Image(systemName: "checkmark").accessibilityHidden(true)
+                  }
                 }
               }.buttonStyle(
                 AppButtonStyle(
-                  variant: .ghost, fullWidth: true, selected: selection == options[index].0))
+                  variant: .ghost, fullWidth: true, selected: selection == options[index].0)
+              )
+              .accessibilityAddTraits(selection == options[index].0 ? .isSelected : [])
             }
           }
         }
       }.padding(24).foregroundStyle(palette.ink)
-        .presentationDetents([.medium]).presentationBackground(palette.canvas)
+        .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large])
+        .presentationBackground(palette.canvas)
         .presentationCornerRadius(20)
     }
   }
