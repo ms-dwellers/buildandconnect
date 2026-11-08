@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { shadeHex, type SceneTokens } from "@/lib/home-scene";
+import { instanceAutumnTree, loadAutumnTreeTemplate } from "./autumn-tree";
 import { buildContactShadow } from "./furniture";
+
+export type PartnerFoliage = "pine" | "autumn";
 
 export type BackdropSide = "developer" | "partner";
 
@@ -8,6 +11,8 @@ export type BackdropField = {
   group: THREE.Group;
   /** Ease toward 0 (rest) or 1 (hovered) each frame. */
   setTarget(intensity: number): void;
+  /** Re-run the sprout animation (used when autumn trees finish loading). */
+  nudge(): void;
   /** Advances sprouting, hover ease, and motion; true when more frames are wanted. */
   update(now: number, motion: boolean): boolean;
   dispose(): void;
@@ -87,6 +92,9 @@ function makeField(
     group,
     setTarget(intensity) {
       target = clamp01(intensity);
+    },
+    nudge() {
+      born = null;
     },
     update(now, motion) {
       if (born === null) born = now;
@@ -177,49 +185,39 @@ function buildPine(
   return tree;
 }
 
-/**
- * A stand of pines and bushes behind the partner's wooden chair, running off
- * the right edge of the screen. Rest colours are soft mint and teal; hovering
- * deepens them toward pine and emerald and strengthens the sway.
- */
-export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
-  const group = new THREE.Group();
-  group.userData.backdrop = "partner";
-  const trunk = tint(tokens.shadow, tokens.woodEdge);
-  const foliage = [
-    tint(tokens.teal, tokens.pine),
-    tint(shadeHex(tokens.teal, 0.25), tokens.emerald),
-    tint(tokens.mint, shadeHex(tokens.emerald, 0.2)),
-  ];
-  const bush = tint(shadeHex(tokens.mint, 0.1), shadeHex(tokens.teal, -0.1));
-  const tints = [trunk, ...foliage, bush];
-  const items: Sprout[] = [];
+const PARTNER_TREE_SLOTS = [
+  { x: 1.85, z: -0.95, height: 1.9 },
+  { x: 2.35, z: -0.45, height: 1.45 },
+  { x: 2.75, z: -1.25, height: 2.2 },
+  { x: 3.2, z: -0.7, height: 1.7 },
+  { x: 3.7, z: -1.1, height: 2.05 },
+  { x: 4.15, z: -0.5, height: 1.55 },
+  { x: 4.7, z: -1.3, height: 2.3 },
+  { x: 5.2, z: -0.8, height: 1.8 },
+  { x: 5.8, z: -1.15, height: 2.1 },
+  { x: 6.4, z: -0.6, height: 1.65 },
+  { x: 7.0, z: -1.2, height: 2.2 },
+  { x: 7.6, z: -0.75, height: 1.85 },
+] as const;
 
-  const pines = [
-    { x: 1.85, z: -0.95, height: 1.9 },
-    { x: 2.35, z: -0.45, height: 1.45 },
-    { x: 2.75, z: -1.25, height: 2.2 },
-    { x: 3.2, z: -0.7, height: 1.7 },
-    { x: 3.7, z: -1.1, height: 2.05 },
-    { x: 4.15, z: -0.5, height: 1.55 },
-    { x: 4.7, z: -1.3, height: 2.3 },
-    { x: 5.2, z: -0.8, height: 1.8 },
-    { x: 5.8, z: -1.15, height: 2.1 },
-    { x: 6.4, z: -0.6, height: 1.65 },
-    { x: 7.0, z: -1.2, height: 2.2 },
-    { x: 7.6, z: -0.75, height: 1.85 },
-  ];
-  pines.forEach((pine, index) => {
+function plantPines(
+  group: THREE.Group,
+  items: Sprout[],
+  tokens: SceneTokens,
+  trunk: Tint,
+  foliage: Tint[],
+) {
+  PARTNER_TREE_SLOTS.forEach((slot, index) => {
     const tree = buildPine(
-      pine.height,
+      slot.height,
       trunk.material,
       foliage.map((entry) => entry.material),
     );
-    tree.position.set(pine.x, 0, pine.z);
+    tree.position.set(slot.x, 0, slot.z);
     tree.rotation.y = degrees((index * 47) % 360);
     const shadow = buildContactShadow(
-      pine.height * 0.42,
-      pine.height * 0.42,
+      slot.height * 0.42,
+      slot.height * 0.42,
       tokens.shadow,
       0,
       0,
@@ -235,6 +233,40 @@ export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
       phase: index * 1.1,
     });
   });
+}
+
+/**
+ * Trees behind the partner chair. Community keeps procedural pines; Developer
+ * swaps in the low-poly autumn GLB (with a pine fallback if loading fails).
+ */
+export function buildPartnerBackdrop(
+  tokens: SceneTokens,
+  foliage: PartnerFoliage = "pine",
+): BackdropField {
+  const group = new THREE.Group();
+  group.userData.backdrop = "partner";
+  const items: Sprout[] = [];
+  const trunk = tint(tokens.shadow, tokens.woodEdge);
+  const pineFoliage = [
+    tint(tokens.teal, tokens.pine),
+    tint(shadeHex(tokens.teal, 0.25), tokens.emerald),
+    tint(tokens.mint, shadeHex(tokens.emerald, 0.2)),
+  ];
+  const autumn =
+    foliage === "autumn"
+      ? {
+          orange: tint(tokens.apricot, shadeHex(tokens.coral, -0.1)),
+          yellow: tint(tokens.wheat, tokens.apricot),
+          brown: tint(tokens.woodEdge, tokens.shadow),
+        }
+      : null;
+  const bush = autumn
+    ? tint(shadeHex(tokens.apricot, -0.05), shadeHex(tokens.coral, -0.15))
+    : tint(shadeHex(tokens.mint, 0.1), shadeHex(tokens.teal, -0.1));
+  const accent = autumn ? autumn.yellow : pineFoliage[2]!;
+  const tints = autumn
+    ? [autumn.orange, autumn.yellow, autumn.brown, bush]
+    : [trunk, ...pineFoliage, bush];
 
   const bushes = [
     { x: 2.0, z: -0.25, size: 0.42 },
@@ -257,7 +289,7 @@ export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
     shrub.add(
       mesh(
         new THREE.ConeGeometry(entry.size * 0.36, entry.size * 0.8, 6),
-        foliage[2].material,
+        accent.material,
         entry.size * 0.4,
         entry.size * 0.4,
         entry.size * 0.2,
@@ -275,7 +307,46 @@ export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
     });
   });
 
-  return makeField(group, items, tints, "partner");
+  const field = makeField(group, items, tints, "partner");
+  if (autumn) {
+    void loadAutumnTreeTemplate()
+      .then((template) => {
+        PARTNER_TREE_SLOTS.forEach((slot, index) => {
+          const tree = instanceAutumnTree(template, {
+            orange: autumn.orange.material,
+            yellow: autumn.yellow.material,
+            brown: autumn.brown.material,
+          });
+          tree.position.set(slot.x, 0, slot.z);
+          tree.rotation.y = degrees((index * 47) % 360);
+          const shadow = buildContactShadow(
+            slot.height * 0.42,
+            slot.height * 0.42,
+            tokens.shadow,
+            0,
+            0,
+          );
+          if (shadow) tree.add(shadow);
+          group.add(tree);
+          items.push({
+            group: tree,
+            baseScale: slot.height,
+            baseY: 0,
+            baseYaw: tree.rotation.y,
+            delay: 80 + index * 70,
+            phase: index * 1.1,
+          });
+        });
+        field.nudge();
+      })
+      .catch(() => {
+        plantPines(group, items, tokens, trunk, pineFoliage);
+        field.nudge();
+      });
+  } else {
+    plantPines(group, items, tokens, trunk, pineFoliage);
+  }
+  return field;
 }
 
 type MarkKind =
