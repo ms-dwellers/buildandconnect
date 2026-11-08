@@ -57,6 +57,13 @@
   ],
   "type": "module",
   "scripts": {
+    "ios:generate": "xcodegen generate --spec ios/project.yml",
+    "ios:artwork": "bun scripts/ios-artwork.mjs",
+    "ios:build": "node scripts/ios.mjs build",
+    "ios:test": "node scripts/ios.mjs test",
+    "ios:fmt": "node scripts/ios.mjs format",
+    "ios:fmt:check": "node scripts/ios.mjs format-check",
+    "ios:test:server": "node --env-file=.env.local tests/native/server.mjs",
     "dev": "vite dev",
     "dev:remote": "node scripts/dev-remote.mjs",
     "dev:rex": "node scripts/dev-rex.mjs",

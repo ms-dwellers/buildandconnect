@@ -1,0 +1,4 @@
+API_BASE_URL = http:/$()/127.0.0.1:5173
+MAPBOX_PUBLIC_TOKEN =
+// Optional, ignored machine-specific settings. Never put a bridge secret here.
+#include? "Local.xcconfig"

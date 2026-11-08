@@ -76,9 +76,13 @@ New role selections reject those legacy values. Stored interest columns retain
 their old names for compatibility, but the API exposes `requesterInterested` and
 `requesterName`.
 
-All application endpoints below require a Better Auth session cookie. Fetch from
-the same origin with `credentials: "include"`. JSON bodies use `Content-Type:
-application/json`. Errors return `{ "error": "..." }`; validation errors also
+Browser requests use a Better Auth session cookie from the same origin with
+`credentials: "include"`. Native requests use a signed bearer session from the
+`set-auth-token` authentication response header, stored in Keychain, and send the
+configured site origin in `Origin`. Both use the same facade and authorization.
+The public map accepts either session type optionally. Convex JWTs and the bridge
+credential remain server-side. JSON bodies use `Content-Type: application/json`.
+Errors return `{ "error": "..." }`; validation errors also
 include field paths under `issues`. Better Auth routes use its native error shape.
 
 | Method | Path                              | Caller and response                                                                  |
@@ -95,6 +99,7 @@ include field paths under `issues`. Better Auth routes use its native error shap
 | PATCH  | `/api/developers/me/location`     | Developer: `{latitude,longitude,radiusKm?}` without AI calls                         |
 | PATCH  | `/api/developers/me/preferences`  | Developer: replace experience, pay and work-arrangement preferences without AI calls |
 | GET    | `/api/developers`                 | Requester: consented profiles and project evidence                                   |
+| GET    | `/api/developers/:id`             | Requester: profile only while still discoverable; never private area                 |
 | POST   | `/api/opportunities`              | Requester: analyze, embed, and persist a new opportunity; returns 201                |
 | GET    | `/api/map`                        | Public: Calgary map listings, precision depending on viewer (see map guide)          |
 | GET    | `/api/opportunities`              | Open opportunities and structured analyses                                           |
@@ -118,6 +123,19 @@ include field paths under `issues`. Better Auth routes use its native error shap
 
 `GET /api/interests` lists a participant's pending and mutual interests, including
 both consent flags and `connected`. It uses the same pagination as connections.
+Both reads optionally accept `opportunityId` to scope results without scanning
+only the first page of unrelated interests.
+
+Native posting clients may send `Idempotency-Key` with a UUID on request and
+opportunity creation. The ID is namespaced to the authenticated user. Convex
+atomically returns the existing posting on an identical retry and rejects reuse
+with different details. Analysis still runs before persistence, so inference
+outages can return 503 on a retry without creating another posting.
+
+Profile and posting reads include a numeric `revision`. Full profile saves and
+posting edits optionally accept `If-Match: "<revision>"`; stale edits return 409
+without overwriting current data. Existing web callers can omit the precondition.
+Native clients preserve their draft and ask before discarding it to reload.
 
 Browse and connection responses are `{data: [...], nextCursor: string|null}`.
 Pass `?after=<nextCursor>&limit=20` for the next page; limits are 1-100. Match

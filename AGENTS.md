@@ -36,8 +36,9 @@ the only account roles; do not reintroduce Company or Recruiter account types.
 - Maps: Mapbox.
 - Other infrastructure: prefer Cloudflare products (Workers, R2, Queues,
   Durable Objects, etc.), except the explicitly selected Convex backend.
-- Future iOS app: native Swift. Do not scaffold, build, or require iOS tooling
-  until explicitly requested; the current development host is Linux.
+- iPhone: native SwiftUI in `ios/`; build, test, and formatting commands are in
+  `ios/README.md` and `package.json`. Xcode is required only for iOS tasks, never web
+  development. Edit `ios/project.yml`, not generated Xcode projects or Info.plist.
 - Current scope includes growth-oriented matching and opportunity-specific mutual
   interest. Do not invent payment or messaging flows without product direction.
 

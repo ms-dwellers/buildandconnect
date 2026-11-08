@@ -1,5 +1,8 @@
 # Build & Connect
 
+The native [iPhone app](ios/README.md) lives in `ios/`. Its build and test tasks
+are opt-in and do not add Xcode requirements to web development.
+
 A hackathon app connecting early-career developers with non-technical requesters
 through shared interests and social-impact projects.
 
@@ -11,7 +14,7 @@ examples. For browser-based backend QA, run the frontend and open `/debug`.
 Signed-in users land on a role dashboard at `/dashboard` (developer or requester).
 The public Calgary `/map` shows live requests and
 opportunities with role-specific actions. See [the map guide](docs/calgary-map.md).
-The future native Swift iOS app is deliberately not scaffolded or built on Linux.
+Native iPhone builds require macOS and Xcode; web development does not.
 
 ## Develop
 

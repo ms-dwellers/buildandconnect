@@ -19,3 +19,9 @@ result-*
 *.log
 .DS_Store
 .tools/
+ios/*.xcodeproj/
+ios/Info.plist
+ios/Local.xcconfig
+ios/.build/
+ios/TestResults/
+ios/**/xcuserdata/

@@ -13,7 +13,7 @@
 | Mutual interest               | Convex interest records            | Opportunity-specific, revocable |
 | Role views                    | `app/dashboard`, `components/`     | One dashboard per account type  |
 | Maps                          | Mapbox, `GET /api/map`             | Public Calgary feed, role-aware |
-| Native iOS                    | Swift                              | Deferred                        |
+| Native iOS                    | SwiftUI and native Mapbox SDK      | Optional client in `ios/`       |
 
 The backend follows the explicit switch from D1 to Convex. There is one Worker
 HTTP facade and one Convex application database; D1 is no longer bound.
