@@ -8,7 +8,7 @@ at `1a039d2e`. The filenames use export labels: `_1000` files are actually
 transparency. Regenerate with `bun run assets:mascot`. The shared `Mascot`
 component uses these static assets by default and for reduced motion. Idle and
 loading feedback can loop while enabled; success and error reactions stop after
-four seconds. The header's animation toggle pauses all mascot movement.
+four seconds. Device reduced-motion settings disable all mascot movement.
 
 These images are decorative: they never replace labels, error text, progress,
 consent, or other necessary information. Keep pixel rendering crisp and avoid

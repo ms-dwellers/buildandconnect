@@ -48,11 +48,9 @@ crying character without removing their message or retry action. Existing
 success/error notifications use the corresponding character; no additional
 success notifications are invented just to show an animation.
 
-The header's **Mascot animations** toggle pauses every character, including
-those already moving. Its browser-local preference survives navigation and
-reloads; no profile, credentials, or drafts are stored with it. If browser storage
-is blocked, the toggle still works for the current page. Device reduced-motion
-settings always win and use the still image without downloading animated GIFs.
+Mascot animations follow device reduced-motion settings, including changes made
+while the page is open. Reduced motion uses the still image without downloading
+animated GIFs.
 
 The imported assets are the only remote changes included in this design pass.
 The fetched branch also contains a backend migration and iOS work; those remain

@@ -2,11 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { firstGifFrame } from "../scripts/mascot-stills.mjs";
-import {
-  MASCOT_FEEDBACK,
-  MASCOT_REACTION_MS,
-  MASCOT_MOTION_STORAGE_KEY,
-} from "../lib/mascot-feedback.ts";
+import { MASCOT_FEEDBACK, MASCOT_REACTION_MS } from "../lib/mascot-feedback.ts";
 
 test("every supplied mascot has a reproducible static first frame", () => {
   for (const pose of ["Base", "Happy", "Crying", "Running"]) {
@@ -59,7 +55,6 @@ test("feedback maps each app state to the supplied pose and motion", () => {
   });
   assert.equal(MASCOT_REACTION_MS, 4000);
   assert.ok(MASCOT_REACTION_MS <= 5000);
-  assert.equal(MASCOT_MOTION_STORAGE_KEY, "build-and-connect:mascot-motion");
 });
 
 test("mascot motion has static reduced-motion fallback and bounded reactions", () => {

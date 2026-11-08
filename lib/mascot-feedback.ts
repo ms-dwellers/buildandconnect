@@ -13,4 +13,3 @@ export const MASCOT_FEEDBACK: Record<
 };
 
 export const MASCOT_REACTION_MS = 4000;
-export const MASCOT_MOTION_STORAGE_KEY = "build-and-connect:mascot-motion";

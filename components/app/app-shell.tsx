@@ -13,7 +13,6 @@ import { knownAccount, useSession } from "@/lib/session";
 import type { Role } from "@/lib/types";
 import { withNext } from "@/lib/navigation";
 import { DashboardGarden } from "@/components/dashboards/dashboard-garden";
-import { MascotMotionToggle } from "@/components/mascot-motion-toggle";
 
 type NavItem = { href: string; label: string };
 
@@ -114,7 +113,6 @@ export function AppHeader({ className }: { className?: string }) {
             </Button>
           );
         })}
-        <MascotMotionToggle />
         {member ? (
           <span className="ms-2 flex items-center gap-3 border-s ps-3">
             <span className="text-sm leading-tight">

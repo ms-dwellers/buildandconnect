@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
 import { homeCopy } from "@/lib/home-copy";
-import { MascotMotionToggle } from "@/components/mascot-motion-toggle";
 
 export default function Home() {
   const [headingStart, headingEnd] = homeCopy.heading;
@@ -32,7 +31,6 @@ export default function Home() {
             Nearby map
           </MapJourneyLink>
           <AccountLinks />
-          <MascotMotionToggle />
         </nav>
       </header>
       <main id="main-content" tabIndex={-1} className="outline-none">

@@ -221,14 +221,6 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
               speaking={false}
               microphone={recording ? microphone.level : undefined}
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-pressed={moving}
-              onClick={() => setMoving(!moving)}
-            >
-              {moving ? "Pause atmosphere" : "Animate atmosphere"}
-            </Button>
             <div className="voice-presence">
               <Waveform microphone={recording ? microphone.level : undefined} />
             </div>

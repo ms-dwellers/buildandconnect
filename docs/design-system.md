@@ -2,7 +2,7 @@
 
 The signed-in [mascot fieldbook](mascot-fieldbook.md) uses the supplied pixel
 mascot, dotted mint boards, pine rules, and flat navigation on the white canvas.
-Mascot feedback has a global pause control and a static reduced-motion fallback;
+Mascot feedback respects device reduced-motion settings with a static fallback;
 success and error reactions are brief. Sign-in and onboarding share this artwork.
 
 Open `/design-system` for the live component gallery. It covers foundations,
