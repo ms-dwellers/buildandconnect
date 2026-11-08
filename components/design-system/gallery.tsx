@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeftIcon, ArrowUpRightIcon } from "lucide-react";
-import { BrandLogo } from "@/components/brand-logo";
+import { AppHeader } from "@/components/app/app-shell";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { AnchoredToastProvider, ToastProvider } from "@/components/ui/toast";
@@ -33,19 +33,11 @@ export function DesignSystem() {
           >
             Skip to content
           </Button>
-          <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur-sm">
-            <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
-              <Button
-                render={<Link href="/" />}
-                variant="ghost"
-                className="gap-3 px-0 font-semibold"
-              >
-                <BrandLogo className="size-10" />
-                <span>Build &amp; Connect</span>
-                <span className="hidden text-muted-foreground sm:inline">
-                  / Design system
-                </span>
-              </Button>
+          <AppHeader
+            variant="tool"
+            label="Design system"
+            className="sticky top-0 z-30"
+            actions={
               <Button
                 render={
                   <a
@@ -60,8 +52,8 @@ export function DesignSystem() {
                 coss ui docs
                 <ArrowUpRightIcon aria-hidden="true" />
               </Button>
-            </div>
-          </header>
+            }
+          />
           <div className="mx-auto grid w-full max-w-screen-2xl gap-8 px-5 sm:px-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-12">
             <aside className="pt-8 lg:sticky lg:top-24 lg:h-fit lg:pt-12">
               <p className="mb-3 text-xs font-semibold tracking-widest text-muted-foreground uppercase">

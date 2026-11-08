@@ -8,10 +8,12 @@ import { LogOutIcon } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { MapJourneyLink } from "@/components/map/map-journey";
+import { FieldMessage } from "@/components/forms/form-kit";
 import { cn } from "@/lib/utils";
 import { knownAccount, useSession } from "@/lib/session";
 import type { Role } from "@/lib/types";
 import { withNext } from "@/lib/navigation";
+import { AccountLinks } from "./account-links";
 import { DashboardGarden } from "@/components/dashboards/dashboard-garden";
 
 type NavItem = { href: string; label: string };
@@ -44,7 +46,76 @@ export function navigationFor(role: Role | null | undefined) {
   return role ? NAVIGATION[role] : NAVIGATION.unassigned;
 }
 
-export function AppHeader({ className }: { className?: string }) {
+/**
+ * The one site header. The `app` variant carries the signed-in navigation,
+ * `landing` is the airy home-page version with the account links, and `tool`
+ * labels utility pages such as the design system and the QA console and takes
+ * its own trailing actions instead of navigation.
+ */
+export function AppHeader({
+  className,
+  variant = "app",
+  label,
+  actions,
+}: {
+  className?: string;
+  variant?: "app" | "landing" | "tool";
+  /** A short page name shown beside the brand on tool pages. */
+  label?: string;
+  /** Trailing controls for tool pages, in place of the site navigation. */
+  actions?: ReactNode;
+}) {
+  const brand = (
+    <Link
+      href="/"
+      aria-label="Build & Connect home"
+      className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+    >
+      <BrandLogo />
+      <span
+        className={variant === "landing" ? "hidden min-[420px]:inline" : ""}
+      >
+        Build &amp; Connect
+      </span>
+    </Link>
+  );
+  return (
+    <header
+      className={cn(
+        "flex items-center justify-between gap-3",
+        variant === "landing"
+          ? "h-24 px-5 sm:px-10 lg:px-16"
+          : "fieldbook-header min-h-18 flex-wrap gap-x-6 gap-y-2 border-b bg-card px-5 py-3 sm:px-8",
+        className,
+      )}
+    >
+      {label ? (
+        <div className="flex items-center gap-3">
+          {brand}
+          <span className="text-sm text-muted-foreground">{label}</span>
+        </div>
+      ) : (
+        brand
+      )}
+      {variant === "landing" ? (
+        <nav aria-label="Main" className="flex items-center gap-3 sm:gap-6">
+          <MapJourneyLink variant="link" className="hidden px-0 sm:inline-flex">
+            Nearby map
+          </MapJourneyLink>
+          <AccountLinks />
+        </nav>
+      ) : variant === "tool" ? (
+        actions && (
+          <div className="flex flex-wrap items-center gap-2">{actions}</div>
+        )
+      ) : (
+        <SiteNavigation />
+      )}
+    </header>
+  );
+}
+
+function SiteNavigation() {
   const pathname = usePathname();
   const [destination, setDestination] = useState(pathname);
   useEffect(() => {
@@ -57,119 +128,102 @@ export function AppHeader({ className }: { className?: string }) {
   const member = knownAccount(session);
   const items = navigationFor(member ? member.role : undefined);
   return (
-    <header
-      className={cn(
-        "fieldbook-header flex min-h-18 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b bg-card px-5 py-3 sm:px-8",
-        className,
-      )}
+    <nav
+      aria-label="Main"
+      className="flex flex-wrap items-center gap-x-1 gap-y-2"
     >
-      <Link
-        href="/"
-        aria-label="Build & Connect home"
-        className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-      >
-        <BrandLogo />
-        Build &amp; Connect
-      </Link>
-      <nav
-        aria-label="Main"
-        className="flex flex-wrap items-center gap-x-1 gap-y-2"
-      >
-        {items.map((item) => {
-          const current =
-            pathname === item.href ||
-            (item.href !== "/map" && pathname.startsWith(`${item.href}/`));
-          if (item.href === "/map") {
-            return (
-              <MapJourneyLink
-                key={item.href}
-                variant="ghost"
-                size="sm"
-                aria-current={current ? "page" : undefined}
-                className="fieldbook-nav-link"
-              >
-                {item.label}
-              </MapJourneyLink>
-            );
-          }
+      {items.map((item) => {
+        const current =
+          pathname === item.href ||
+          (item.href !== "/map" && pathname.startsWith(`${item.href}/`));
+        if (item.href === "/map") {
           return (
-            <Button
+            <MapJourneyLink
               key={item.href}
-              render={
-                <Link
-                  href={
-                    item.href === "/role"
-                      ? withNext(item.href, destination)
-                      : item.href
-                  }
-                />
-              }
               variant="ghost"
               size="sm"
               aria-current={current ? "page" : undefined}
               className="fieldbook-nav-link"
             >
               {item.label}
-            </Button>
+            </MapJourneyLink>
           );
-        })}
-        {member ? (
-          <span className="ms-2 flex items-center gap-3 border-s ps-3">
-            <span className="text-sm leading-tight">
-              <span className="block font-medium">{member.user.name}</span>
-              {member.role && (
-                <span className="block text-xs text-muted-foreground">
-                  {ROLE_LABELS[member.role]}
-                </span>
-              )}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              loading={signingOut}
-              onClick={async () => {
-                setSigningOut(true);
-                setSignOutError("");
-                try {
-                  await signOut();
-                } catch {
-                  setSignOutError(
-                    "Sign out failed. Check your connection and retry.",
-                  );
-                } finally {
-                  setSigningOut(false);
+        }
+        return (
+          <Button
+            key={item.href}
+            render={
+              <Link
+                href={
+                  item.href === "/role"
+                    ? withNext(item.href, destination)
+                    : item.href
                 }
-              }}
-            >
-              <LogOutIcon aria-hidden="true" />
-              Sign out
-            </Button>
-            {signOutError && (
-              <span role="alert" className="max-w-52 text-xs">
-                {signOutError}
+              />
+            }
+            variant="ghost"
+            size="sm"
+            aria-current={current ? "page" : undefined}
+            className="fieldbook-nav-link"
+          >
+            {item.label}
+          </Button>
+        );
+      })}
+      {member ? (
+        <span className="ms-2 flex items-center gap-3 border-s ps-3">
+          <span className="text-sm leading-tight">
+            <span className="block font-medium">{member.user.name}</span>
+            {member.role && (
+              <span className="block text-xs text-muted-foreground">
+                {ROLE_LABELS[member.role]}
               </span>
             )}
           </span>
-        ) : session.status === "guest" ? (
-          <span className="ms-2 flex items-center gap-2">
-            <Button
-              render={<Link href={withNext("/sign-in", destination)} />}
-              variant="ghost"
-              size="sm"
-            >
-              Sign in
-            </Button>
-            <Button
-              render={<Link href={withNext("/sign-up", destination)} />}
-              variant="default"
-              size="sm"
-            >
-              Get started
-            </Button>
-          </span>
-        ) : null}
-      </nav>
-    </header>
+          <Button
+            variant="ghost"
+            size="sm"
+            loading={signingOut}
+            onClick={async () => {
+              setSigningOut(true);
+              setSignOutError("");
+              try {
+                await signOut();
+              } catch {
+                setSignOutError(
+                  "Sign out failed. Check your connection and retry.",
+                );
+              } finally {
+                setSigningOut(false);
+              }
+            }}
+          >
+            <LogOutIcon aria-hidden="true" />
+            Sign out
+          </Button>
+          <FieldMessage className="max-w-52 text-xs">
+            {signOutError}
+          </FieldMessage>
+        </span>
+      ) : session.status === "guest" ? (
+        <span className="ms-2 flex items-center gap-2">
+          <Button
+            render={<Link href={withNext("/sign-in", destination)} />}
+            variant="ghost"
+            size="sm"
+          >
+            Sign in
+          </Button>
+          <Button
+            render={<Link href={withNext("/sign-up", destination)} />}
+            variant="default"
+            size="sm"
+          >
+            Get started
+          </Button>
+        </span>
+      ) : null}
+    </nav>
   );
 }
 
