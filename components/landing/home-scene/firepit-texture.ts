@@ -20,6 +20,8 @@ export type FirepitTexture = {
 const FRAME_MS = 1000 / 24;
 /** A pleasing mid-flicker moment for the single frame drawn under reduced motion. */
 const STILL_TIME = 1.7;
+/** The drawing was designed at 320 px wide; everything scales from there. */
+const DESIGN_WIDTH = 320;
 
 function roundedRect(
   context: CanvasRenderingContext2D,
@@ -41,7 +43,9 @@ function roundedRect(
 
 /**
  * The monitor's picture: a campfire on a pine backdrop, echoing the brand's
- * crossed logs, that crossfades to the city name during the approach.
+ * crossed logs, that crossfades to the city name during the approach. The
+ * texture is large enough to stay sharp when the screen fills the viewport,
+ * and mipmapped so it stays calm at the idle size.
  */
 export function createFirepitTexture(
   tokens: SceneTokens,
@@ -55,9 +59,11 @@ export function createFirepitTexture(
   if (!context) return null;
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearFilter;
-  texture.generateMipmaps = false;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
 
+  const scale = width / DESIGN_WIDTH;
   const embers = createEmbers(12, 7);
   const vignette = shadeHex(tokens.pine, -0.35);
   const flameFills = [
@@ -102,12 +108,33 @@ export function createFirepitTexture(
       context!.translate(width / 2, height * 0.75);
       context!.rotate((angle * Math.PI) / 180);
       context!.fillStyle = tokens.wood;
-      roundedRect(context!, -75, -11, 150, 22, 8);
+      roundedRect(
+        context!,
+        -75 * scale,
+        -11 * scale,
+        150 * scale,
+        22 * scale,
+        8 * scale,
+      );
       context!.fill();
       context!.fillStyle = tokens.woodEdge;
-      roundedRect(context!, -75, -11, 16, 22, 6);
+      roundedRect(
+        context!,
+        -75 * scale,
+        -11 * scale,
+        16 * scale,
+        22 * scale,
+        6 * scale,
+      );
       context!.fill();
-      roundedRect(context!, 59, -11, 16, 22, 6);
+      roundedRect(
+        context!,
+        59 * scale,
+        -11 * scale,
+        16 * scale,
+        22 * scale,
+        6 * scale,
+      );
       context!.fill();
       context!.restore();
     }
@@ -139,7 +166,7 @@ export function createFirepitTexture(
       context!.arc(
         point.x * width,
         point.y * height,
-        ember.size,
+        ember.size * scale,
         0,
         Math.PI * 2,
       );
@@ -155,7 +182,7 @@ export function createFirepitTexture(
     context!.fillStyle = tokens.primary;
     context!.textAlign = "center";
     context!.textBaseline = "middle";
-    const size = Math.round(72 * (0.94 + 0.06 * blend));
+    const size = Math.round(72 * scale * (0.94 + 0.06 * blend));
     context!.font = `700 ${size}px ${options.fontFamily}`;
     context!.fillText(options.cityName, width / 2, height / 2);
     context!.globalAlpha = 1;
