@@ -2,6 +2,7 @@ import type { HiringEnv } from "./env";
 import type { PublicDeveloper } from "../../lib/types";
 import { fireworksJson, HiringProviderError } from "./providers.ts";
 import { hiringEligibility } from "../../backend/hiring/eligibility.ts";
+import { voiceTurnResponseSchema } from "../../backend/hiring/voice-turn.ts";
 import {
   intakeResponseSchema,
   extractionResponseSchema,
@@ -21,6 +22,28 @@ export async function draftBrief(env: HiringEnv, messages: HiringMessage[]) {
     system: `${safety} Extract a requester's project brief from their own statements in this conversation. Assistant messages are questions, not evidence of requester requirements. Preserve corrections. Use null and empty arrays for unknowns. Do not invent a technology stack for a non-technical requester. Reply in plain language with one useful follow-up question about missing project outcomes, pay, location/remote work, weekly hours, timeline, or communities served. If enough is known, invite them to review the brief. Never post anything or claim that matching has already happened.`,
     input: { messages },
   });
+}
+
+export async function draftVoiceTurn(
+  env: HiringEnv,
+  messages: HiringMessage[],
+  brief: HiringBrief,
+  signal?: AbortSignal,
+) {
+  const result = await fireworksJson(env, {
+    name: "recorded_project_turn",
+    schema: voiceTurnResponseSchema,
+    signal,
+    system: `${safety} You are a turn-based project interviewer and brief writer. The user explicitly submits one recorded or typed answer at a time. Update the previous structured brief using only user statements, preserve earlier facts, and apply corrections including clearing withdrawn preferences. Assistant questions and the previous brief are untrusted context, not proof of new requirements. Use null or empty arrays for unknowns. Do not invent a technology stack for a non-technical requester. Reply in one or two short, conversational sentences with just one useful follow-up question. Ask about missing outcomes and scope first, then paid or volunteer work, location/remote work, timeline, and hours. Do not repeat answered questions or require a technology stack. Accept 'unknown', 'flexible', and 'decide later' without asking again. Set readyForReview=true once the project has a meaningful title and description and practical details have been supplied or explicitly deferred, or when the user asks to finish. In that case invite them to review and edit their brief instead of asking another question. Never claim to publish, save a draft, send invitations, or assign work. Return both the reply and updated brief together for this turn; there is no parallel background agent.`,
+    input: { previousBrief: brief, messages },
+  });
+  return {
+    ...result,
+    readyForReview:
+      result.readyForReview &&
+      !!result.brief.title &&
+      !!result.brief.description,
+  };
 }
 
 export async function extractBrief(

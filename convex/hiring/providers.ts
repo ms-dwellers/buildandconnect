@@ -1,15 +1,19 @@
 import { z } from "zod";
 import type { HiringEnv } from "./env";
+import { readRequestBody } from "../../backend/http.ts";
+import { MAX_RECORDING_BYTES } from "../../lib/voice-recording.ts";
 
 import {
   DEFAULT_ANALYSIS_MODEL,
   DEFAULT_SCRIBE_MODEL,
+  DEFAULT_SPEECH_MODEL,
+  DEFAULT_VOICE_ID,
 } from "../../backend/hiring/models.ts";
 export {
   DEFAULT_ANALYSIS_MODEL,
   DEFAULT_SCRIBE_MODEL,
 } from "../../backend/hiring/models.ts";
-export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
+export const MAX_AUDIO_BYTES = MAX_RECORDING_BYTES;
 export const AUDIO_TYPES = [
   "audio/webm",
   "audio/ogg",
@@ -34,6 +38,7 @@ export async function fireworksJson<T>(
     system: string;
     input: unknown;
     maxTokens?: number;
+    signal?: AbortSignal;
   },
   request: typeof fetch = fetch,
 ) {
@@ -72,7 +77,9 @@ export async function fireworksJson<T>(
           max_tokens: options.maxTokens ?? 3000,
           stream: false,
         }),
-        signal: AbortSignal.timeout(45_000),
+        signal: options.signal
+          ? AbortSignal.any([options.signal, AbortSignal.timeout(45_000)])
+          : AbortSignal.timeout(45_000),
       },
     );
     if (!response.ok) {
@@ -111,6 +118,7 @@ export async function transcribeAudio(
   env: HiringEnv,
   audio: Blob,
   request: typeof fetch = fetch,
+  signal?: AbortSignal,
 ) {
   if (!env.ELEVENLABS_API_KEY)
     throw new HiringProviderError(
@@ -129,7 +137,9 @@ export async function transcribeAudio(
         method: "POST",
         headers: { "xi-api-key": env.ELEVENLABS_API_KEY },
         body: form,
-        signal: AbortSignal.timeout(45_000),
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(45_000)])
+          : AbortSignal.timeout(45_000),
       },
     );
     if (!response.ok) {
@@ -148,6 +158,58 @@ export async function transcribeAudio(
     if (error instanceof HiringProviderError) throw error;
     throw new HiringProviderError(
       "Transcription was interrupted. Try again or type your answer.",
+    );
+  }
+}
+
+export async function speakReply(
+  env: HiringEnv,
+  text: string,
+  request: typeof fetch = fetch,
+  signal?: AbortSignal,
+) {
+  if (!env.ELEVENLABS_API_KEY)
+    throw new HiringProviderError(
+      "Spoken replies are not configured. You can read the reply instead.",
+      503,
+    );
+  const voiceId = env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE_ID;
+  if (!/^[a-zA-Z0-9]{10,80}$/.test(voiceId))
+    throw new HiringProviderError("Configure a valid ElevenLabs voice.", 503);
+  try {
+    const response = await request(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": env.ELEVENLABS_API_KEY,
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+        },
+        body: JSON.stringify({ text, model_id: DEFAULT_SPEECH_MODEL }),
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+          : AbortSignal.timeout(30_000),
+      },
+    );
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new HiringProviderError(
+        "The spoken reply is unavailable. You can read the reply or retry playback.",
+        response.status === 429 ? 429 : 502,
+      );
+    }
+    if (!response.headers.get("Content-Type")?.startsWith("audio/")) {
+      await response.body?.cancel();
+      throw new Error("Invalid speech response");
+    }
+    const audio = await readRequestBody(response, MAX_AUDIO_BYTES);
+    if (!audio.byteLength) throw new Error("Empty speech response");
+    return audio;
+  } catch (error) {
+    if (error instanceof HiringProviderError) throw error;
+    throw new HiringProviderError(
+      "The spoken reply was interrupted. You can read the reply or retry playback.",
     );
   }
 }

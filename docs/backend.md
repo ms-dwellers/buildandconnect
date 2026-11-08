@@ -63,9 +63,10 @@ transitions. Clients cannot call them or submit trusted analysis/embeddings.
 
 Convex calls Fireworks for structured analysis and Qwen3 embeddings. Set
 `FIREWORKS_API_KEY` only in the Convex environment. Set `ELEVENLABS_API_KEY`
-and `ELEVENLABS_AGENT_ID` there for voice. None of these credentials belongs in
+there for recorded web voice, with optional `ELEVENLABS_VOICE_ID` voice selection.
+Native live voice still uses `ELEVENLABS_AGENT_ID`. None of these credentials belongs in
 web settings, `.xcconfig`, or client code. Missing configuration returns 503
-rather than fabricated data. Only authorized profile/posting requests can invoke
+rather than fabricated data. Only authorized application requests can invoke
 models. No Cloudflare Workers AI credentials or binding are used.
 
 ## Deployment

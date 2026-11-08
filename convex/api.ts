@@ -218,6 +218,7 @@ export async function handleApi(
         FIREWORKS_MODEL: process.env.FIREWORKS_MODEL,
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
         ELEVENLABS_STT_MODEL: process.env.ELEVENLABS_STT_MODEL,
+        ELEVENLABS_VOICE_ID: process.env.ELEVENLABS_VOICE_ID,
         ELEVENLABS_AGENT_ID: process.env.ELEVENLABS_AGENT_ID,
       });
     }

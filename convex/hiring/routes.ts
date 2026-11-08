@@ -13,13 +13,23 @@ import {
   transcribeAudio,
   signVoiceConversation,
   nativeVoiceToken,
+  speakReply,
 } from "./providers.ts";
 import {
   confirmedBriefSchema,
   conversationSchema,
   extractionRequestSchema,
 } from "../../backend/hiring/schemas.ts";
-import { draftBrief, extractBrief, recommendDevelopers } from "./service.ts";
+import {
+  draftBrief,
+  draftVoiceTurn,
+  extractBrief,
+  recommendDevelopers,
+} from "./service.ts";
+import {
+  voiceTurnRequestSchema,
+  speechRequestSchema,
+} from "../../backend/hiring/voice-turn.ts";
 import { hiringEligibility } from "../../backend/hiring/eligibility.ts";
 import { postingDraftFromBrief } from "../../backend/hiring/posting.ts";
 
@@ -68,18 +78,22 @@ type HiringServices = {
   listDevelopers: typeof listHiringDevelopers;
   signVoiceConversation: typeof signVoiceConversation;
   extractBrief: typeof extractBrief;
+  draftVoiceTurn: typeof draftVoiceTurn;
+  speakReply: typeof speakReply;
 };
 
-export function createHiringRoutes(
-  services: HiringServices = {
+export function createHiringRoutes(overrides: Partial<HiringServices> = {}) {
+  const services: HiringServices = {
     draftBrief,
     recommendDevelopers,
     transcribeAudio,
     listDevelopers: listHiringDevelopers,
     signVoiceConversation,
     extractBrief,
-  },
-) {
+    draftVoiceTurn,
+    speakReply,
+    ...overrides,
+  };
   const routes = new Hono<ApiEnv>();
   routes.use("*", async (c, next) => {
     if (c.get("role") !== "requester")
@@ -101,6 +115,7 @@ export function createHiringRoutes(
     c.json({
       transcription: Boolean(c.env.ELEVENLABS_API_KEY),
       matching: Boolean(c.env.FIREWORKS_API_KEY),
+      speech: Boolean(c.env.ELEVENLABS_API_KEY),
       conversation: Boolean(
         c.env.ELEVENLABS_API_KEY && c.env.ELEVENLABS_AGENT_ID,
       ),
@@ -136,6 +151,8 @@ export function createHiringRoutes(
         await services.transcribeAudio(
           c.env,
           new Blob([buffer], { type: mimeType }),
+          fetch,
+          c.req.raw.signal,
         ),
       );
     },
@@ -143,6 +160,30 @@ export function createHiringRoutes(
   routes.post("/brief", async (c) => {
     const { messages } = conversationSchema.parse(await c.req.json());
     return c.json(await services.draftBrief(c.env, messages));
+  });
+  routes.post("/turn", async (c) => {
+    const { messages, brief } = voiceTurnRequestSchema.parse(
+      await c.req.json(),
+    );
+    return c.json(
+      await services.draftVoiceTurn(c.env, messages, brief, c.req.raw.signal),
+    );
+  });
+  routes.post("/speech", async (c) => {
+    const { text } = speechRequestSchema.parse(await c.req.json());
+    const audio = await services.speakReply(
+      c.env,
+      text,
+      fetch,
+      c.req.raw.signal,
+    );
+    return new Response(audio, {
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
   });
   routes.post("/voice-session", async (c) => {
     return c.json(

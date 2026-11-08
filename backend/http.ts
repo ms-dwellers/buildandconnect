@@ -1,8 +1,11 @@
 export class RequestBodyTooLarge extends Error {}
 
 /** Bound streaming bodies as well as Content-Length; never trust the latter alone. */
-export async function readRequestBody(request: Request): Promise<ArrayBuffer> {
-  if (Number(request.headers.get("Content-Length")) > 32 * 1024)
+export async function readRequestBody(
+  request: Pick<Request, "headers" | "body">,
+  maximumBytes = 32 * 1024,
+): Promise<ArrayBuffer> {
+  if (Number(request.headers.get("Content-Length")) > maximumBytes)
     throw new RequestBodyTooLarge();
   if (!request.body) return new ArrayBuffer(0);
   const reader = request.body.getReader();
@@ -13,7 +16,7 @@ export async function readRequestBody(request: Request): Promise<ArrayBuffer> {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 32 * 1024) {
+      if (size > maximumBytes) {
         await reader.cancel();
         throw new RequestBodyTooLarge();
       }

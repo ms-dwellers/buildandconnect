@@ -1,4 +1,5 @@
 import { readRequestBody, RequestBodyTooLarge } from "../backend/http.ts";
+import { MAX_RECORDING_BYTES } from "./voice-recording.ts";
 
 /** The web host forwards requests only. Auth, validation, AI and data run in Convex. */
 export async function forwardToConvex(
@@ -14,6 +15,9 @@ export async function forwardToConvex(
   const incoming = new URL(request.url);
   target.pathname = incoming.pathname;
   target.search = incoming.search;
+  const audioUpload =
+    request.method === "POST" && incoming.pathname === "/api/hiring/transcribe";
+  const maximumBytes = audioUpload ? MAX_RECORDING_BYTES : 32 * 1024;
   const headers = new Headers(request.headers);
   for (const name of [...headers.keys()]) {
     if (
@@ -39,9 +43,9 @@ export async function forwardToConvex(
       headers,
       ...(["GET", "HEAD"].includes(request.method)
         ? {}
-        : { body: await readRequestBody(request) }),
+        : { body: await readRequestBody(request, maximumBytes) }),
       redirect: "manual",
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(60_000)]),
     });
     const responseHeaders = new Headers(result.headers);
     responseHeaders.set("Cache-Control", "no-store");
@@ -52,7 +56,11 @@ export async function forwardToConvex(
   } catch (error) {
     if (error instanceof RequestBodyTooLarge)
       return Response.json(
-        { error: "Request body exceeds 32 KB" },
+        {
+          error: audioUpload
+            ? "Record a shorter answer (maximum 2 MB)"
+            : "Request body exceeds 32 KB",
+        },
         { status: 413, headers: { "Cache-Control": "no-store" } },
       );
     return Response.json(

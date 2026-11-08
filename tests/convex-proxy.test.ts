@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { forwardToConvex } from "../lib/convex-proxy.ts";
+import { MAX_RECORDING_BYTES } from "../lib/voice-recording.ts";
 
 const config = {
   VITE_CONVEX_SITE_URL: "https://deployment.convex.site",
@@ -86,4 +87,56 @@ test("forwarder bounds streaming bodies and reports unavailable configuration/tr
     ).status,
     503,
   );
+});
+
+test("only the exact transcription upload gets the bounded audio allowance", async (t) => {
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async (_url: URL, init: RequestInit) => {
+    calls++;
+    assert.equal((init.body as ArrayBuffer).byteLength, 64 * 1024);
+    assert.equal(new Headers(init.headers).get("Content-Type"), "audio/webm");
+    return Response.json({ text: "A recorded project answer" });
+  });
+  const response = await forwardToConvex(
+    new Request("https://app.example.test/api/hiring/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": "audio/webm" },
+      body: new Uint8Array(64 * 1024),
+    }),
+    config,
+  );
+  assert.equal(response.status, 200);
+  assert.equal(calls, 1);
+  for (const path of [
+    "/api/hiring/turn",
+    "/api/hiring/speech",
+    "/api/me",
+    "/api/hiring/transcribe-extra",
+  ]) {
+    assert.equal(
+      (
+        await forwardToConvex(
+          new Request(`https://app.example.test${path}`, {
+            method: "POST",
+            body: new Uint8Array(64 * 1024),
+          }),
+          config,
+        )
+      ).status,
+      413,
+    );
+  }
+  assert.equal(
+    (
+      await forwardToConvex(
+        new Request("https://app.example.test/api/hiring/transcribe", {
+          method: "POST",
+          body: new Uint8Array(MAX_RECORDING_BYTES + 1),
+        }),
+        config,
+      )
+    ).status,
+    413,
+  );
+  assert.equal(calls, 1);
 });

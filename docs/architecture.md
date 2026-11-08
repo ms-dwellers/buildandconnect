@@ -103,7 +103,8 @@ colluding-account abuse prevention is outside this MVP.
   updates through the same-origin SSE bridge in `lib/chat-stream.ts`.
 - Use same-origin cookie requests. Mutation origins are checked; Better Auth
   retains its own CSRF/cookie protections. API responses are never shared-cached.
-  Request bodies are capped at 32 KB and input fields/collections are bounded.
+  JSON request bodies are capped at 32 KB and input fields/collections are bounded.
+  Only the exact transcription-upload route accepts bounded audio up to 2 MB.
 - Application rate limiting is disabled for authentication and chat. External
   providers can still enforce their own limits. The web forwarder strips untrusted
   forwarding headers;
