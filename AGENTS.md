@@ -10,14 +10,15 @@ companies through shared interests and social-impact projects.
   primitives from the `@coss` registry in `components.json`, not shadcn's default
   registry or a parallel custom component set. Native HTML remains appropriate
   for headings, landmarks, and ordinary content.
-- Theme: use the semantic tokens in `app/globals.css`. Soft mint `#CCE0D9`,
-  muted teal `#8FB3AC`, and pine `#174C43` set the calm green foundation.
-  Preserve the original emerald `#1E6348`, cream `#F8F7DE`, wheat `#F6DFB3`,
-  apricot `#F0A345`, and coral `#EB5757` as supporting and warm accent colors.
-  Use beige as the page canvas, mint for the framed landing hero, and teal for
-  landscape/water accents rather than tinting the whole site teal.
-  Keep raw palette values out of components; use contrast-safe text
-  pairings and keep the interface light unless dark mode is explicitly requested.
+- Theme: use the semantic tokens in `app/globals.css`. The page canvas and cards
+  are white. Pine `#174C43` is the primary; soft mint `#CCE0D9` and muted teal
+  `#8FB3AC` are supporting surfaces and landscape/water scenery, used as accents
+  on white rather than as a tint over the whole site. Preserve the original
+  emerald `#1E6348`, cream `#F8F7DE` (text on pine, mist, map roads), wheat
+  `#F6DFB3`, apricot `#F0A345`, and coral `#EB5757` as supporting and warm accent
+  colors. Keep raw palette values out of components; WebGL scenes read tokens at
+  runtime with `getComputedStyle`. Use contrast-safe text pairings and keep the
+  interface light unless dark mode is explicitly requested.
 - Avoid decorative pills. Use plain text for ordinary labels; reserve
   softly rectangular, comfortably padded badges for actual status or metadata.
 - Do not add heading prefixes, decorative section numbers, or eyebrow labels

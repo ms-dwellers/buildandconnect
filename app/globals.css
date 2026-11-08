@@ -224,10 +224,11 @@
   --palette-mint: #cce0d9;
   --palette-teal: #8fb3ac;
   --palette-pine: #174c43;
+  --palette-white: #ffffff;
 
-  --background: var(--palette-cream);
+  --background: var(--palette-white);
   --foreground: #123d37;
-  --card: var(--palette-cream);
+  --card: var(--palette-white);
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);

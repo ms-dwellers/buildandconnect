@@ -14,7 +14,7 @@ const palette = [
     name: "Soft mint",
     hex: "#CCE0D9",
     token: "--palette-mint",
-    role: "Hero and supporting surfaces",
+    role: "Supporting surfaces and scenery",
   },
   {
     name: "Muted teal",
@@ -38,7 +38,7 @@ const palette = [
     name: "Cream",
     hex: "#F8F7DE",
     token: "--palette-cream",
-    role: "Page, cards and clouds",
+    role: "Text on pine, mist and roads",
   },
   {
     name: "Wheat",
@@ -50,7 +50,7 @@ const palette = [
     name: "Golden apricot",
     hex: "#F0A345",
     token: "--palette-apricot",
-    role: "Highlight",
+    role: "Sun and warning tint",
   },
   {
     name: "Coral",

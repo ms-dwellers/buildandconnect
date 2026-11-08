@@ -21,14 +21,17 @@ Semantic HTML is still the right choice for page structure and content.
 
 | Reference color | Value     | Role                                       |
 | --------------- | --------- | ------------------------------------------ |
-| Soft mint       | `#CCE0D9` | Framed hero and supporting surfaces        |
+| Soft mint       | `#CCE0D9` | Supporting surfaces and scenery            |
 | Muted teal      | `#8FB3AC` | Water and scenery                          |
 | Pine            | `#174C43` | Primary actions, illustration, focus rings |
 | Emerald depths  | `#1E6348` | Original supporting green                  |
-| Cream           | `#F8F7DE` | Page, cards, clouds, text on pine          |
+| Cream           | `#F8F7DE` | Text on pine, mist and clouds, map roads   |
 | Wheat           | `#F6DFB3` | Warm supporting accent                     |
 | Golden apricot  | `#F0A345` | Illustration accent, warning tint          |
 | Coral           | `#EB5757` | Landing-page calls to action, illustration |
+
+The page canvas and cards are white (`--palette-white`); the reference colours
+sit on it as structure, scenery, and accents rather than as a page tint.
 
 `app/globals.css` maps these to the complete coss semantic token contract. Use
 `bg-primary`, `text-foreground`, `text-muted-foreground`, etc. in components, not
@@ -41,11 +44,10 @@ text, coral highlight buttons pair the original coral with deep green text, and
 primary buttons pair pine with cream. The current theme is
 intentionally light-only; OS dark-mode preference does not change its colors.
 
-Use the 60/30/10 rule as a visual balance: beige is the main page canvas,
-mint and teal form the full-screen landscape and supporting surfaces, and warm accents
+Use the 60/30/10 rule as a visual balance: white is the main page canvas, pine,
+mint, and teal form structure, supporting surfaces, and scenery, and warm accents
 remain sparse. The reference informs the composition rather than a full-page
-color swap: a mint hero, cream clouds, layered trees, and a teal waterfront sit
-inside the beige page. Keep the original cream, wheat, apricot, and coral values.
+color swap. Keep the original cream, wheat, apricot, and coral values.
 Reserve coral for
 selected calls to action and small illustration details, and apricot for the sun,
 warm roof accents, and warning tints. These are composition guidelines, not fixed
