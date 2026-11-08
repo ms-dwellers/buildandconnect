@@ -16,6 +16,7 @@ import {
   type SavedCareerTarget,
 } from "@/lib/career";
 import { useApi } from "@/lib/use-api";
+import { withNext } from "@/lib/navigation";
 
 export function CareerProjects({
   target,
@@ -36,7 +37,10 @@ export function CareerProjects({
           onRetry={() => void projects.reload()}
         />
         {projects.error.status === 404 && (
-          <Button render={<a href="/profile" />} variant="outline">
+          <Button
+            render={<a href={withNext("/onboarding", "/career")} />}
+            variant="outline"
+          >
             Set up your developer profile
           </Button>
         )}
@@ -152,7 +156,10 @@ function ProjectExplorer({
         </div>
         {!recommendations.nearbyRequestsAvailable && (
           <p className="text-sm text-muted-foreground">
-            <a className="underline underline-offset-4" href="/profile#area">
+            <a
+              className="underline underline-offset-4"
+              href={`${withNext("/profile", "/career")}#area`}
+            >
               Set your search area
             </a>{" "}
             to include nearby community requests.

@@ -8,7 +8,7 @@ test("onboarding and public role types expose only developers and requesters", (
     assert.match(source, /export type Role = "developer" \| "requester"/);
   }
   const choices = readFileSync(
-    new URL("../app/role/page.tsx", import.meta.url),
+    new URL("../components/app/role-chooser.tsx", import.meta.url),
     "utf8",
   );
   assert.match(choices, /role: "developer"/);

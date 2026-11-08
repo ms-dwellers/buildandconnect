@@ -28,8 +28,9 @@ problems; developers build experience and working relationships.
 
 ## Developer journey
 
-1. Create an account and a developer profile with skills, experience, interests,
-   availability, and an optional nearby search area.
+1. Create an account and a short developer profile with skills, experience,
+   availability, and optional interests. Choose visibility and volunteer consent
+   explicitly; add project evidence, preferences, and a search area later.
 2. Open **Career path** from navigation or the dashboard.
 3. Paste a target job description. Review the privacy/AI disclosure and save.
 4. Inspect requirements alongside verbatim supporting quotes. See what is already
@@ -74,7 +75,10 @@ transcripts; see [project drafts](project-drafts.md) for the persistence contrac
 
 ## Scope after this release
 
-Further simplify onboarding and decide how both parties coordinate after
-connection. Delivery submissions,
+Account entry now preserves destinations and uses shorter developer setup;
+dashboards prioritize drafts, responses, and accepted work. See
+[account entry and dashboard flow](experience-flow.md).
+
+Decide how both parties coordinate after connection. Delivery submissions,
 owner confirmation, and portfolio evidence need their own full lifecycle. Do not
 equate the existing close action with successful completion.

@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { LogOutIcon } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { MapJourneyLink } from "@/components/map/map-journey";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/session";
 import type { Role } from "@/lib/types";
+import { withNext } from "@/lib/navigation";
 
 type NavItem = { href: string; label: string };
 
@@ -42,7 +44,13 @@ export function navigationFor(role: Role | null | undefined) {
 
 export function AppHeader({ className }: { className?: string }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const [destination, setDestination] = useState(pathname);
+  useEffect(() => {
+    const current = `${pathname}${window.location.search}${window.location.hash}`;
+    if (current !== destination) setDestination(current);
+  });
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
   const { session, signOut } = useSession();
   const member = session.status === "member" ? session : null;
   const items = navigationFor(member ? member.role : undefined);
@@ -85,7 +93,15 @@ export function AppHeader({ className }: { className?: string }) {
           return (
             <Button
               key={item.href}
-              render={<a href={item.href} />}
+              render={
+                <a
+                  href={
+                    item.href === "/role"
+                      ? withNext(item.href, destination)
+                      : item.href
+                  }
+                />
+              }
               variant="ghost"
               size="sm"
               aria-current={current ? "page" : undefined}
@@ -108,21 +124,44 @@ export function AppHeader({ className }: { className?: string }) {
             <Button
               variant="ghost"
               size="sm"
+              loading={signingOut}
               onClick={async () => {
-                await signOut();
-                router.push("/");
+                setSigningOut(true);
+                setSignOutError("");
+                try {
+                  await signOut();
+                } catch {
+                  setSignOutError(
+                    "Sign out failed. Check your connection and retry.",
+                  );
+                } finally {
+                  setSigningOut(false);
+                }
               }}
             >
               <LogOutIcon aria-hidden="true" />
               Sign out
             </Button>
+            {signOutError && (
+              <span role="alert" className="max-w-52 text-xs">
+                {signOutError}
+              </span>
+            )}
           </span>
         ) : session.status === "guest" ? (
           <span className="ms-2 flex items-center gap-2">
-            <Button render={<a href="/sign-in" />} variant="ghost" size="sm">
+            <Button
+              render={<a href={withNext("/sign-in", destination)} />}
+              variant="ghost"
+              size="sm"
+            >
               Sign in
             </Button>
-            <Button render={<a href="/sign-up" />} variant="outline" size="sm">
+            <Button
+              render={<a href={withNext("/sign-up", destination)} />}
+              variant="outline"
+              size="sm"
+            >
               Get started
             </Button>
           </span>

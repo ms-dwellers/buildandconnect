@@ -99,6 +99,7 @@ try {
     "/role",
     "/dashboard",
     "/profile",
+    "/onboarding",
     "/requests/new",
     "/projects/new",
     "/opportunities/new",

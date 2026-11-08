@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePaged } from "@/lib/use-api";
 import type { Interest, OpportunityRecord } from "@/lib/types";
+import { prioritizeInterests, prioritizeOpportunities } from "@/lib/dashboard";
 import {
   ConfirmButton,
   EmptyState,
@@ -22,7 +23,6 @@ import {
 
 export function RequesterOpportunities() {
   const opportunities = usePaged<OpportunityRecord>("/opportunities/mine");
-  const interests = usePaged<Interest>("/interests");
   const { pending, run } = useMutation();
   const setStatus = async (
     opportunity: OpportunityRecord,
@@ -45,6 +45,7 @@ export function RequesterOpportunities() {
       >
         <ListState
           {...opportunities}
+          items={prioritizeOpportunities(opportunities.items)}
           onRetry={() => void opportunities.reload()}
           onLoadMore={() => void opportunities.loadMore()}
           empty={
@@ -125,7 +126,6 @@ export function RequesterOpportunities() {
           )}
         </ListState>
       </Section>
-      <InterestSection interests={interests} viewer="requester" />
     </div>
   );
 }
@@ -137,13 +137,13 @@ export function InterestSection({
   interests: ReturnType<typeof usePaged<Interest>>;
   viewer: "requester" | "developer";
 }) {
+  if (!interests.loading && !interests.error && !interests.items.length)
+    return null;
   return (
-    <Section
-      title="Interest and connections"
-      description="A connection forms when both sides say they're interested."
-    >
+    <Section title="Responses and connections">
       <ListState
         {...interests}
+        items={prioritizeInterests(interests.items, viewer)}
         onRetry={() => void interests.reload()}
         onLoadMore={() => void interests.loadMore()}
         empty={
@@ -184,11 +184,7 @@ export function InterestSection({
                   {interest.connected ? (
                     <Badge variant="success">Connected</Badge>
                   ) : theirs ? (
-                    <Badge variant="info">
-                      {viewer === "requester"
-                        ? "Developer is interested"
-                        : "Requester is interested"}
-                    </Badge>
+                    <Badge variant="info">Needs your response</Badge>
                   ) : (
                     <Badge variant="outline">Waiting for a reply</Badge>
                   )}
@@ -199,7 +195,9 @@ export function InterestSection({
                     variant="outline"
                     size="sm"
                   >
-                    Open
+                    {viewer === "requester"
+                      ? "Review developer"
+                      : "Review opportunity"}
                   </Button>
                 </div>
               </ItemCard>

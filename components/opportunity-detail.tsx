@@ -26,6 +26,7 @@ import {
 import { useApi, usePaged } from "@/lib/use-api";
 import { ProjectScope } from "@/components/project-scope";
 import { ConfirmButton } from "@/components/dashboards/parts";
+import { withNext } from "@/lib/navigation";
 import type {
   DeveloperMatch,
   Interest,
@@ -395,7 +396,18 @@ function YourFit({
         title="Create your profile to see your fit"
         description="Your match is calculated from your skills, projects and learning goals."
         action={
-          <Button render={<a href="/profile" />}>Create your profile</Button>
+          <Button
+            render={
+              <a
+                href={withNext(
+                  "/onboarding",
+                  `/opportunities/${opportunity.id}`,
+                )}
+              />
+            }
+          >
+            Create your profile
+          </Button>
         }
       />
     );

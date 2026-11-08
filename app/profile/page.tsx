@@ -1,14 +1,16 @@
 import { AppShell } from "@/components/app/app-shell";
 import { ProfileEditor } from "@/components/profile-editor";
+import { safeNext } from "@/lib/navigation";
 
-export default function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
   return (
-    <AppShell
-      title="Your developer profile"
-      description="Companies match on demonstrated skills and projects. Learning goals shape growth matching but never count against you."
-      width="narrow"
-    >
-      <ProfileEditor />
+    <AppShell title="Your developer profile" width="narrow">
+      <ProfileEditor next={safeNext(params.next)} />
     </AppShell>
   );
 }

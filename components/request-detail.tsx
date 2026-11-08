@@ -15,6 +15,7 @@ import {
 import { ProjectScope } from "@/components/project-scope";
 import { useApi } from "@/lib/use-api";
 import type { RequestRecord, Role } from "@/lib/types";
+import { withNext } from "@/lib/navigation";
 
 export function RequestDetail({ id }: { id: string }) {
   return (
@@ -176,7 +177,14 @@ function RequestCommitment({
               <li key={reason}>{reason}</li>
             ))}
           </ul>
-          <Button render={<a href="/profile" />} variant="outline">
+          <Button
+            render={
+              <a
+                href={`${withNext("/profile", `/requests/${item.id}`)}#area`}
+              />
+            }
+            variant="outline"
+          >
             Review profile and area
           </Button>
         </>

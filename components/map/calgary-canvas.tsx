@@ -77,6 +77,8 @@ export function CalgaryCanvas({
       ref={frame}
       className={`relative isolate size-full overflow-hidden bg-map-land ${placing ? "cursor-crosshair" : ""}`}
       data-testid="calgary-canvas"
+      role="region"
+      aria-label="Calgary project map"
       data-map-mode={mode}
       aria-busy={loading}
       data-map-zoom={camera.zoom.toFixed(2)}
@@ -95,7 +97,6 @@ export function CalgaryCanvas({
       <div
         ref={container}
         className={`absolute inset-0 size-full ${live ? "opacity-100" : "pointer-events-none opacity-0"}`}
-        aria-label="Interactive Calgary city map"
       />
       {mode === "preview" && (
         <>

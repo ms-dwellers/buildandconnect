@@ -3,9 +3,13 @@
 import { HeartHandshakeIcon, MapPinIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePaged } from "@/lib/use-api";
-import { RequesterOpportunities } from "./requester-opportunities";
+import {
+  InterestSection,
+  RequesterOpportunities,
+} from "./requester-opportunities";
 import { DraftList } from "@/components/projects/draft-list";
-import type { RequestRecord } from "@/lib/types";
+import type { Interest, RequestRecord } from "@/lib/types";
+import { prioritizeRequests } from "@/lib/dashboard";
 import {
   ConfirmButton,
   EmptyState,
@@ -18,6 +22,7 @@ import {
 
 export function RequesterDashboard() {
   const requests = usePaged<RequestRecord>("/requests");
+  const interests = usePaged<Interest>("/interests");
   const { pending, run } = useMutation();
   const act = async (request: RequestRecord, action: "close" | "release") => {
     const ok =
@@ -40,6 +45,7 @@ export function RequesterDashboard() {
   return (
     <div className="space-y-12">
       <DraftList />
+      <InterestSection interests={interests} viewer="requester" />
       <RequesterOpportunities />
       <Section
         title="Your requests"
@@ -47,6 +53,7 @@ export function RequesterDashboard() {
       >
         <ListState
           {...requests}
+          items={prioritizeRequests(requests.items)}
           onRetry={() => void requests.reload()}
           onLoadMore={() => void requests.loadMore()}
           empty={

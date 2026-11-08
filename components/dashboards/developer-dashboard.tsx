@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ErrorAlert, LoadingBlock } from "@/components/app/require-role";
 import { useApi, usePaged } from "@/lib/use-api";
+import { withNext } from "@/lib/navigation";
 import type {
   Interest,
   NearbyRequest,
@@ -42,7 +43,14 @@ export function DeveloperDashboard() {
         title="Create your developer profile"
         description="Add your skills, projects and what you want to learn. Matching and nearby requests start from your profile."
         action={
-          <Button render={<a href="/profile" />}>Create your profile</Button>
+          <div className="flex flex-wrap gap-3">
+            <Button render={<a href={withNext("/onboarding", "/career")} />}>
+              Create your profile
+            </Button>
+            <Button render={<a href="/map" />} variant="outline">
+              Explore the map first
+            </Button>
+          </div>
         }
       />
     );
@@ -98,6 +106,8 @@ function Dashboard({
 
   return (
     <div className="space-y-12">
+      <InterestSection interests={interests} viewer="developer" />
+      <AcceptedRequests claimed={claimed} pending={pending} release={release} />
       <Card>
         <CardPanel className="flex flex-wrap items-center justify-between gap-4 p-6">
           <div className="space-y-1">
@@ -114,98 +124,61 @@ function Dashboard({
           </Button>
         </CardPanel>
       </Card>
-      <Card>
-        <CardPanel className="grid gap-6 p-6 md:grid-cols-[1fr_auto]">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold">{profile.name}</h2>
-              <Badge variant="outline">{profile.city}</Badge>
-            </div>
-            <p className="line-clamp-2 max-w-xl text-sm text-muted-foreground">
-              {profile.bio}
-            </p>
-            <p className="flex items-center gap-1.5 text-sm">
-              <MapPinIcon aria-hidden="true" className="size-4 text-primary" />
-              {profile.location
-                ? `Finding requests within ${profile.location.radiusKm} km of your pin`
-                : "No area set yet. Set one to see nearby requests."}
-            </p>
-            <Button render={<a href="/profile" />} variant="outline" size="sm">
-              Edit profile and area
-            </Button>
-          </div>
-          <div className="space-y-4 md:min-w-64">
-            {(
-              [
-                ["available", "Available for new work"],
-                ["discoverable", "Visible to requesters"],
-              ] as const
-            ).map(([key, label]) => (
-              <div
-                key={key}
-                className="flex items-center justify-between gap-4"
-              >
-                <Label htmlFor={`toggle-${key}`}>{label}</Label>
-                <Switch
-                  id={`toggle-${key}`}
-                  checked={profile[key]}
-                  disabled={pending === key}
-                  onCheckedChange={(value) => void toggle(key, value)}
-                />
+      <details className="space-y-4">
+        <summary className="cursor-pointer font-semibold">
+          Profile and availability
+        </summary>
+        <Card>
+          <CardPanel className="grid gap-6 p-6 md:grid-cols-[1fr_auto]">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-semibold">{profile.name}</h2>
+                <Badge variant="outline">{profile.city}</Badge>
               </div>
-            ))}
-          </div>
-        </CardPanel>
-      </Card>
-
-      <Section
-        title="Accepted requests"
-        description="Community requests you've taken on."
-      >
-        <ListState
-          {...claimed}
-          onRetry={() => void claimed.reload()}
-          onLoadMore={() => void claimed.loadMore()}
-          empty={
-            <p className="text-sm text-muted-foreground">
-              Nothing accepted yet. Pick a nearby request below.
-            </p>
-          }
-        >
-          {(request) => (
-            <li key={request.id}>
-              <ItemCard>
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <h3 className="font-semibold">{request.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {request.ownerName} · {request.place}
-                  </p>
-                  <p className="line-clamp-2 text-sm">{request.description}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    render={<a href={`/requests/${request.id}`} />}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    View request
-                  </Button>
-                  <ConfirmButton
-                    label="Release"
-                    title="Release this request?"
-                    description="It reopens for other developers nearby."
-                    confirmLabel="Release request"
-                    variant="outline"
-                    size="sm"
-                    loading={pending === request.id}
-                    onConfirm={() => void release(request.id)}
+              <p className="line-clamp-2 max-w-xl text-sm text-muted-foreground">
+                {profile.bio}
+              </p>
+              <p className="flex items-center gap-1.5 text-sm">
+                <MapPinIcon
+                  aria-hidden="true"
+                  className="size-4 text-primary"
+                />
+                {profile.location
+                  ? `Finding requests within ${profile.location.radiusKm} km of your pin`
+                  : "No area set yet. Set one to see nearby requests."}
+              </p>
+              <Button
+                render={<a href="/profile" />}
+                variant="outline"
+                size="sm"
+              >
+                Edit profile and area
+              </Button>
+            </div>
+            <div className="space-y-4 md:min-w-64">
+              {(
+                [
+                  ["available", "Available for new work"],
+                  ["discoverable", "Visible to requesters"],
+                ] as const
+              ).map(([key, label]) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-4"
+                >
+                  <Label htmlFor={`toggle-${key}`}>{label}</Label>
+                  <Switch
+                    id={`toggle-${key}`}
+                    checked={profile[key]}
+                    disabled={pending === key}
+                    onCheckedChange={(value) => void toggle(key, value)}
                   />
                 </div>
-              </ItemCard>
-            </li>
-          )}
-        </ListState>
-      </Section>
+              ))}
+            </div>
+          </CardPanel>
+        </Card>
+      </details>
 
       <Section
         title="Nearby requests"
@@ -322,8 +295,64 @@ function Dashboard({
           )}
         </ListState>
       </Section>
-
-      <InterestSection interests={interests} viewer="developer" />
     </div>
+  );
+}
+
+function AcceptedRequests({
+  claimed,
+  pending,
+  release,
+}: {
+  claimed: ReturnType<typeof usePaged<RequestRecord>>;
+  pending: string | null;
+  release: (id: string) => Promise<void>;
+}) {
+  if (!claimed.loading && !claimed.error && !claimed.items.length) return null;
+  return (
+    <Section
+      title="Accepted requests"
+      description="Community requests you've taken on."
+    >
+      <ListState
+        {...claimed}
+        onRetry={() => void claimed.reload()}
+        onLoadMore={() => void claimed.loadMore()}
+        empty={null}
+      >
+        {(request) => (
+          <li key={request.id}>
+            <ItemCard>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <h3 className="font-semibold">{request.title}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {request.ownerName} · {request.place}
+                </p>
+                <p className="line-clamp-2 text-sm">{request.description}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  render={<a href={`/requests/${request.id}`} />}
+                  variant="outline"
+                  size="sm"
+                >
+                  View request
+                </Button>
+                <ConfirmButton
+                  label="Release"
+                  title="Release this request?"
+                  description="It reopens for other developers nearby."
+                  confirmLabel="Release request"
+                  variant="ghost"
+                  size="sm"
+                  loading={pending === request.id}
+                  onConfirm={() => void release(request.id)}
+                />
+              </div>
+            </ItemCard>
+          </li>
+        )}
+      </ListState>
+    </Section>
   );
 }

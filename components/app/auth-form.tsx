@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
@@ -8,7 +8,8 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
-import { homeFor, useSession } from "@/lib/session";
+import { useSession } from "@/lib/session";
+import { afterAuthentication, withNext } from "@/lib/navigation";
 import { ErrorAlert } from "./require-role";
 
 export function AuthForm({
@@ -19,31 +20,58 @@ export function AuthForm({
   next: string | null;
 }) {
   const router = useRouter();
-  const { refresh } = useSession();
+  const { refresh, session } = useSession();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const busy = useRef(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [ready, setReady] = useState(false);
   const signUp = mode === "sign-up";
+  useEffect(() => setReady(true), []);
+  useEffect(() => {
+    if (session.status === "member" && !busy.current)
+      router.replace(afterAuthentication(session.role, next));
+  }, [session, router, next]);
+
+  async function continueSession() {
+    const current = await refresh();
+    if (current.status !== "member") {
+      setError(
+        current.status === "unavailable"
+          ? current.message
+          : "Sign-in could not be confirmed. Check your connection and retry.",
+      );
+      return;
+    }
+    router.replace(afterAuthentication(current.role, next));
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy.current || authenticated) return;
+    busy.current = true;
     const data = Object.fromEntries(new FormData(event.currentTarget));
     setPending(true);
     setError(null);
-    const result = await api(`/auth/${mode}/email`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-    if (!result.ok) {
+    try {
+      const result = await api(`/auth/${mode}/email`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setAuthenticated(true);
+      await continueSession();
+    } catch {
+      setError(
+        "Check your connection and try again. Your form has not been cleared.",
+      );
+    } finally {
+      busy.current = false;
       setPending(false);
-      setError(result.error);
-      return;
     }
-    const session = await refresh();
-    router.push(
-      session.status === "member" && session.role
-        ? (next ?? homeFor(session.role))
-        : "/role",
-    );
   }
 
   return (
@@ -81,13 +109,23 @@ export function AuthForm({
               message={error}
             />
           )}
-          <Button type="submit" loading={pending} className="w-full">
+          {authenticated && error && (
+            <Button variant="outline" onClick={() => void continueSession()}>
+              Retry loading account
+            </Button>
+          )}
+          <Button
+            type="submit"
+            loading={pending}
+            disabled={!ready || authenticated}
+            className="w-full"
+          >
             {signUp ? "Create account" : "Sign in"}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             {signUp ? "Already have an account? " : "New here? "}
             <a
-              href={signUp ? "/sign-in" : "/sign-up"}
+              href={withNext(signUp ? "/sign-in" : "/sign-up", next)}
               className="font-medium text-foreground underline underline-offset-4"
             >
               {signUp ? "Sign in" : "Create an account"}

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { StarterProfile } from "@/components/developer-onboarding";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
@@ -48,14 +50,19 @@ const LEVELS = [
 type Skill = DeveloperProfile["skills"][number];
 type Project = { title: string; description: string; technologies: string };
 
-export function ProfileEditor() {
+export function ProfileEditor({ next = null }: { next?: string | null }) {
   return (
-    <RequireRole roles={["developer"]}>{() => <LoadProfile />}</RequireRole>
+    <RequireRole roles={["developer"]}>
+      {({ user }) => <LoadProfile key={user.id} next={next} />}
+    </RequireRole>
   );
 }
 
-function LoadProfile() {
+function LoadProfile({ next }: { next: string | null }) {
   const profile = useApi<OwnProfile>("/developers/me");
+  const router = useRouter();
+  if (profile.error?.status === 404)
+    return <StarterProfile next={next ?? "/career"} />;
   if (profile.error && profile.error.status !== 404)
     return (
       <ErrorAlert
@@ -65,14 +72,31 @@ function LoadProfile() {
       />
     );
   if (profile.loading && !profile.data) return <LoadingBlock />;
+  const saveAndReturn = async () => {
+    await profile.reload();
+    if (next) router.push(next);
+  };
   return (
     <div className="space-y-10">
-      <ProfileForm initial={profile.data} onSaved={profile.reload} />
+      {next && (
+        <Button render={<a href={next} />} variant="outline">
+          Return to project
+        </Button>
+      )}
+      <ProfileForm
+        initial={profile.data}
+        onSaved={saveAndReturn}
+        returnToProject={!!next}
+      />
       <DeveloperPreferencesForm
         initial={profile.data}
         onSaved={profile.reload}
       />
-      <AreaForm profile={profile.data} onSaved={profile.reload} />
+      <AreaForm
+        profile={profile.data}
+        onSaved={saveAndReturn}
+        returnToProject={!!next}
+      />
     </div>
   );
 }
@@ -80,9 +104,11 @@ function LoadProfile() {
 function ProfileForm({
   initial,
   onSaved,
+  returnToProject = false,
 }: {
   initial?: OwnProfile;
   onSaved: () => Promise<void>;
+  returnToProject?: boolean;
 }) {
   const [skills, setSkills] = useState<Skill[]>(
     initial?.skills.length ? initial.skills : [{ name: "", level: 2 }],
@@ -110,6 +136,7 @@ function ProfileForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     const data = new FormData(event.currentTarget);
     const profile: DeveloperProfile = {
       bio: String(data.get("bio")),
@@ -133,26 +160,32 @@ function ProfileForm({
     };
     setPending(true);
     setFailure(null);
-    const result = await api("/developers/me", {
-      method: "PUT",
-      body: JSON.stringify(profile),
-    });
-    setPending(false);
-    if (!result.ok) {
-      setErrors(issuesToErrors(result.issues));
-      setFailure(result.error);
-      return;
+    try {
+      const result = await api("/developers/me", {
+        method: "PUT",
+        body: JSON.stringify(profile),
+      });
+      if (!result.ok) {
+        setErrors(issuesToErrors(result.issues));
+        setFailure(result.error);
+        return;
+      }
+      setErrors({});
+      toastManager.add({
+        title: initial ? "Profile saved" : "Profile created",
+        description: initial
+          ? undefined
+          : "Next, set your area to see nearby requests.",
+        type: "success",
+      });
+      await onSaved();
+    } catch {
+      setFailure(
+        "Your profile could not be saved. Check your connection and retry; your entries are still here.",
+      );
+    } finally {
+      setPending(false);
     }
-    setErrors({});
-    toastManager.add({
-      title: initial ? "Profile saved" : "Profile created",
-      description: initial
-        ? undefined
-        : "Next, set your area to see nearby requests.",
-      type: "success",
-    });
-    await onSaved();
-    if (!initial) document.getElementById("area")?.scrollIntoView();
   }
 
   return (
@@ -299,8 +332,8 @@ function ProfileForm({
 
           <FormSection title="Projects">
             <p className="text-sm text-muted-foreground">
-              Projects are your evidence. Companies see them alongside your
-              skills.
+              These projects are self-reported examples of your work. Requesters
+              can see them when your profile is visible.
             </p>
             <ul className="w-full space-y-4">
               {projects.map((project, index) => {
@@ -443,7 +476,11 @@ function ProfileForm({
             <ErrorAlert title="Profile not saved" message={failure} />
           )}
           <Button type="submit" loading={pending}>
-            {initial ? "Save profile" : "Create profile"}
+            {returnToProject
+              ? "Save profile and return"
+              : initial
+                ? "Save profile"
+                : "Create profile"}
           </Button>
         </Form>
       </CardPanel>
@@ -454,9 +491,11 @@ function ProfileForm({
 function AreaForm({
   profile,
   onSaved,
+  returnToProject = false,
 }: {
   profile?: OwnProfile;
   onSaved: () => Promise<void>;
+  returnToProject?: boolean;
 }) {
   const [pin, setPin] = useState<Pin | null>(
     profile?.location ? { ...profile.location, place: "Your area" } : null,
@@ -466,24 +505,31 @@ function AreaForm({
   const [failure, setFailure] = useState<string | null>(null);
 
   async function save() {
-    if (!pin) return;
+    if (!pin || pending) return;
     setPending(true);
     setFailure(null);
-    const result = await api("/developers/me/location", {
-      method: "PATCH",
-      body: JSON.stringify({
-        latitude: pin.latitude,
-        longitude: pin.longitude,
-        radiusKm: radius,
-      }),
-    });
-    setPending(false);
-    if (!result.ok) {
-      setFailure(result.error);
-      return;
+    try {
+      const result = await api("/developers/me/location", {
+        method: "PATCH",
+        body: JSON.stringify({
+          latitude: pin.latitude,
+          longitude: pin.longitude,
+          radiusKm: radius,
+        }),
+      });
+      if (!result.ok) {
+        setFailure(result.error);
+        return;
+      }
+      toastManager.add({ title: "Area saved", type: "success" });
+      await onSaved();
+    } catch {
+      setFailure(
+        "Your area could not be saved. Check your connection and retry.",
+      );
+    } finally {
+      setPending(false);
     }
-    toastManager.add({ title: "Area saved", type: "success" });
-    await onSaved();
   }
 
   return (
@@ -525,7 +571,7 @@ function AreaForm({
               disabled={!pin}
               onClick={() => void save()}
             >
-              Save area
+              {returnToProject ? "Save area and return" : "Save area"}
             </Button>
           </>
         )}

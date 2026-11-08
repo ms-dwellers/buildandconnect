@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/lib/session";
 import type { Me, Role } from "@/lib/types";
 import { ROLE_LABELS } from "./app-shell";
+import { withNext } from "@/lib/navigation";
 
 type Member = { user: Me["user"]; role: Role };
 
@@ -23,15 +24,20 @@ export function RequireRole({
   roles?: Role[];
   children: (member: Member) => ReactNode;
 }) {
-  const { session, refresh } = useSession();
+  const { session, refresh, signingOut } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   useEffect(() => {
+    if (signingOut) return;
+    const destination =
+      pathname === "/onboarding"
+        ? (new URLSearchParams(window.location.search).get("next") ?? "/career")
+        : `${pathname}${window.location.search}${window.location.hash}`;
     if (session.status === "guest")
-      router.replace(`/sign-in?next=${encodeURIComponent(pathname)}`);
+      router.replace(withNext("/sign-in", destination));
     else if (session.status === "member" && !session.role)
-      router.replace("/role");
-  }, [session, router, pathname]);
+      router.replace(withNext("/role", destination));
+  }, [session, router, pathname, signingOut]);
 
   if (session.status === "unavailable")
     return (

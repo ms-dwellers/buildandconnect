@@ -128,6 +128,13 @@ export function ListState<T>({
   if (!items.length) return <>{empty}</>;
   return (
     <div className="space-y-3">
+      {error && (
+        <ErrorAlert
+          title="The list could not be refreshed"
+          message={error.message}
+          onRetry={onRetry}
+        />
+      )}
       <ul className="space-y-3">{items.map(children)}</ul>
       {hasMore && onLoadMore && (
         <Button variant="outline" loading={loading} onClick={onLoadMore}>

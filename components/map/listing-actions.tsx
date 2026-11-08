@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import type { CityJob } from "@/lib/calgary";
 import type { Session } from "@/lib/session";
+import { withNext } from "@/lib/navigation";
 
 /** What the signed-in viewer can do with a map listing, by role and ownership. */
 export function ListingActions({
@@ -20,7 +21,12 @@ export function ListingActions({
       <Button
         render={
           <a
-            href={`/sign-in?next=${encodeURIComponent(`/map?focus=${job.id}`)}`}
+            href={withNext(
+              "/sign-in",
+              job.source === "request"
+                ? `/requests/${encodeURIComponent(job.id)}`
+                : `/opportunities/${encodeURIComponent(job.id)}`,
+            )}
           />
         }
         size="sm"
