@@ -130,12 +130,13 @@ function ProjectExplorer({
                     In your profile: {item.selfReportedSkills.join(", ")}
                   </p>
                 )}
-                {item.confirmedSkills.length > 0 && (
+                {/* Backends deployed before skill evidence omit this field. */}
+                {item.confirmedSkills?.length ? (
                   <p className="text-sm text-primary">
                     Requester-confirmed practice:{" "}
                     {item.confirmedSkills.join(", ")}
                   </p>
-                )}
+                ) : null}
                 {item.missingSkills.length > 0 && (
                   <p className="text-sm">
                     Find practice in: {item.missingSkills.join(", ")}
