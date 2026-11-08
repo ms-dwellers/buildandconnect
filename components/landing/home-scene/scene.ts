@@ -13,6 +13,11 @@ import {
 } from "@/lib/home-scene";
 import { createFirepitTexture } from "./firepit-texture";
 import {
+  buildDeveloperBackdrop,
+  buildPartnerBackdrop,
+  type BackdropField,
+} from "./backdrops";
+import {
   buildContactShadow,
   buildMonitor,
   buildSideTable,
@@ -167,6 +172,14 @@ export function createHomeScene(
   ].filter((shadow): shadow is THREE.Mesh => shadow !== null);
   scene.add(developer, partner, table, monitor, ...shadows);
 
+  // Personality behind each chair: low-poly tech marks for the developer, a
+  // stand of pines for the partner. Both sprout on load; hovering a chair
+  // deepens and animates its side.
+  const developerBackdrop = buildDeveloperBackdrop(tokens);
+  const partnerBackdrop = buildPartnerBackdrop(tokens);
+  const backdrops: BackdropField[] = [developerBackdrop, partnerBackdrop];
+  scene.add(developerBackdrop.group, partnerBackdrop.group);
+
   const groups: Record<PickTarget, THREE.Group> = {
     developer,
     partner,
@@ -318,6 +331,9 @@ export function createHomeScene(
       applyPose(restPose(rig), yaw, pitch);
       wantsFrame = motion;
     }
+    for (const field of backdrops) {
+      if (field.update(now, motion && approach === null)) wantsFrame = true;
+    }
     firepit?.draw(now, blend, motion);
     renderer.render(scene, camera);
     return wantsFrame;
@@ -356,6 +372,8 @@ export function createHomeScene(
         THREE.Group,
       ][])
         group.position.y = id === target ? 0.015 : 0;
+      developerBackdrop.setTarget(target === "developer" ? 1 : 0);
+      partnerBackdrop.setTarget(target === "partner" ? 1 : 0);
     },
     setMotion(enabled) {
       motion = enabled;
@@ -420,6 +438,7 @@ export function createHomeScene(
           material.dispose();
         }
       });
+      for (const field of backdrops) field.dispose();
       firepit?.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

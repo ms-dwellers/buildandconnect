@@ -71,25 +71,29 @@ percentages enforced on every component or the map.
   canvas-drawn campfire. The canvas covers the whole hero rather than a box: a
   camera view offset frames the furniture into the band beneath the copy at full
   size while the heading floats in the same space. Every colour comes from `--palette-*`
-  and `--scene-*` tokens read at runtime; no asset files are loaded. The header
-  and hero fill at least the first viewport; the remaining sections scroll
-  below. Typography adapts to viewport width and height.
+  and `--scene-*` tokens read at runtime. Behind the developer chair, low-poly tech marks (brackets, braces, a chip, a
+  terminal, a gear, a diamond, a dot grid) float, turn, and run off the left
+  edge; behind the partner chair, a stand of low-poly pines and bushes runs off
+  the right edge. Both are procedural meshes that sprout from the ground on
+  load, so no asset files are loaded. The header and hero fill at least the first viewport; the remaining
+  sections scroll below. Typography adapts to viewport width and height.
 - The chairs are the calls to action. Each carries a real button above it
   ("I'm a developer: Find a project" on the task chair, "I need a developer:
   Post a request" on the wooden chair), positioned from the scene's projected
   anchors on screens 40rem and wider and shown as a plain row under the scene
   otherwise, before WebGL is ready, and without WebGL at all. Hovering or
-  focusing a chair or its button lifts the chair. Clicking the developer chair
-  or the monitor starts the map journey; clicking the partner chair opens the
-  request form. The canvas itself is `aria-hidden`. Reduced motion renders one
-  static frame, and the render loop pauses while the tab is hidden or the hero
-  is off-screen.
+  focusing a chair or its button lifts the chair and intensifies that side's
+  backdrop: the pines deepen from mint and teal to pine and emerald and sway
+  harder, the marks brighten to pine and apricot, grow, and turn faster. Clicking the developer chair or the
+  monitor starts the map journey; clicking the partner chair opens the request
+  form. The canvas itself is `aria-hidden`. Reduced motion renders one static
+  frame, and the render loop pauses while the tab is hidden or the hero is
+  off-screen.
 - When the map journey begins with the hero visible, the scene registers an
   approach beat: the canvas breaks out of its box to cover the whole viewport
   (a camera view offset keeps the furniture where it was while the frame grows),
   the camera dollies into the monitor while its screen crossfades to the city
-  name, and then the mist takes over. The former pixel-art sprite collection has
-  been removed.
+  name, and then the mist takes over.
 
 - No decorative pills. Ordinary labels are plain text. Badges are
   softly rectangular with a small radius, explicit line height, and enough padding

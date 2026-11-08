@@ -109,7 +109,7 @@ test("token parsing accepts six-digit hex and rejects everything else", () => {
   assert.equal(shadeHex("not-a-colour", -0.5), "not-a-colour");
   const complete = readSceneTokens(() => "#123456");
   assert.ok(complete);
-  assert.equal(Object.keys(complete).length, 15);
+  assert.equal(Object.keys(complete).length, 17);
   assert.equal(
     readSceneTokens((name) => (name === "--scene-wood" ? "" : "#123456")),
     null,
@@ -183,10 +183,18 @@ test("the home page renders copy on the server and loads three lazily", () => {
   assert.match(scene, /forceContextLoss/);
   assert.match(scene, /NoToneMapping/);
   assert.match(scene, /powerPreference: "low-power"/);
+  assert.match(scene, /buildDeveloperBackdrop/);
+  assert.match(scene, /buildPartnerBackdrop/);
   assert.doesNotMatch(scene, /castShadow\s*=\s*true/);
   const css = read("app/globals.css");
   assert.match(css, /min-height: calc\(100svh - 6rem\)/);
   assert.match(css, /--home-scene-height/);
+  // The backdrops are procedural meshes; no sprite assets ship any more.
+  const backdrops = read("components/landing/home-scene/backdrops.ts");
+  assert.match(backdrops, /ConeGeometry/);
+  assert.match(backdrops, /buildPartnerBackdrop/);
+  assert.match(backdrops, /buildDeveloperBackdrop/);
+  assert.doesNotMatch(backdrops, /TextureLoader|\/sprites\//);
   assert.equal(
     existsSync(new URL("../public/sprites", import.meta.url)),
     false,
