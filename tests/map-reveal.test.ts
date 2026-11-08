@@ -2,10 +2,35 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  createMistTexture,
+  MIST_TEXTURE_SIZE,
+  revealFragmentSource,
   revealProgress,
   revealResolution,
   revealTiming,
 } from "../lib/map-reveal.ts";
+
+test("mist uses a small deterministic texture with three spatial scales", () => {
+  const pixels = createMistTexture();
+  assert.equal(MIST_TEXTURE_SIZE, 128);
+  assert.equal(pixels.byteLength, 64 * 1024);
+  assert.deepEqual(pixels, createMistTexture());
+  const channels = [new Set<number>(), new Set<number>(), new Set<number>()];
+  for (let index = 0; index < pixels.length; index += 4) {
+    for (let channel = 0; channel < 3; channel++)
+      channels[channel].add(pixels[index + channel]);
+    assert.equal(pixels[index + 3], 255);
+  }
+  for (const channel of channels) assert.ok(channel.size > 128);
+});
+
+test("mist separates in three drifting banks rather than a radial wipe", () => {
+  assert.match(revealFragmentSource, /texture2D\(u_mist/);
+  for (const layer of ["far", "mid", "near"])
+    assert.match(revealFragmentSource, new RegExp(`${layer}Opening`));
+  assert.match(revealFragmentSource, /abs\(p\.x\) - opening \+ billow/);
+  assert.doesNotMatch(revealFragmentSource, /length\(p\)|float radius/);
+});
 
 test("reveal progress is bounded, smooth and finishes at the configured deadline", () => {
   for (const duration of Object.values(revealTiming)) {
@@ -50,6 +75,7 @@ test("map transition removes sprite stacks and stops drawing after each phase", 
   assert.match(component, /if \(amount < 1\) frame = requestAnimationFrame/);
   assert.match(component, /stopped \|\| document\.hidden/);
   assert.match(component, /context\.deleteProgram/);
+  assert.match(component, /context\.deleteTexture/);
   assert.match(component, /webglcontextlost/);
   assert.match(journey, /<MapReveal/);
   assert.doesNotMatch(

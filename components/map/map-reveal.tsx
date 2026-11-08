@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  createMistTexture,
+  MIST_TEXTURE_SIZE,
   revealFragmentSource,
   revealProgress,
   revealResolution,
@@ -43,6 +45,7 @@ export function MapReveal({
     const shaders: WebGLShader[] = [];
     let program: WebGLProgram | null = null;
     let buffer: WebGLBuffer | null = null;
+    let texture: WebGLTexture | null = null;
     let frame = 0;
     let stopped = false;
 
@@ -52,6 +55,7 @@ export function MapReveal({
       draw.current = null;
       context.deleteBuffer(buffer);
       context.deleteProgram(program);
+      context.deleteTexture(texture);
       shaders.forEach((shader) => context.deleteShader(shader));
       context.getExtension("WEBGL_lose_context")?.loseContext();
     }
@@ -93,10 +97,46 @@ export function MapReveal({
       const position = context.getAttribLocation(program, "a_position");
       context.enableVertexAttribArray(position);
       context.vertexAttribPointer(position, 2, context.FLOAT, false, 0, 0);
+      texture = context.createTexture();
+      if (!texture) throw new Error("Mist texture unavailable");
+      context.activeTexture(context.TEXTURE0);
+      context.bindTexture(context.TEXTURE_2D, texture);
+      context.texParameteri(
+        context.TEXTURE_2D,
+        context.TEXTURE_MIN_FILTER,
+        context.LINEAR,
+      );
+      context.texParameteri(
+        context.TEXTURE_2D,
+        context.TEXTURE_MAG_FILTER,
+        context.LINEAR,
+      );
+      context.texParameteri(
+        context.TEXTURE_2D,
+        context.TEXTURE_WRAP_S,
+        context.REPEAT,
+      );
+      context.texParameteri(
+        context.TEXTURE_2D,
+        context.TEXTURE_WRAP_T,
+        context.REPEAT,
+      );
+      context.texImage2D(
+        context.TEXTURE_2D,
+        0,
+        context.RGBA,
+        MIST_TEXTURE_SIZE,
+        MIST_TEXTURE_SIZE,
+        0,
+        context.RGBA,
+        context.UNSIGNED_BYTE,
+        createMistTexture(),
+      );
+      context.uniform1i(context.getUniformLocation(program, "u_mist"), 0);
       const styles = getComputedStyle(element);
       for (const [uniform, token] of [
-        ["paper", "--background"],
-        ["mint", "--secondary"],
+        ["light", "--map-mist-light"],
+        ["shadow", "--map-mist-shadow"],
       ]) {
         const hex = styles
           .getPropertyValue(token)

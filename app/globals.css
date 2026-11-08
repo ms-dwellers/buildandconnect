@@ -271,6 +271,8 @@
   --map-arterial: #dfc999;
   --map-label: #425f57;
   --cloud: var(--palette-cream);
+  --map-mist-light: #f2f5f1;
+  --map-mist-shadow: #afc6bf;
 }
 
 .voice-studio {
