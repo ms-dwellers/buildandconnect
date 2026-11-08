@@ -1,0 +1,62 @@
+.home-scene {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--home-scene-height, 20rem);
+  pointer-events: none;
+}
+
+.home-scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  touch-action: pan-y;
+  transition: opacity 500ms ease-out;
+}
+
+.home-scene[data-renderer="webgl"] canvas {
+  pointer-events: auto;
+}
+
+.home-scene[data-ready] canvas {
+  opacity: 1;
+}
+
+.home-scene-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  translate: -50% -100%;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+.home-scene[data-hover="developer"] .home-scene-label[data-chair="developer"],
+.home-scene[data-hover="partner"] .home-scene-label[data-chair="partner"] {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (hover: none) {
+  .home-scene[data-renderer="webgl"] .home-scene-label {
+    opacity: 1;
+  }
+}
+
+.home-scene[data-phase="approaching"] .home-scene-label,
+.home-scene[data-phase="covering"] .home-scene-label {
+  opacity: 0;
+}
+
+.home-scene[data-phase="approaching"] ~ .landing-hero-copy,
+.home-scene[data-phase="covering"] ~ .landing-hero-copy {
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+}

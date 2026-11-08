@@ -22,7 +22,8 @@ buffer stays within 768 × 512, independent of device pixel ratio. Rendering sto
 when the cover is complete and while the tab is hidden. GPU resources are released
 on exit. WebGL initialization failures or context loss fall back to a CSS fade;
 independent deadlines keep navigation working if animation callbacks are lost.
-The landing-page pixel-art scene is unchanged.
+The landing Three.js scene stops rendering when the mist starts and releases its
+WebGL context when the route changes, so at most two contexts draw at once.
 
 The map shows live Convex records through the public `GET /api/map` feed: open
 requester opportunities that have a map pin, and open community requests. No demo
@@ -96,6 +97,9 @@ and `tests/convex/roles.test.ts` cover feed privacy and visibility; smoke checks
 the public map, its feed, and the role pages. Browser QA should additionally cover:
 
 - Landing link, cloud cover, city reveal, Escape/skip, browser Back and re-entry.
+- Landing approach: camera dolly into the monitor, city name on its screen,
+  Escape mid-dolly, and a landing link used with the hero scrolled out of view
+  (plain mist, no dolly).
 - Direct `/map` visit and reduced-motion navigation, neither with a cloud replay.
 - Delayed Mapbox loading: only clouds, no illustrated map or preview pins. The
   landing transition must stay covered past five seconds until loading resolves.

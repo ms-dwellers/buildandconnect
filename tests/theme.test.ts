@@ -127,6 +127,26 @@ test("focus and input tokens remain visible against light surfaces", () => {
   }
 });
 
+test("the landing scene reads only tokens that resolve to hex colours", () => {
+  const sceneTokens = new Set(
+    [...root.matchAll(/(--scene-[\w-]+):/g)].map((match) => match[1]),
+  );
+  assert.ok(sceneTokens.size >= 8, "scene tokens are defined in :root");
+  assert.equal(tokens.get("--scene-fabric"), "var(--palette-pine)");
+  assert.equal(tokens.get("--scene-cushion"), "var(--palette-wheat)");
+  for (const name of [
+    ...sceneTokens,
+    "--background",
+    "--primary",
+    "--palette-pine",
+    "--palette-mint",
+    "--palette-wheat",
+    "--palette-apricot",
+    "--palette-coral",
+  ])
+    assert.match(color(`var(${name})`), /^#[\da-f]{6}$/i, name);
+});
+
 test("component discovery uses the coss registry", () => {
   const config = JSON.parse(
     readFileSync(new URL("../components.json", import.meta.url), "utf8"),

@@ -1,23 +1,22 @@
 import { ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { AccountLinks } from "@/components/app/account-links";
-import { HeroScene } from "@/components/landing/hero-scene";
-import {
-  JoinGardenBorder,
-  JoinGardenTrees,
-} from "@/components/landing/join-garden";
+import { HomeScene } from "@/components/landing/home-scene";
 import { MapJourneyLink } from "@/components/map/map-journey";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
+import { homeCopy } from "@/lib/home-copy";
 
 export default function Home() {
+  const [headingStart, headingEnd] = homeCopy.heading;
+  const [forDevelopers, forPartners] = homeCopy.ways;
   return (
-    <div className="landing-paper">
+    <div>
       <a href="#main-content" className="landing-skip-link">
         Skip to content
       </a>
-      <header className="flex h-24 items-center justify-between gap-3 bg-secondary px-5 sm:px-10 lg:px-16">
+      <header className="flex h-24 items-center justify-between gap-3 px-5 sm:px-10 lg:px-16">
         <a
           href="/"
           aria-label="Build & Connect home"
@@ -36,33 +35,32 @@ export default function Home() {
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           aria-labelledby="hero-heading"
-          className="landing-hero relative isolate w-full overflow-hidden bg-secondary"
+          className="landing-hero relative isolate w-full overflow-hidden bg-background"
         >
-          <HeroScene />
-          <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-5 text-center sm:px-10">
+          <HomeScene />
+          <div className="landing-hero-copy relative z-10 mx-auto flex max-w-4xl flex-col items-center px-5 text-center sm:px-10">
             <h1
               id="hero-heading"
               className="landing-hero-heading font-display font-bold leading-[0.98] tracking-[-0.045em] text-balance"
             >
-              Build experience.
+              {headingStart}
               <br />
-              <span className="text-primary">Make a difference.</span>
+              <span className="text-primary">{headingEnd}</span>
             </h1>
-            <p className="mt-7 max-w-lg text-base leading-8 text-muted-foreground sm:text-lg">
-              Good ideas need people. Find a local project, bring what you know,
-              and grow something good together.
+            <p className="mt-7 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
+              {homeCopy.lead}
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-5">
               <MapJourneyLink variant="highlight" size="lg">
-                Find a project
+                {homeCopy.ctas.find.label}
                 <ArrowRightIcon aria-hidden="true" />
               </MapJourneyLink>
               <Button
-                render={<a href="/requests/new" />}
+                render={<a href={homeCopy.ctas.post.href} />}
                 variant="outline"
                 size="lg"
               >
-                Post a request
+                {homeCopy.ctas.post.label}
               </Button>
             </div>
           </div>
@@ -73,36 +71,33 @@ export default function Home() {
         >
           <article>
             <h2 className="font-display text-3xl leading-tight tracking-tight sm:text-4xl">
-              A little experience.
-              <br />A lot to offer.
+              {forDevelopers.heading[0]}
+              <br />
+              {forDevelopers.heading[1]}
             </h2>
             <p className="mt-5 max-w-sm text-base leading-8 text-muted-foreground">
-              You don’t have to know everything to make something useful. Find
-              nearby requests that fit your skills, try something new, and build
-              experience that matters.
+              {forDevelopers.body}
             </p>
             <MapJourneyLink variant="link" className="mt-5 px-0">
-              Explore nearby projects
+              {forDevelopers.link}
               <ArrowUpRightIcon aria-hidden="true" />
             </MapJourneyLink>
           </article>
           <article>
             <h2 className="font-display text-3xl leading-tight tracking-tight sm:text-4xl">
-              You bring the idea.
+              {forPartners.heading[0]}
               <br />
-              We’ll help you connect.
+              {forPartners.heading[1]}
             </h2>
             <p className="mt-5 max-w-sm text-base leading-8 text-muted-foreground">
-              A community group, a small business, or a problem worth solving.
-              Tell us what you need and put it on the map. You don’t need to
-              speak code to get started.
+              {forPartners.body}
             </p>
             <Button
-              render={<a href="/requests/new" />}
+              render={<a href={homeCopy.ctas.post.href} />}
               variant="link"
               className="mt-5 px-0"
             >
-              Share a request
+              {forPartners.link}
               <ArrowUpRightIcon aria-hidden="true" />
             </Button>
           </article>
@@ -111,27 +106,24 @@ export default function Home() {
           aria-labelledby="join-heading"
           className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 sm:pb-24"
         >
-          <Card className="relative overflow-hidden border-primary/15 bg-secondary/50">
-            <CardPanel className="grid items-center gap-8 p-8 pb-24 sm:p-12 sm:pb-24 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
+          <Card className="border-primary/15 bg-secondary/40">
+            <CardPanel className="flex flex-col gap-8 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-12">
               <h2
                 id="join-heading"
                 className="max-w-lg font-display text-3xl leading-tight tracking-tight sm:text-4xl"
               >
-                Your next chapter could
-                <br className="hidden sm:block" /> start around the corner.
+                {homeCopy.join}
               </h2>
-              <JoinGardenTrees />
               <Button
                 render={<a href="/sign-up" />}
                 variant="highlight"
                 size="lg"
-                className="justify-self-start lg:justify-self-end"
+                className="shrink-0 self-start sm:self-auto"
               >
                 Get started
                 <ArrowRightIcon aria-hidden="true" />
               </Button>
             </CardPanel>
-            <JoinGardenBorder />
           </Card>
         </section>
       </main>
