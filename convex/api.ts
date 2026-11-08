@@ -3,6 +3,7 @@ import { z, ZodError } from "zod";
 import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
 import { createAuth } from "./auth";
+import { configuredProviders } from "./socialProviders";
 import { fail } from "./access";
 import { workersAI } from "./ai";
 import { createHiringRoutes } from "./hiring/routes";
@@ -105,6 +106,10 @@ export async function handleApi(
         service: "buildandconnect",
         backend: "convex",
       });
+    // Booleans only, so sign-in forms show the providers this deployment has
+    // credentials for without the credentials ever leaving Convex.
+    if (path === "/auth-providers" && method === "GET")
+      return json(configuredProviders(process.env));
     const session = await createAuth(ctx).api.getSession({
       headers: request.headers,
     });

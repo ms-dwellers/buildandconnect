@@ -25,6 +25,32 @@ browser-visible. Set Convex's `SITE_URL` to the website's exact origin. The web
 host needs only that origin and `VITE_CONVEX_SITE_URL` for forwarding. No
 production deployment is part of local setup.
 
+### Social sign-in (Google and GitHub)
+
+Provider credentials live only in the Convex deployment environment as
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, and
+`GITHUB_CLIENT_SECRET`. A provider's button appears only when both of its values
+are set; deployments without them keep email/password sign-in. Set them with
+`bunx convex env set NAME` (the value is read from stdin), or export them in the
+shell before `bun run setup:backend`, which copies any that are present. Never put
+them in `.env.local`; the website host does not use them.
+
+Better Auth runs behind the same-origin forwarding route with `baseURL = SITE_URL`,
+so the callback URL to register with each provider is `SITE_URL` plus
+`/api/auth/callback/google` or `/api/auth/callback/github`; locally that is
+`http://127.0.0.1:5173/api/auth/callback/google`. Register the production origin
+separately. GitHub OAuth Apps accept one callback URL each and ignore the port on
+`127.0.0.1`, so use one app per environment. Always open the app at the exact
+`SITE_URL` origin: Better Auth's state cookie is bound to that host, so mixing
+`localhost` and `127.0.0.1` fails with `state_mismatch`.
+
+`GET /api/auth-providers` returns `{google, github}` booleans so the sign-in form
+shows only configured providers. New social accounts have no role and land on
+`/role`. An existing email/password account with the same email is not linked
+automatically (its email is unverified); the person returns to the sign-in page
+with `?error=account_not_linked` and a plain-language explanation. OAuth tokens
+are encrypted at rest.
+
 Run `bun run dev` in a second terminal for the website. Browser requests stay on
 `/api`, forwarded without application logic to Convex HTTP actions. Native apps
 call `https://<deployment>.convex.site/api/...` directly and do not need the website
@@ -64,7 +90,9 @@ any existing production data requires a separate, reviewed migration.
 Run `bun run dev --host 127.0.0.1` and open `/debug` on the printed local
 origin. The console includes:
 
-- Email/password sign-up, sign-in, role selection and sign-out using real cookies.
+- Email/password and Google/GitHub sign-in, sign-up, role selection and sign-out
+  using real cookies. Provider sign-in returns to `/debug`; choose the role
+  afterwards with the console's role button.
 - Searchable request presets for every application endpoint, with editable JSON,
   query parameters, and opportunity/developer ID context.
 - HTTP status, elapsed time, cache headers, raw JSON, validation errors and match
@@ -109,6 +137,8 @@ include field paths under `issues`. Better Auth routes use its native error shap
 | POST   | `/api/auth/sign-in/email`         | `{email,password}`, sets session cookie                                              |
 | POST   | `/api/auth/sign-out`              | Ends current session                                                                 |
 | GET    | `/api/auth/get-session`           | Better Auth session                                                                  |
+| POST   | `/api/auth/sign-in/social`        | `{provider:"google"                                                                  | "github",callbackURL?,newUserCallbackURL?,errorCallbackURL?}`; returns `{url}` to visit |
+| GET    | `/api/auth-providers`             | Public: `{google:boolean,github:boolean}`, which providers have credentials          |
 | GET    | `/api/me`                         | Own ID, name and selected role                                                       |
 | PUT    | `/api/me/role`                    | `{role:"developer"\|"requester"}`; one-time, retry-safe                              |
 | PUT    | `/api/developers/me`              | Developer: save the complete profile and embed its experience                        |

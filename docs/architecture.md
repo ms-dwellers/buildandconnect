@@ -6,7 +6,7 @@
 | ----------------------------- | ------------------------------------ | ------------------------------- |
 | Web routes and landing page   | React, Vinext App Router, Tailwind   | Implemented                     |
 | API routing and authorization | Convex HTTP actions, `convex/api.ts` | Implemented                     |
-| Accounts and sessions         | Better Auth's Convex component       | Email/password                  |
+| Accounts and sessions         | Better Auth's Convex component       | Email/password, Google, GitHub  |
 | Application and auth data     | Convex, `convex/schema.ts`           | Implemented                     |
 | Job analysis and embeddings   | Convex actions and Workers AI REST   | Requires Cloudflare access      |
 | Growth matching               | `backend/matching.ts`                | Deterministic, versioned        |

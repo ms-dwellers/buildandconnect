@@ -7,7 +7,7 @@ A hackathon app connecting early-career developers with non-technical requesters
 through shared interests and social-impact projects.
 
 **Current state:** a Three.js landing scene, Mapbox nearby-request UI, `/api/health`, and a
-Convex backend with Better Auth, Convex HTTP actions, Workers AI analysis, growth-oriented
+Convex backend with Better Auth (email/password, Google, GitHub), Convex HTTP actions, Workers AI analysis, growth-oriented
 matching, consent-based developer discovery, opportunity-specific mutual interest, and exclusive
 local-request claims. See [the backend guide](docs/backend.md) for setup and API
 examples. For browser-based backend QA, run the frontend and open `/debug`.

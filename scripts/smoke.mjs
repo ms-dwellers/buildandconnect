@@ -159,6 +159,18 @@ try {
     assert.equal(response.headers.get("Cache-Control"), "no-store");
   }
 
+  const providers = await fetch(`${origin}/api/auth-providers`);
+  assert.ok(
+    [200, 503].includes(providers.status),
+    "Provider availability must be public",
+  );
+  assert.equal(providers.headers.get("Cache-Control"), "no-store");
+  if (providers.status === 200) {
+    const flags = await providers.json();
+    assert.deepEqual(Object.keys(flags).sort(), ["github", "google"]);
+    for (const value of Object.values(flags))
+      assert.equal(typeof value, "boolean");
+  }
   const health = await fetch(`${origin}/api/health`);
   assert.equal(health.headers.get("Cache-Control"), "no-store");
   assert.deepEqual(await health.json(), {
@@ -181,7 +193,7 @@ try {
   });
   assert.equal(protectedRoute.headers.get("Cache-Control"), "no-store");
   console.log(
-    "Smoke passed: home, CSS, map, role pages, public map feed, QA console, health, protected backend, 404, 405, and environment-file denial.",
+    "Smoke passed: home, CSS, map, role pages, public map feed, QA console, health, sign-in providers, protected backend, 404, 405, and environment-file denial.",
   );
 } finally {
   if (server.pid && server.exitCode === null && server.signalCode === null) {

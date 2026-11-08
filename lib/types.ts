@@ -95,3 +95,7 @@ export type MapFeed = {
   listings: CityJob[];
   truncated: boolean;
 };
+
+/** Social sign-in providers the Convex deployment has credentials for. */
+export type AuthProviders = { google: boolean; github: boolean };
+export type SocialProvider = keyof AuthProviders;
