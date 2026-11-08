@@ -6,6 +6,18 @@
     0 7px 16px --alpha(var(--primary) / 18%);
 }
 
+:is([data-theme="developer"], [data-theme-preview="developer"]) .map-job-marker {
+  box-shadow:
+    0 3px 0 var(--button-edge),
+    0 0 14px --alpha(var(--palette-apricot) / 50%),
+    0 0 28px --alpha(#ee962f / 30%),
+    0 7px 16px --alpha(#c26e0b / 22%);
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"]) .map-key-paid {
+  box-shadow: var(--fire-glow-soft);
+}
+
 .map-job-marker > svg {
   rotate: 6deg;
 }
@@ -60,6 +72,13 @@
 .map-workspace .mapboxgl-ctrl-group button:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -3px;
+}
+
+.map-workspace .mapboxgl-ctrl-scale {
+  border-color: var(--primary);
+  background: var(--card);
+  color: var(--foreground);
+  border-radius: 0 0 0.25rem 0.25rem;
 }
 
 @media (pointer: coarse) {

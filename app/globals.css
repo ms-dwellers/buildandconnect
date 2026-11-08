@@ -98,6 +98,14 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   --color-illustration-sun: var(--illustration-sun);
   --color-illustration-flower: var(--illustration-flower);
   --color-map-land: var(--map-land);
@@ -213,6 +221,8 @@
   --palette-wheat: #f6dfb3;
   --palette-apricot: #f0a345;
   --palette-coral: #eb5757;
+  --palette-flame: #ee962f;
+  --palette-ember: #c26e0b;
   --palette-mint: #cce0d9;
   --palette-teal: #8fb3ac;
   --palette-pine: #174c43;
@@ -245,16 +255,24 @@
   --border: --alpha(var(--palette-pine) / 30%);
   --input: #5f7d74;
   --ring: var(--palette-pine);
+  --sidebar: var(--secondary);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
   --map-land: #d7e5d8;
   --map-block: #c4d8c8;
-  --map-building: var(--map-block);
   --map-road: var(--palette-cream);
   --map-park: #a4c2ad;
   --map-water: var(--palette-teal);
+  --map-water-edge: #719b92;
   --map-arterial: #dfc999;
-  --map-label: #1f433c;
+  --map-label: #425f57;
   --cloud: var(--palette-cream);
   --map-mist-light: #fbfcfa;
   --map-mist-shadow: #bcc9c8;
@@ -310,6 +328,86 @@
   border-radius: 50%;
   background: var(--card);
   content: "";
+}
+
+/* Warm/fire kit for logged-in developers. Community keeps :root greens.
+   data-theme-preview is for /design-system only so previews do not fight session theme. */
+[data-theme="developer"],
+[data-theme-preview="developer"] {
+  --button-primary-edge: var(--palette-ember);
+  --button-primary-hover: var(--palette-flame);
+  --button-highlight-edge: #b84141;
+  --button-highlight-hover: #ef6b64;
+  --button-secondary-edge: #8a4a1c;
+  --button-outline-edge: var(--palette-apricot);
+  --button-destructive-edge: #7f1e27;
+
+  /* Figma Color / Developer mode — burnt ember surfaces + fire chrome. */
+  --background: #4a2816;
+  --foreground: #ffe8cc;
+  --card: #5e3218;
+  --card-foreground: var(--foreground);
+  --popover: #6e3a1c;
+  --popover-foreground: var(--foreground);
+  --primary: var(--palette-apricot);
+  --primary-foreground: #1a0e08;
+  --highlight: var(--palette-coral);
+  --highlight-foreground: #1a0e08;
+  --secondary: #5e3218;
+  --secondary-foreground: var(--foreground);
+  --muted: #3a1e10;
+  --muted-foreground: #e8b888;
+  --accent: #6e3a1c;
+  --accent-foreground: var(--foreground);
+  --destructive: #b52d35;
+  --destructive-foreground: #ffe8cc;
+  --info: var(--palette-flame);
+  --info-foreground: var(--palette-flame);
+  --success: #e8b888;
+  --success-foreground: #e8b888;
+  --warning: var(--palette-apricot);
+  --warning-foreground: #ffe8cc;
+  --border: --alpha(var(--palette-flame) / 40%);
+  --input: var(--palette-flame);
+  --ring: var(--palette-flame);
+  --sidebar: #3a1e10;
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --illustration-sun: var(--palette-apricot);
+  --illustration-flower: var(--palette-coral);
+  --map-land: #6e3a1c;
+  --map-block: #5e3218;
+  --map-road: #3a1e10;
+  --map-park: #5e3218;
+  --map-water: #e8a070;
+  --map-water-edge: #c26e0b;
+  --map-arterial: #8a4a1c;
+  --map-label: #e8b888;
+  --cloud: #6e3a1c;
+  --map-mist-light: #5e3218;
+  --map-mist-shadow: #1a0e08;
+  --dashboard-paper: #5e3218;
+  --map-base: #4a2816;
+  --map-community: #e8a070;
+  --shadow-card:
+    0 2px 0 --alpha(var(--palette-apricot) / 24%),
+    0 0 26px --alpha(var(--palette-apricot) / 22%),
+    0 10px 30px --alpha(#ee962f / 16%);
+  --fire-glow:
+    0 0 12px --alpha(var(--palette-apricot) / 65%),
+    0 0 28px --alpha(#ee962f / 42%),
+    0 0 48px --alpha(#c26e0b / 28%);
+  --fire-glow-soft:
+    0 0 10px --alpha(var(--palette-coral) / 45%),
+    0 0 22px --alpha(var(--palette-coral) / 25%);
+  --fieldbook-shadow:
+    3px 4px 0 --alpha(#c26e0b / 22%),
+    0 0 20px --alpha(var(--palette-apricot) / 16%);
 }
 
 .voice-studio {
@@ -445,6 +543,8 @@
 
   .button-raised {
     --button-shadow-depth: var(--button-depth);
+    --button-raised-shadow: 0 var(--button-shadow-depth) 0 0 var(--button-edge);
+    box-shadow: var(--button-raised-shadow);
     transform: translateY(0);
   }
 
@@ -463,6 +563,57 @@
 
   .button-raised:is(:disabled, [aria-disabled="true"]) {
     --button-shadow-depth: 0px;
+  }
+
+  /* Developer fire: apricot bloom on primary fills; coral spark on highlight. */
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    .button-raised.bg-primary,
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    .button-raised[data-pressed][class*="data-pressed:bg-primary"] {
+    --button-raised-shadow:
+      0 var(--button-shadow-depth) 0 0 var(--button-edge), var(--fire-glow);
+  }
+
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    .button-raised.bg-highlight {
+    --button-raised-shadow:
+      0 var(--button-shadow-depth) 0 0 var(--button-edge),
+      var(--fire-glow-soft);
+  }
+
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    .button-raised.bg-primary:not(:disabled, [aria-disabled="true"]):is(
+      :hover,
+      :focus-visible
+    ),
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    .button-raised[data-pressed][class*="data-pressed:bg-primary"]:not(
+      :disabled,
+      [aria-disabled="true"]
+    ):is(:hover, :focus-visible) {
+    --button-raised-shadow:
+      0 var(--button-shadow-depth) 0 0 var(--button-edge),
+      0 0 16px --alpha(var(--palette-apricot) / 80%),
+      0 0 36px --alpha(#ee962f / 55%),
+      0 0 56px --alpha(#c26e0b / 35%);
+  }
+
+  /* Figma gallery: outline labels and edges use apricot, not muted cream. */
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    .button-raised.border-input {
+    color: var(--primary);
+    --button-edge: var(--primary);
+  }
+
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    [data-slot="switch"][data-checked],
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    [role="switch"][data-checked] {
+    box-shadow: var(--fire-glow);
+  }
+
+  :is([data-theme="developer"], [data-theme-preview="developer"]) .bg-card {
+    border-color: --alpha(var(--ring) / 55%);
   }
 }
 

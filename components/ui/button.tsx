@@ -65,8 +65,7 @@ export const buttonVariants = cva(
           "destructive",
           "destructive-outline",
         ],
-        className:
-          "button-raised shadow-[0_var(--button-shadow-depth)_0_0_var(--button-edge)]",
+        className: "button-raised",
       },
     ],
   },

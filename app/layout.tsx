@@ -3,6 +3,7 @@ import "./globals.css";
 import "../components/map/map.css";
 import { MapJourneyProvider } from "@/components/map/map-journey";
 import { ToastProvider } from "@/components/ui/toast";
+import { RoleTheme } from "@/components/app/role-theme";
 import { SessionProvider } from "@/lib/session";
 import { MascotMotionProvider } from "@/lib/mascot-motion";
 import { DemoReset } from "@/components/demo-reset";
@@ -25,6 +26,7 @@ export default function RootLayout({
         <div className="relative isolate flex min-h-svh flex-col">
           <MascotMotionProvider>
             <SessionProvider>
+              <RoleTheme />
               <ToastProvider>
                 <DemoReset />
                 <MapJourneyProvider>{children}</MapJourneyProvider>

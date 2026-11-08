@@ -2,7 +2,7 @@
 
 The signed-in [mascot fieldbook](mascot-fieldbook.md) uses the supplied pixel
 mascot, dotted mint boards, pine rules, and flat navigation on the white canvas.
-Mascot feedback respects device reduced-motion settings with a static fallback;
+Mascot feedback has a global pause control and a static reduced-motion fallback;
 success and error reactions are brief. Sign-in and onboarding share this artwork.
 
 Open `/design-system` for the live component gallery. It covers foundations,
@@ -24,16 +24,16 @@ Semantic HTML is still the right choice for page structure and content.
 
 ## Palette
 
-| Reference color | Value     | Role                                       |
-| --------------- | --------- | ------------------------------------------ |
-| Soft mint       | `#CCE0D9` | Supporting surfaces and scenery            |
-| Muted teal      | `#8FB3AC` | Water and scenery                          |
-| Pine            | `#174C43` | Primary actions, illustration, focus rings |
-| Emerald depths  | `#1E6348` | Original supporting green                  |
-| Cream           | `#F8F7DE` | Text on pine, mist and clouds, map roads   |
-| Wheat           | `#F6DFB3` | Warm supporting accent                     |
-| Golden apricot  | `#F0A345` | Illustration accent, warning tint          |
-| Coral           | `#EB5757` | Landing-page calls to action, illustration |
+| Reference color | Value     | Role                                        |
+| --------------- | --------- | ------------------------------------------- |
+| Soft mint       | `#CCE0D9` | Supporting surfaces and scenery             |
+| Muted teal      | `#8FB3AC` | Water and scenery                           |
+| Pine            | `#174C43` | Primary actions, illustration, focus rings  |
+| Emerald depths  | `#1E6348` | Original supporting green                   |
+| Cream           | `#F8F7DE` | Text on pine; developer canvas and map roads |
+| Wheat           | `#F6DFB3` | Warm supporting accent; developer secondary |
+| Golden apricot  | `#F0A345` | Developer primary; illustration and warning |
+| Coral           | `#EB5757` | Highlight CTA; landing and developer accent |
 
 The page canvas and cards are white (`--palette-white`); the reference colours
 sit on it as structure, scenery, and accents rather than as a page tint. Status
@@ -45,20 +45,33 @@ warning apricot; muted text is a lighter grey-green than body text.
 raw hex codes. The illustration has its own semantic accents so decorative color
 does not silently become a status or action color.
 
-The original coral is not a white-text button color. Destructive actions use a
-darker derived red; error copy uses a darker foreground. Pale surfaces use dark
-text, coral highlight buttons pair the original coral with deep green text, and
-primary buttons pair pine with cream. The current theme is
-intentionally light-only; OS dark-mode preference does not change its colors.
+### Dual theme
 
-Use the 60/30/10 rule as a visual balance: white is the main page canvas, pine,
-mint, and teal form structure, supporting surfaces, and scenery, and warm accents
-remain sparse. The reference informs the composition rather than a full-page
-color swap. Keep the original cream, wheat, apricot, and coral values.
-Reserve coral for
-selected calls to action and small illustration details, and apricot for the sun,
-warm roof accents, and warning tints. These are composition guidelines, not fixed
-percentages enforced on every component or the map.
+- **Community (default `:root`):** green foundation. Guests, requesters, and the
+  public landing stay on pine, mint, and teal with cream canvas.
+- **Developer (`data-theme="developer"`):** dark-fire foundation. Applied for the
+  whole session while `session.role === "developer"`. Canvas is burnt ember
+  (`#4A2816`), primary is apricot with flame glow, outline/input chrome uses
+  flame orange, highlight CTAs stay coral, and text is warm peach on ember.
+
+Preview either mode on `/design-system`. Importable Tokens Studio files and the
+Figma page map live in `design/figma/`.
+
+The original coral is not a white-text button color. Destructive actions use a
+darker derived red; error copy uses a darker foreground. Pale community surfaces
+use dark text, coral highlight buttons pair the original coral with deep text, and
+community primary buttons pair pine with cream. Developer primary pairs apricot
+with near-black ember text. Community stays light-only; Developer is an intentional
+dark role theme. OS dark-mode preference does not change either kit.
+
+Use the 60/30/10 rule as a visual balance: white is the community page canvas,
+pine/mint/teal form structure and scenery, and warm accents stay sparse there.
+On the developer side, ember surfaces lead and apricot/flame/coral take over
+primary actions and chrome. Keep the original cream, wheat, apricot, and coral
+palette values. Reserve coral for selected calls to action and small illustration
+details, and apricot for fire primary, glow, and developer chrome. These are
+composition guidelines, not fixed percentages enforced on every component or the
+map.
 
 ## Components and typography
 

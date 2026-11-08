@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export const toggleVariants = cva(
   [
     "button-control button-raised relative inline-flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-(--button-radius) border border-input bg-popover text-sm font-semibold text-foreground outline-none",
-    "shadow-[0_var(--button-shadow-depth)_0_0_var(--button-edge)] [--button-edge:var(--button-outline-edge)] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--button-radius)-1px)]",
+    "[--button-edge:var(--button-outline-edge)] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--button-radius)-1px)]",
     "pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:bg-accent focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-64",
     "data-pressed:border-(--button-primary-edge) data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:[--button-edge:var(--button-primary-edge)]",
     "[&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:-mx-0.5 [&_svg]:shrink-0",

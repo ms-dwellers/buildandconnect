@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeftIcon, ArrowUpRightIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowUpRightIcon } from "lucide-react";
 import { AppHeader } from "@/components/app/app-shell";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -22,7 +23,20 @@ const sections = [
   ["content", "Content"],
 ];
 
+type ThemePreview = "community" | "developer";
+
 export function DesignSystem() {
+  const [preview, setPreview] = useState<ThemePreview>("community");
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (preview === "developer") root.dataset.themePreview = "developer";
+    else delete root.dataset.themePreview;
+    return () => {
+      delete root.dataset.themePreview;
+    };
+  }, [preview]);
+
   return (
     <ToastProvider>
       <AnchoredToastProvider>
@@ -38,20 +52,46 @@ export function DesignSystem() {
             label="Design system"
             className="sticky top-0 z-30"
             actions={
-              <Button
-                render={
-                  <a
-                    href="https://coss.com/ui/docs"
-                    target="_blank"
-                    rel="noreferrer"
-                  />
-                }
-                variant="outline"
-                size="sm"
-              >
-                coss ui docs
-                <ArrowUpRightIcon aria-hidden="true" />
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <div
+                  role="group"
+                  aria-label="Theme preview"
+                  className="flex rounded-lg border p-1"
+                >
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={preview === "community" ? "default" : "ghost"}
+                    aria-pressed={preview === "community"}
+                    onClick={() => setPreview("community")}
+                  >
+                    Community
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={preview === "developer" ? "default" : "ghost"}
+                    aria-pressed={preview === "developer"}
+                    onClick={() => setPreview("developer")}
+                  >
+                    Developer
+                  </Button>
+                </div>
+                <Button
+                  render={
+                    <a
+                      href="https://coss.com/ui/docs"
+                      target="_blank"
+                      rel="noreferrer"
+                    />
+                  }
+                  variant="outline"
+                  size="sm"
+                >
+                  coss ui docs
+                  <ArrowUpRightIcon aria-hidden="true" />
+                </Button>
+              </div>
             }
           />
           <div className="mx-auto grid w-full max-w-screen-2xl gap-8 px-5 sm:px-8 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-12">
