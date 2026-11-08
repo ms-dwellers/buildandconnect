@@ -58,6 +58,8 @@ struct DeveloperHomeView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
         FeatureBanner(title: "Make something\nthat matters.", symbol: "bolt.fill")
+        NavigationLink("Find projects for my goals", value: Route.career).buttonStyle(
+          AppButtonStyle.primary)
         if profile.loading && profile.value == nil { ProgressView("Loading your work") }
         if (profile.error as? APIError)?.status == 404 {
           EmptyState(

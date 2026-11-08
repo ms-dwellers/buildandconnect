@@ -301,6 +301,10 @@ export const careerRecommendations = query({
               latitude: row.details.latitude,
               longitude: row.details.longitude,
               activities: row.analysis.activities ?? [],
+              listing: opportunityListing(row, {
+                id: user.id,
+                role: "developer",
+              }),
               ...match,
             },
           ]
@@ -328,6 +332,7 @@ export const careerRecommendations = query({
               longitude: request.longitude,
               distanceKm: Math.round(distanceKm * 10) / 10,
               activities: row.analysis.activities ?? [],
+              listing: requestListing(row, { id: user.id, role: "developer" }),
               ...match,
             },
           ]
@@ -542,6 +547,7 @@ export const createOpportunity = mutation({
           "The draft changed while publishing. Review the latest saved version and try again.",
         );
       if (
+        id !== `draft-${draft.id}` ||
         JSON.stringify(
           opportunityFromDraft(projectDraftContentSchema.parse(draft.content)),
         ) !== JSON.stringify(details)
@@ -963,10 +969,15 @@ export const ownRequestMatch = query({
       fail(403, "This request is no longer available");
     const profile = await findDeveloper(ctx, user.id);
     if (!profile)
-      return { ineligibleReasons: ["Create your developer profile first"] };
+      return {
+        eligible: false,
+        ineligibleReasons: ["Create your developer profile first"],
+      };
     const developer = await developerData(ctx, profile);
+    const reasons = requestEligibility(requestData(row), developer);
     return {
-      ineligibleReasons: requestEligibility(requestData(row), developer),
+      eligible: reasons.length === 0,
+      ineligibleReasons: reasons,
     };
   },
 });

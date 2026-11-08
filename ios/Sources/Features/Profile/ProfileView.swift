@@ -151,6 +151,47 @@ struct ProfileView: View {
         CollaborationPicker(value: $draft.collaboration)
         Toggle("Open to volunteering", isOn: $draft.acceptsVolunteer)
       }
+      AppSection("Matching preferences") {
+        Text("Optional. Leave unknown details blank. Zero years is valid.")
+          .font(Theme.caption).foregroundStyle(Theme.muted)
+        AppField(title: "Years of professional experience") {
+          TextField("Years", value: $draft.professionalExperienceYears, format: .number)
+            .keyboardType(.decimalPad)
+        }
+        Toggle(
+          "Set hourly pay preferences",
+          isOn: Binding(
+            get: { draft.compensationPreference != nil },
+            set: { draft.compensationPreference = $0 ? CompensationPreference() : nil }))
+        if draft.compensationPreference != nil {
+          AppField(title: "Currency") {
+            TextField("CAD", text: compensation.currency).textInputAutocapitalization(.characters)
+          }
+          AppField(title: "Minimum hourly rate") {
+            TextField("Optional", value: compensation.minimumHourlyRate, format: .number)
+              .keyboardType(.decimalPad)
+          }
+          AppField(title: "Preferred hourly rate") {
+            TextField("Optional", value: compensation.preferredHourlyRate, format: .number)
+              .keyboardType(.decimalPad)
+          }
+        }
+        AppSelect(
+          title: "Work arrangement",
+          selection: Binding(
+            get: { draft.workArrangementPreference?.preferred ?? "unknown" },
+            set: {
+              draft.workArrangementPreference =
+                $0 == "unknown" ? nil : WorkArrangementPreference(preferred: $0)
+            }),
+          options: [
+            ("unknown", "Not specified"), ("remote", "Remote"), ("hybrid", "Hybrid"),
+            ("onsite", "On-site"), ("flexible", "Flexible"),
+          ])
+        if let preference = draft.workArrangementPreference, preference.preferred != "flexible" {
+          Toggle("This arrangement is required", isOn: workArrangement.required)
+        }
+      }
       Section {
         Toggle("Available for new work", isOn: flagBinding(\.available, "available"))
         Toggle(
@@ -232,6 +273,17 @@ struct ProfileView: View {
           }
         }
       })
+  }
+
+  private var compensation: Binding<CompensationPreference> {
+    Binding(
+      get: { draft.compensationPreference ?? CompensationPreference() },
+      set: { draft.compensationPreference = $0 })
+  }
+  private var workArrangement: Binding<WorkArrangementPreference> {
+    Binding(
+      get: { draft.workArrangementPreference ?? WorkArrangementPreference() },
+      set: { draft.workArrangementPreference = $0 })
   }
 
   private func load() async {

@@ -67,15 +67,60 @@ struct ProfileInput: Codable, Equatable {
   var experienceLevel = 1
   var collaboration = "flexible"
   var weeklyHours = 8
-  var acceptsVolunteer = true
+  var acceptsVolunteer = false
   var available = true
   var discoverable = false
+  var professionalExperienceYears: Double?
+  var compensationPreference: CompensationPreference?
+  var workArrangementPreference: WorkArrangementPreference?
+  enum CodingKeys: String, CodingKey {
+    case bio, city, skills, projects, interests, wantsToLearn, experienceLevel, collaboration
+    case weeklyHours, acceptsVolunteer, available, discoverable
+    case professionalExperienceYears, compensationPreference, workArrangementPreference
+  }
+  func encode(to encoder: Encoder) throws {
+    var values = encoder.container(keyedBy: CodingKeys.self)
+    try values.encode(bio, forKey: .bio)
+    try values.encode(city, forKey: .city)
+    try values.encode(skills, forKey: .skills)
+    try values.encode(projects, forKey: .projects)
+    try values.encode(interests, forKey: .interests)
+    try values.encode(wantsToLearn, forKey: .wantsToLearn)
+    try values.encode(experienceLevel, forKey: .experienceLevel)
+    try values.encode(collaboration, forKey: .collaboration)
+    try values.encode(weeklyHours, forKey: .weeklyHours)
+    try values.encode(acceptsVolunteer, forKey: .acceptsVolunteer)
+    try values.encode(available, forKey: .available)
+    try values.encode(discoverable, forKey: .discoverable)
+    // Explicit null clears an old preference; omitting it means preserve on the server.
+    try values.encode(professionalExperienceYears, forKey: .professionalExperienceYears)
+    try values.encode(compensationPreference, forKey: .compensationPreference)
+    try values.encode(workArrangementPreference, forKey: .workArrangementPreference)
+  }
   func differsOnlyInVisibility(from other: ProfileInput) -> Bool {
     var comparable = self
     comparable.available = other.available
     comparable.discoverable = other.discoverable
     return comparable == other
   }
+}
+
+struct CompensationPreference: Codable, Equatable {
+  var currency = "CAD"
+  var minimumHourlyRate: Double?
+  var preferredHourlyRate: Double?
+  enum CodingKeys: String, CodingKey { case currency, minimumHourlyRate, preferredHourlyRate }
+  func encode(to encoder: Encoder) throws {
+    var values = encoder.container(keyedBy: CodingKeys.self)
+    try values.encode(currency, forKey: .currency)
+    try values.encode(minimumHourlyRate, forKey: .minimumHourlyRate)
+    try values.encode(preferredHourlyRate, forKey: .preferredHourlyRate)
+  }
+}
+
+struct WorkArrangementPreference: Codable, Equatable {
+  var preferred = "flexible"
+  var required = false
 }
 
 struct Developer: Decodable, Identifiable {
@@ -95,6 +140,9 @@ struct Developer: Decodable, Identifiable {
   let available: Bool
   let discoverable: Bool
   let location: Area?
+  let professionalExperienceYears: Double?
+  let compensationPreference: CompensationPreference?
+  let workArrangementPreference: WorkArrangementPreference?
 
   var input: ProfileInput {
     ProfileInput(
@@ -102,7 +150,10 @@ struct Developer: Decodable, Identifiable {
       interests: interests, wantsToLearn: wantsToLearn,
       experienceLevel: experienceLevel, collaboration: collaboration,
       weeklyHours: weeklyHours, acceptsVolunteer: acceptsVolunteer,
-      available: available, discoverable: discoverable)
+      available: available, discoverable: discoverable,
+      professionalExperienceYears: professionalExperienceYears,
+      compensationPreference: compensationPreference,
+      workArrangementPreference: workArrangementPreference)
   }
 }
 
@@ -115,6 +166,58 @@ struct Analysis: Decodable {
   let responsibilities: [String]
   let learningOpportunities: [String]
   let mentorshipAvailable: Bool
+  let activities: [ProjectActivity]?
+}
+
+struct ProjectActivity: Codable, Identifiable {
+  let id: String
+  let description: String
+  let skills: [String]
+}
+
+struct CareerRequirement: Codable, Identifiable {
+  let id: String
+  let description: String
+  let skills: [String]
+  let sourceQuote: String
+}
+
+struct CareerTarget: Codable {
+  let title: String
+  let sourceText: String
+  let sourceUrl: String?
+  let requirements: [CareerRequirement]
+  let updatedAt: Int
+}
+
+struct CareerRecommendations: Decodable {
+  let data: [CareerProject]
+  let total: Int
+  let targetUpdatedAt: Int
+  let profileUpdatedAt: Int
+  let nearbyRequestsAvailable: Bool
+}
+
+struct CareerProject: Decodable {
+  struct RequirementLink: Decodable {
+    struct ActivityLink: Decodable {
+      let activityId: String
+      let skills: [String]
+    }
+    let requirementId: String
+    let skills: [String]
+    let gapSkillsWithPractice: [String]
+    let activityLinks: [ActivityLink]
+  }
+  let id: String
+  let source: String
+  let title: String
+  let description: String
+  let activities: [ProjectActivity]
+  let listing: Listing?
+  let actionIneligibleReasons: [String]
+  let requirementLinks: [RequirementLink]
+  var stableId: String { "\(source):\(id)" }
 }
 
 struct OpportunityInput: Codable, Equatable {

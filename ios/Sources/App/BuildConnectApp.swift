@@ -47,7 +47,7 @@ enum Route: Hashable {
   case request(String)
   case developer(String)
   case profile, setupProfile, area, newRequest, newOpportunity, voice, discovery, dashboard,
-    connections, myOpportunities
+    connections, myOpportunities, career
   case editRequest(String)
   case editOpportunity(String)
   case map(String)
@@ -364,6 +364,7 @@ struct AppNavigation<Content: View>: View {
             case .dashboard: DashboardView()
             case .connections: ConnectionsView()
             case .myOpportunities: RequesterOpportunitiesView()
+            case .career: CareerView()
             }
           }
           .navigationBarBackButtonHidden()

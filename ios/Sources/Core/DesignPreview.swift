@@ -40,6 +40,7 @@
           Text("Fictional data. No live backend requests or account changes.")
             .font(Theme.caption)
           Button("Control states") { showControls = true }
+          destination("Career discovery", route: .career)
           Button("Input and focus states") { showInputs = true }
           Button("Authentication states") { showAuth = true }
           Button("Requester tabs") {
@@ -199,6 +200,8 @@
     private static func payload(path: String, requester: Bool) -> String? {
       switch path {
       case "/api/map": return mapFeed
+      case "/api/developers/me/career-target": return careerTarget
+      case "/api/developers/me/career-projects": return careerProjects
       case "/api/developers": return page(profile)
       case "/api/requests", "/api/requests/claimed": return page(communityRequest)
       case "/api/requests/preview-request": return communityRequest
@@ -229,6 +232,14 @@
 
     private static let analysis = #"""
       {"requiredTechnologies":["React"],"preferredTechnologies":["TypeScript"],"difficulty":2,"experienceLevel":"Early career","requiredSkills":["Web development"],"responsibilities":["Build accessible calendar views","Work with community volunteers"],"learningOpportunities":["Accessibility","Collaborative design"],"mentorshipAvailable":true}
+      """#
+
+    private static let careerTarget = #"""
+      {"title":"Junior frontend developer","sourceText":"Build accessible React interfaces and collaborate with community partners.","requirements":[{"id":"requirement-1","description":"Build accessible React interfaces","skills":["react","accessibility"],"sourceQuote":"Build accessible React interfaces"},{"id":"requirement-2","description":"Collaborate with community partners","skills":["collaboration"],"sourceQuote":"collaborate with community partners"}],"updatedAt":1}
+      """#
+
+    private static let careerProjects = #"""
+      {"data":[{"id":"preview-opportunity","source":"opportunity","title":"Build an accessible events calendar","description":"Create a welcoming calendar with a local community group. Fictional preview content.","activities":[{"id":"activity-1","description":"Build a keyboard-accessible calendar view with React.","skills":["react","accessibility"]}],"listing":null,"actionIneligibleReasons":["Not available for discovery"],"requirementLinks":[{"requirementId":"requirement-1","skills":["react","accessibility"],"gapSkillsWithPractice":["accessibility"],"activityLinks":[{"activityId":"activity-1","skills":["react","accessibility"]}]}]}],"total":1,"targetUpdatedAt":1,"profileUpdatedAt":1,"nearbyRequestsAvailable":true}
       """#
 
     private static var opportunity: String {

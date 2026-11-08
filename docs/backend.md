@@ -232,6 +232,36 @@ and overall match scores are percentages, not probabilities of hiring success.
 Opportunity browsing also accepts `city` (case-insensitive, includes remote jobs)
 and `kind=paid` or `kind=volunteer`.
 
+### Career targets and private project drafts
+
+These routes run in the existing Convex HTTP action. Persistence remains internal,
+revalidates the live session, and never accepts client-supplied AI analysis. No
+Worker API or bridge secret is introduced.
+
+| Method | Route                                | Behavior                                                                                          |
+| ------ | ------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| GET    | `/api/developers/me/career-target`   | Read the developer's private target, or `null`                                                    |
+| PUT    | `/api/developers/me/career-target`   | Analyze `{sourceText, sourceUrl?, expectedUpdatedAt}` and atomically replace the reviewed version |
+| GET    | `/api/developers/me/career-projects` | Rank relevant projects and link requirements to concrete activities; accepts `limit`              |
+| GET    | `/api/requests/:id/match`            | Explain the developer's current request eligibility without claiming it                           |
+| GET    | `/api/project-drafts`                | List the requester's unpublished drafts                                                           |
+| POST   | `/api/project-drafts`                | Create `{id, content}` using a client-generated UUID                                              |
+| GET    | `/api/project-drafts/:id`            | Read an owned draft                                                                               |
+| PUT    | `/api/project-drafts/:id`            | Save `{content, expectedUpdatedAt}` without publishing or AI execution                            |
+| DELETE | `/api/project-drafts/:id`            | Discard an unpublished draft with `{expectedUpdatedAt}`                                           |
+| POST   | `/api/project-drafts/:id/publish`    | Analyze and publish the reviewed saved version with `{expectedUpdatedAt}`                         |
+
+Drafts allow incomplete fields and are limited to 20 unpublished drafts per owner.
+Stale edits return 409. Publication rechecks the draft's owner, revision, and
+content in the same mutation that inserts the opportunity and links it to the
+draft. Repeated publication returns the linked opportunity. Failed analysis or
+concurrent edits cannot replace the saved draft or create duplicate postings.
+
+Career targets preserve verbatim supporting quotes from the provided text; the
+optional source URL is attribution only and is never fetched. Recommendations
+do not change discovery consent, express interest, or accept a request. Legacy
+project analyses without activities remain readable and do not invent them.
+
 ### Developer profile
 
 `PUT /api/developers/me` replaces the core profile; omitted required fields are errors.
