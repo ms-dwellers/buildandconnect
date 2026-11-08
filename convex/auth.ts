@@ -5,6 +5,7 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import authConfig from "./auth.config";
+import { socialProviders } from "./socialProviders";
 
 export const authComponent = createClient<DataModel>(components.betterAuth);
 
@@ -22,6 +23,11 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
       ...(process.env.DEV_SITE_URL ? [process.env.DEV_SITE_URL] : []),
     ],
     emailAndPassword: { enabled: true, minPasswordLength: 12 },
+    // Google and GitHub appear only when their credentials are set on the
+    // deployment. Account linking keeps Better Auth's safe default: an existing
+    // unverified email/password account is never linked silently.
+    socialProviders: socialProviders(process.env),
+    account: { encryptOAuthTokens: true },
     rateLimit: {
       enabled: true,
       storage: "database",

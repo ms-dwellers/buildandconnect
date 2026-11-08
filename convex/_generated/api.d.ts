@@ -14,6 +14,7 @@ import type * as data from "../data.js";
 import type * as domain from "../domain.js";
 import type * as http from "../http.js";
 import type * as maintenance from "../maintenance.js";
+import type * as socialProviders from "../socialProviders.js";
 
 import type {
   ApiFromModules,
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   domain: typeof domain;
   http: typeof http;
   maintenance: typeof maintenance;
+  socialProviders: typeof socialProviders;
 }>;
 
 /**

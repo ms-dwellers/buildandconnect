@@ -52,6 +52,11 @@ export async function createOptionalClient(env: BackendEnv, request: Request) {
   return client;
 }
 
+/** For public configuration reads that never depend on a session. */
+export function createPublicClient(env: BackendEnv) {
+  return new ConvexHttpClient(env.VITE_CONVEX_URL);
+}
+
 export async function proxyAuth(env: BackendEnv, request: Request) {
   const url = new URL(request.url);
   const site = new URL(env.SITE_URL);

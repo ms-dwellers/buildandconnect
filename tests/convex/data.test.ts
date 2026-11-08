@@ -351,3 +351,20 @@ test("local requests preserve exclusive claims, retry safety, and owner-only clo
       .total,
   ).toBe(0);
 });
+
+test("provider availability is bridge-only and mirrors deployment credentials", async () => {
+  const t = setup();
+  await expect(
+    t.query(api.data.authProviders, { secret: "wrong" }),
+  ).rejects.toThrow(/application API/);
+  await expect(t.query(api.data.authProviders, { secret })).resolves.toEqual({
+    google: false,
+    github: false,
+  });
+  vi.stubEnv("GITHUB_CLIENT_ID", "github-id");
+  vi.stubEnv("GITHUB_CLIENT_SECRET", "github-secret");
+  await expect(t.query(api.data.authProviders, { secret })).resolves.toEqual({
+    google: false,
+    github: true,
+  });
+});

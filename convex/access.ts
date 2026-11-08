@@ -7,7 +7,8 @@ export function fail(status: number, message: string): never {
   throw new ConvexError({ status, message });
 }
 
-function requireBridge(secret: string) {
+/** Every application function is reachable only through the Worker bridge. */
+export function requireBridge(secret: string) {
   if (
     !process.env.CONVEX_BRIDGE_SECRET ||
     secret !== process.env.CONVEX_BRIDGE_SECRET

@@ -8,6 +8,7 @@ import { api as convex } from "../convex/_generated/api";
 import {
   createAuthenticatedClient,
   createOptionalClient,
+  createPublicClient,
   isConfigured,
   proxyAuth,
 } from "./auth";
@@ -88,6 +89,14 @@ export function createApi(
     c.req.path === "/api/hiring/transcribe" ? next() : jsonBodyLimit(c, next),
   );
   app.on(["GET", "POST"], "/auth/*", (c) => proxyAuth(c.env, c.req.raw));
+  // Which social providers exist is public; their credentials stay in Convex.
+  app.get("/auth-providers", async (c) =>
+    c.json(
+      await createPublicClient(c.env).query(convex.data.authProviders, {
+        secret: secret(c),
+      }),
+    ),
+  );
   // The map is public. Viewer-specific detail depends on the optional session.
   app.get("/map", async (c) =>
     c.json(

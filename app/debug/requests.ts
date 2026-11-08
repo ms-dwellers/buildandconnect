@@ -76,6 +76,15 @@ export const requests: RequestPreset[] = [
     note: "Session tokens are redacted from the response.",
   },
   {
+    id: "providers",
+    group: "Account",
+    title: "List sign-in providers",
+    method: "GET",
+    path: "/api/auth-providers",
+    caller: "Public",
+    note: "Booleans only; provider credentials never leave Convex.",
+  },
+  {
     id: "role",
     group: "Account",
     title: "Set account role",

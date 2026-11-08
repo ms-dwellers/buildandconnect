@@ -18,10 +18,9 @@ export async function api<T>(
     credentials: "include",
   });
   const text = await response.text();
-  let body: { error?: string; issues?: ApiIssue[] } & T = {} as {
-    error?: string;
-    issues?: ApiIssue[];
-  } & T;
+  // Hono errors use `error`; proxied Better Auth errors use `message`.
+  type Body = { error?: string; message?: string; issues?: ApiIssue[] } & T;
+  let body: Body = {} as Body;
   if (text) {
     try {
       body = JSON.parse(text) as typeof body;
@@ -37,7 +36,7 @@ export async function api<T>(
     return {
       ok: false,
       status: response.status,
-      error: body.error ?? "Request failed",
+      error: body.error ?? body.message ?? "Request failed",
       issues: body.issues,
     };
   return { ok: true, data: body };

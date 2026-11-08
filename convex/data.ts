@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { access, fail, optionalAccess } from "./access";
+import { access, fail, optionalAccess, requireBridge } from "./access";
+import { configuredProviders } from "./socialProviders";
 import {
   developerData,
   findDeveloper,
@@ -58,6 +59,15 @@ function checkLimit(limit: number) {
 export const me = query({
   args: { secret },
   handler: async (ctx, args) => access(ctx, args.secret),
+});
+
+/** Which social sign-in providers this deployment has credentials for. */
+export const authProviders = query({
+  args: { secret },
+  handler: async (_ctx, args) => {
+    requireBridge(args.secret);
+    return configuredProviders(process.env);
+  },
 });
 
 export const setRole = mutation({

@@ -25,6 +25,31 @@ The public Convex URLs may be browser-visible. In production, configure the same
 URL/bridge/origin settings in the Worker and set Convex's `SITE_URL` to the deployed
 app's exact origin. No production deployment is part of local setup.
 
+### Social sign-in (Google and GitHub)
+
+Provider credentials live only in the Convex deployment environment as
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, and
+`GITHUB_CLIENT_SECRET`. A provider's button appears only when both of its values
+are set; deployments without them keep email/password sign-in. Set them with
+`bunx convex env set NAME` (the value is read from stdin), or export them in the
+shell before `bun run setup:backend`, which copies any that are present. Never put
+them in `.env.local`; the Worker does not use them.
+
+Better Auth runs behind the same-origin proxy with `baseURL = SITE_URL`, so the
+callback URL to register with each provider is `SITE_URL` plus
+`/api/auth/callback/google` or `/api/auth/callback/github`; locally that is
+`http://127.0.0.1:5173/api/auth/callback/google`. Register the production origin
+separately. GitHub OAuth Apps accept one callback URL each and ignore the port on
+`127.0.0.1`, so use one app per environment. Always open the app at the exact
+`SITE_URL` origin: Better Auth's state cookie is bound to that host, so mixing
+`localhost` and `127.0.0.1` fails with `state_mismatch`.
+
+`GET /api/auth-providers` returns `{google, github}` booleans so the sign-in form
+shows only configured providers. New social accounts have no role and land on
+`/role`. An existing email/password account with the same email is not linked
+automatically (its email is unverified); the person returns to the sign-in page
+with `?error=account_not_linked` and a plain-language explanation.
+
 Run `bun run dev` in a second terminal. All browser requests stay on `/api`;
 Hono proxies auth and calls Convex with the session's JWT and the bridge credential.
 The Convex mutations enforce ownership and atomically change interests/claims.
@@ -46,7 +71,9 @@ any existing production data requires a separate, reviewed migration.
 Run `bun run dev --host 127.0.0.1` and open `/debug` on the printed local
 origin. The console includes:
 
-- Email/password sign-up, sign-in, role selection and sign-out using real cookies.
+- Email/password and Google/GitHub sign-in, sign-up, role selection and sign-out
+  using real cookies. Provider sign-in returns to `/debug`; choose the role
+  afterwards with the console's role button.
 - Searchable request presets for every application endpoint, with editable JSON,
   query parameters, and opportunity/developer ID context.
 - HTTP status, elapsed time, cache headers, raw JSON, validation errors and match
@@ -74,40 +101,42 @@ the same origin with `credentials: "include"`. JSON bodies use `Content-Type:
 application/json`. Errors return `{ "error": "..." }`; validation errors also
 include field paths under `issues`. Better Auth routes use its native error shape.
 
-| Method | Path                              | Caller and response                                                                  |
-| ------ | --------------------------------- | ------------------------------------------------------------------------------------ |
-| POST   | `/api/auth/sign-up/email`         | `{name,email,password}`; minimum 12-character password, sets session cookie          |
-| POST   | `/api/auth/sign-in/email`         | `{email,password}`, sets session cookie                                              |
-| POST   | `/api/auth/sign-out`              | Ends current session                                                                 |
-| GET    | `/api/auth/get-session`           | Better Auth session                                                                  |
-| GET    | `/api/me`                         | Own ID, name and selected role                                                       |
-| PUT    | `/api/me/role`                    | `{role:"developer"\|"company"\|"recruiter"\|"requester"}`; one-time, retry-safe      |
-| PUT    | `/api/developers/me`              | Developer: save the complete profile and embed its experience                        |
-| GET    | `/api/developers/me`              | Developer: own profile and location, including when undiscoverable                   |
-| PATCH  | `/api/developers/me`              | Developer: `{available?:boolean,discoverable?:boolean}` without AI calls             |
-| PATCH  | `/api/developers/me/location`     | Developer: `{latitude,longitude,radiusKm?}` without AI calls                         |
-| PATCH  | `/api/developers/me/preferences`  | Developer: replace experience, pay and work-arrangement preferences without AI calls |
-| GET    | `/api/developers`                 | Company/recruiter: consented profiles and project evidence                           |
-| POST   | `/api/opportunities`              | Company: analyze, embed, and persist a new opportunity; returns 201                  |
-| GET    | `/api/map`                        | Public: Calgary map listings, precision depending on viewer (see map guide)          |
-| GET    | `/api/opportunities`              | Open opportunities and structured analyses                                           |
-| GET    | `/api/opportunities/mine`         | Company: own opportunities, open and closed, paginated                               |
-| PUT    | `/api/opportunities/:id`          | Owner: replace details; re-analyses and re-embeds; status unchanged                  |
-| GET    | `/api/opportunities/:id`          | Opportunity detail                                                                   |
-| PATCH  | `/api/opportunities/:id`          | Owner: `{status:"open"\|"closed"}`                                                   |
-| GET    | `/api/opportunities/:id/matches`  | Owner: ranked developers, score breakdowns, explanations, weights and version        |
-| GET    | `/api/opportunities/:id/match`    | Developer: own match or null, eligibility reasons and opportunity status             |
-| PUT    | `/api/opportunities/:id/interest` | Developer: `{interested:boolean}`; owner: additionally supply `developerId`          |
-| GET    | `/api/connections`                | Participant's mutual-interest connections, scoped to opportunities                   |
-| POST   | `/api/requests`                   | Requester: analyze, embed, and post a local request with a pin; returns 201          |
-| GET    | `/api/requests`                   | Requester: own requests, including claimant name when claimed                        |
-| GET    | `/api/requests/claimed`           | Developer: requests they have accepted, paginated                                    |
-| PUT    | `/api/requests/:id`               | Requester owner: replace details while open (409 when claimed or closed)             |
-| GET    | `/api/requests/nearby`            | Developer: ranked open requests inside the saved radius                              |
-| GET    | `/api/requests/:id`               | Requester owner, or developer for open/own claimed request                           |
-| PATCH  | `/api/requests/:id`               | Requester: `{status:"closed"}`                                                       |
-| POST   | `/api/requests/:id/accept`        | Developer: exclusive claim while status is open; retry-safe for same claimant        |
-| POST   | `/api/requests/:id/release`       | Claimant or requester: return a claimed request to open                              |
+| Method | Path                              | Caller and response                                                                                          |
+| ------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| POST   | `/api/auth/sign-up/email`         | `{name,email,password}`; minimum 12-character password, sets session cookie                                  |
+| POST   | `/api/auth/sign-in/email`         | `{email,password}`, sets session cookie                                                                      |
+| POST   | `/api/auth/sign-out`              | Ends current session                                                                                         |
+| GET    | `/api/auth/get-session`           | Better Auth session                                                                                          |
+| POST   | `/api/auth/sign-in/social`        | `{provider:"google"\|"github",callbackURL?,newUserCallbackURL?,errorCallbackURL?}`; returns `{url}` to visit |
+| GET    | `/api/auth-providers`             | Public: `{google:boolean,github:boolean}`, which providers have credentials                                  |
+| GET    | `/api/me`                         | Own ID, name and selected role                                                                               |
+| PUT    | `/api/me/role`                    | `{role:"developer"\|"company"\|"recruiter"\|"requester"}`; one-time, retry-safe                              |
+| PUT    | `/api/developers/me`              | Developer: save the complete profile and embed its experience                                                |
+| GET    | `/api/developers/me`              | Developer: own profile and location, including when undiscoverable                                           |
+| PATCH  | `/api/developers/me`              | Developer: `{available?:boolean,discoverable?:boolean}` without AI calls                                     |
+| PATCH  | `/api/developers/me/location`     | Developer: `{latitude,longitude,radiusKm?}` without AI calls                                                 |
+| PATCH  | `/api/developers/me/preferences`  | Developer: replace experience, pay and work-arrangement preferences without AI calls                         |
+| GET    | `/api/developers`                 | Company/recruiter: consented profiles and project evidence                                                   |
+| POST   | `/api/opportunities`              | Company: analyze, embed, and persist a new opportunity; returns 201                                          |
+| GET    | `/api/map`                        | Public: Calgary map listings, precision depending on viewer (see map guide)                                  |
+| GET    | `/api/opportunities`              | Open opportunities and structured analyses                                                                   |
+| GET    | `/api/opportunities/mine`         | Company: own opportunities, open and closed, paginated                                                       |
+| PUT    | `/api/opportunities/:id`          | Owner: replace details; re-analyses and re-embeds; status unchanged                                          |
+| GET    | `/api/opportunities/:id`          | Opportunity detail                                                                                           |
+| PATCH  | `/api/opportunities/:id`          | Owner: `{status:"open"\|"closed"}`                                                                           |
+| GET    | `/api/opportunities/:id/matches`  | Owner: ranked developers, score breakdowns, explanations, weights and version                                |
+| GET    | `/api/opportunities/:id/match`    | Developer: own match or null, eligibility reasons and opportunity status                                     |
+| PUT    | `/api/opportunities/:id/interest` | Developer: `{interested:boolean}`; owner: additionally supply `developerId`                                  |
+| GET    | `/api/connections`                | Participant's mutual-interest connections, scoped to opportunities                                           |
+| POST   | `/api/requests`                   | Requester: analyze, embed, and post a local request with a pin; returns 201                                  |
+| GET    | `/api/requests`                   | Requester: own requests, including claimant name when claimed                                                |
+| GET    | `/api/requests/claimed`           | Developer: requests they have accepted, paginated                                                            |
+| PUT    | `/api/requests/:id`               | Requester owner: replace details while open (409 when claimed or closed)                                     |
+| GET    | `/api/requests/nearby`            | Developer: ranked open requests inside the saved radius                                                      |
+| GET    | `/api/requests/:id`               | Requester owner, or developer for open/own claimed request                                                   |
+| PATCH  | `/api/requests/:id`               | Requester: `{status:"closed"}`                                                                               |
+| POST   | `/api/requests/:id/accept`        | Developer: exclusive claim while status is open; retry-safe for same claimant                                |
+| POST   | `/api/requests/:id/release`       | Claimant or requester: return a claimed request to open                                                      |
 
 `GET /api/interests` lists a participant's pending and mutual interests, including
 both consent flags and `connected`. It uses the same pagination as connections.
