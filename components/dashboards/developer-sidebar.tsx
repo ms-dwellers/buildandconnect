@@ -14,7 +14,7 @@ export function DeveloperSidebar({ profile }: { profile: OwnProfile }) {
   );
   return (
     <aside aria-label="Your goal and profile" className="min-w-0 space-y-5">
-      <Card className="border-t-4 border-t-primary shadow-none">
+      <Card className="shadow-none">
         <CardPanel className="space-y-4 p-6">
           <h2 className="text-xl">Your next role</h2>
           {target.error ? (

@@ -9,7 +9,7 @@ export function DashboardGarden() {
       <div className="absolute inset-x-3 bottom-1 border-b border-primary/30" />
       <Mascot
         pose="happy"
-        motion="once"
+        motion="loop"
         className="absolute bottom-0 end-0 size-40"
       />
       <img
