@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   ArrowLeftIcon,
   FlaskConicalIcon,
@@ -24,6 +24,9 @@ import {
   requests,
   type RequestPreset,
 } from "./requests.ts";
+import { GitHubMark, GoogleMark } from "@/components/app/provider-marks";
+import { socialSignInError } from "@/lib/auth-errors";
+import type { AuthProviders, SocialProvider } from "@/lib/types";
 import { DebugResponse } from "./response";
 import { useDebugApi } from "./use-debug-api";
 
@@ -45,6 +48,27 @@ export function DebugConsole() {
   const [role, setRole] = useState("developer");
   const [contextStatus, setContextStatus] = useState("");
   const [authError, setAuthError] = useState("");
+  const [providers, setProviders] = useState<AuthProviders | null>(null);
+
+  useEffect(() => {
+    // A provider sign-in that failed returns here with ?error=<code>.
+    const code = new URLSearchParams(window.location.search).get("error");
+    const message = socialSignInError(code ?? undefined);
+    if (message) setAuthError(message);
+    const controller = new AbortController();
+    void fetch("/api/auth-providers", {
+      credentials: "include",
+      signal: controller.signal,
+    })
+      .then((response) =>
+        response.ok ? (response.json() as Promise<AuthProviders>) : null,
+      )
+      .then((data) => {
+        if (data) setProviders(data);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
 
   const filtered = requests.filter((request) =>
     `${request.title} ${request.path} ${request.group}`
@@ -113,6 +137,34 @@ export function DebugConsole() {
       }
     });
   }
+  function continueWith(provider: SocialProvider) {
+    void api.run(async () => {
+      setAuthError("");
+      api.clearHistory();
+      const result = await api.send(
+        {
+          path: "/api/auth/sign-in/social",
+          method: "POST",
+          body: JSON.stringify({
+            provider,
+            callbackURL: "/debug",
+            newUserCallbackURL: "/debug",
+            errorCallbackURL: "/debug",
+          }),
+        },
+        `Continue with ${provider === "google" ? "Google" : "GitHub"}`,
+      );
+      const url =
+        isRecord(result.data) && typeof result.data.url === "string"
+          ? result.data.url
+          : null;
+      if (result.status === 200 && url) window.location.assign(url);
+      else
+        setAuthError(
+          "The provider did not return a sign-in link. Inspect the response below.",
+        );
+    });
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void api.run(async () => {
@@ -159,7 +211,7 @@ export function DebugConsole() {
             <span className="font-semibold tracking-tight">
               Build &amp; Connect
             </span>
-            <Badge variant="secondary">QA console</Badge>
+            <span className="text-sm text-muted-foreground">QA console</span>
           </div>
           <Button render={<a href="/" />} variant="ghost">
             <ArrowLeftIcon aria-hidden="true" />
@@ -306,6 +358,36 @@ export function DebugConsole() {
                     </>
                   ) : (
                     <form onSubmit={authenticate} className="space-y-4">
+                      {providers && (providers.google || providers.github) && (
+                        <div
+                          className="flex flex-wrap gap-2"
+                          role="group"
+                          aria-label="Sign in with a provider"
+                        >
+                          {providers.google && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={api.busy}
+                              onClick={() => continueWith("google")}
+                            >
+                              <GoogleMark className="opacity-100" />
+                              Continue with Google
+                            </Button>
+                          )}
+                          {providers.github && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={api.busy}
+                              onClick={() => continueWith("github")}
+                            >
+                              <GitHubMark className="opacity-100" />
+                              Continue with GitHub
+                            </Button>
+                          )}
+                        </div>
+                      )}
                       <div
                         className="flex flex-wrap gap-2"
                         role="group"
@@ -727,9 +809,9 @@ export function DebugConsole() {
                   after selecting a Convex development deployment, then keep{" "}
                   <code className="font-mono text-xs">bun run dev:backend</code>{" "}
                   running. Set SITE_URL to this page&apos;s origin. Set{" "}
-                  WORKERS_AI_REMOTE=true when launching Vite for real AI calls.
-                  See <code className="font-mono text-xs">docs/backend.md</code>
-                  .
+                  WORKERS_AI_ENABLED=true and the provider credentials in Convex
+                  for real AI calls. See{" "}
+                  <code className="font-mono text-xs">docs/backend.md</code>.
                 </p>
               </div>
             </CardPanel>

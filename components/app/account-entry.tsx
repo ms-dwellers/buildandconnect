@@ -4,9 +4,11 @@ import { AuthForm } from "./auth-form";
 export function AccountEntry({
   mode = "sign-in",
   next,
+  initialError,
 }: {
   mode?: "sign-in" | "sign-up";
   next: string | null;
+  initialError?: string | null;
 }) {
   return (
     <AccountShell
@@ -17,7 +19,7 @@ export function AccountEntry({
           : undefined
       }
     >
-      <AuthForm mode={mode} next={next} />
+      <AuthForm mode={mode} next={next} initialError={initialError} />
     </AccountShell>
   );
 }

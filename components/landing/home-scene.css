@@ -1,0 +1,138 @@
+/* The scene layer covers the whole hero; the copy sits above it and the
+   in-flow band spacer reserves the space the furniture is framed into. */
+.home-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.home-scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  touch-action: pan-y;
+  pointer-events: none;
+  transition: opacity 500ms ease-out;
+}
+
+.home-scene[data-renderer="webgl"] canvas {
+  pointer-events: auto;
+}
+
+.home-scene[data-ready] canvas {
+  opacity: 1;
+}
+
+/* During the approach the canvas breaks out to cover the whole viewport
+   (under the mist overlay at z-index 1000) on an opaque white, so nothing on
+   the page shows through while the camera dives into the monitor. */
+.home-scene[data-expanded] canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--background);
+}
+
+.home-scene-band {
+  width: 100%;
+  height: var(--home-scene-height, 20rem);
+  pointer-events: none;
+}
+
+/* Before WebGL is ready, on narrow screens, and without WebGL at all, the two
+   actions sit in a plain row at the foot of the hero. */
+.home-scene-labels {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+
+.home-scene-label {
+  pointer-events: auto;
+  transition:
+    translate 160ms ease-out,
+    scale 160ms ease-out,
+    opacity 160ms ease-out;
+}
+
+.home-scene-action {
+  height: auto;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.625rem 1.25rem;
+  line-height: 1.15;
+}
+
+.home-scene-action-who {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.home-scene-action-what {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* Once the scene renders on a wide enough screen, each action hides above its
+   chair at the projected anchor the scene writes into --label-x/--label-y and
+   pops out when the chair is hovered, or when the button itself has focus. */
+@media (min-width: 40rem) {
+  .home-scene[data-ready] .home-scene-labels {
+    inset: 0;
+    display: block;
+    padding: 0;
+  }
+
+  .home-scene[data-ready] .home-scene-label {
+    position: absolute;
+    left: var(--label-x, 50%);
+    top: var(--label-y, 50%);
+    translate: -50% calc(-100% + 8px);
+    scale: 0.92;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .home-scene[data-ready][data-hover="developer"]
+    .home-scene-label[data-chair="developer"],
+  .home-scene[data-ready][data-hover="partner"]
+    .home-scene-label[data-chair="partner"],
+  .home-scene[data-ready] .home-scene-label:focus-within {
+    translate: -50% calc(-100% - 4px);
+    scale: 1;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Touch screens cannot hover, so the actions stay visible there. */
+  @media (hover: none) {
+    .home-scene[data-ready] .home-scene-label {
+      translate: -50% -100%;
+      scale: 1;
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+}
+
+.home-scene[data-phase="approaching"] .home-scene-label,
+.home-scene[data-phase="covering"] .home-scene-label {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The copy steps aside while the camera approaches the monitor. */
+.landing-hero:has(.home-scene[data-phase="approaching"]) .landing-hero-copy,
+.landing-hero:has(.home-scene[data-phase="covering"]) .landing-hero-copy {
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+}

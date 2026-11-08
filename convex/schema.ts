@@ -159,6 +159,7 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
   opportunities: defineTable({
+    revision: v.optional(v.number()),
     id: v.string(),
     ownerId: v.string(),
     ownerName: v.string(),
@@ -176,6 +177,7 @@ export default defineSchema({
     .index("by_owner", ["ownerId"])
     .index("by_status", ["status"]),
   requests: defineTable({
+    revision: v.optional(v.number()),
     id: v.string(),
     ownerId: v.string(),
     ownerName: v.string(),

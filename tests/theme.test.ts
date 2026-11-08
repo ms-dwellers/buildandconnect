@@ -49,12 +49,14 @@ test("theme preserves all five supplied reference colors", () => {
   assert.equal(tokens.get("--palette-coral"), "#eb5757");
 });
 
-test("theme pairs a beige page with mint scenery and original warm accents", () => {
+test("theme pairs a white page with green scenery and original warm accents", () => {
   assert.equal(tokens.get("--palette-mint"), "#cce0d9");
   assert.equal(tokens.get("--palette-teal"), "#8fb3ac");
-  assert.equal(tokens.get("--background"), "var(--palette-cream)");
+  assert.equal(tokens.get("--palette-white"), "#ffffff");
+  assert.equal(tokens.get("--background"), "var(--palette-white)");
   assert.equal(tokens.get("--secondary"), "var(--palette-mint)");
-  assert.equal(tokens.get("--card"), "var(--palette-cream)");
+  assert.equal(tokens.get("--card"), "var(--palette-white)");
+  assert.equal(tokens.get("--primary-foreground"), "var(--palette-cream)");
   assert.equal(tokens.get("--highlight"), "var(--palette-coral)");
   assert.equal(tokens.get("--illustration-sun"), "var(--palette-apricot)");
   assert.equal(tokens.get("--sidebar"), "var(--secondary)");
@@ -103,6 +105,11 @@ test("theme text pairings meet WCAG AA normal-text contrast", () => {
     ["var(--map-label)", "var(--map-park)"],
     ["var(--foreground)", "var(--map-community)"],
     ["var(--accent-foreground)", "var(--accent)"],
+    ["var(--success-foreground)", "var(--background)"],
+    ["var(--info-foreground)", "var(--background)"],
+    ["var(--warning-foreground)", "var(--background)"],
+    ["var(--muted-foreground)", "var(--muted)"],
+    ["var(--foreground)", "var(--accent)"],
     ["var(--destructive-foreground)", "var(--background)"],
     ["#ffffff", "var(--destructive)"],
   ];
@@ -130,6 +137,26 @@ test("focus and input tokens remain visible against light surfaces", () => {
       );
     }
   }
+});
+
+test("the landing scene reads only tokens that resolve to hex colours", () => {
+  const sceneTokens = new Set(
+    [...root.matchAll(/(--scene-[\w-]+):/g)].map((match) => match[1]),
+  );
+  assert.ok(sceneTokens.size >= 8, "scene tokens are defined in :root");
+  assert.equal(tokens.get("--scene-fabric"), "var(--palette-pine)");
+  assert.equal(tokens.get("--scene-cushion"), "var(--palette-wheat)");
+  for (const name of [
+    ...sceneTokens,
+    "--background",
+    "--primary",
+    "--palette-pine",
+    "--palette-mint",
+    "--palette-wheat",
+    "--palette-apricot",
+    "--palette-coral",
+  ])
+    assert.match(color(`var(${name})`), /^#[\da-f]{6}$/i, name);
 });
 
 test("component discovery uses the coss registry", () => {

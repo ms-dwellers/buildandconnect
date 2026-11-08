@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { AnalysisUnavailable } from "../ai.ts";
-import type { BackendEnv } from "../env.ts";
+import { AnalysisUnavailable, type AIService } from "../ai.ts";
 import { ANALYSIS_MODEL } from "../models.ts";
 import {
   careerTargetAnalysisSchema,
@@ -9,7 +8,7 @@ import {
 } from "./schemas.ts";
 
 export async function analyzeCareerTarget(
-  ai: BackendEnv["AI"],
+  ai: AIService | undefined,
   input: CareerTargetInput,
 ) {
   try {

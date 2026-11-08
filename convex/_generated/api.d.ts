@@ -9,11 +9,19 @@
  */
 
 import type * as access from "../access.js";
+import type * as ai from "../ai.js";
+import type * as api_ from "../api.js";
 import type * as auth from "../auth.js";
 import type * as data from "../data.js";
 import type * as domain from "../domain.js";
+import type * as hiring_env from "../hiring/env.js";
+import type * as hiring_providers from "../hiring/providers.js";
+import type * as hiring_routes from "../hiring/routes.js";
+import type * as hiring_service from "../hiring/service.js";
 import type * as http from "../http.js";
 import type * as maintenance from "../maintenance.js";
+import type * as router from "../router.js";
+import type * as socialProviders from "../socialProviders.js";
 
 import type {
   ApiFromModules,
@@ -23,11 +31,19 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
+  ai: typeof ai;
+  api: typeof api_;
   auth: typeof auth;
   data: typeof data;
   domain: typeof domain;
+  "hiring/env": typeof hiring_env;
+  "hiring/providers": typeof hiring_providers;
+  "hiring/routes": typeof hiring_routes;
+  "hiring/service": typeof hiring_service;
   http: typeof http;
   maintenance: typeof maintenance;
+  router: typeof router;
+  socialProviders: typeof socialProviders;
 }>;
 
 /**

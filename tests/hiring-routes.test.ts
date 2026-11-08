@@ -3,13 +3,13 @@ import test from "node:test";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { ZodError } from "zod";
-import type { ApiEnv } from "../backend/api.ts";
-import { createHiringRoutes } from "../backend/hiring/routes.ts";
+import type { ApiEnv } from "../convex/hiring/routes.ts";
+import { createHiringRoutes } from "../convex/hiring/routes.ts";
 import { emptyHiringBrief } from "../backend/hiring/schemas.ts";
 import {
   HiringProviderError,
   MAX_AUDIO_BYTES,
-} from "../backend/hiring/providers.ts";
+} from "../convex/hiring/providers.ts";
 import type { PublicDeveloper } from "../lib/types.ts";
 
 const candidate: PublicDeveloper = {
@@ -51,7 +51,7 @@ function harness(
   };
   const app = new Hono<ApiEnv>();
   app.use("*", async (c, next) => {
-    c.env = { CONVEX_BRIDGE_SECRET: "test-bridge" } as ApiEnv["Bindings"];
+    c.env = {};
     c.set("role", role);
     await next();
   });

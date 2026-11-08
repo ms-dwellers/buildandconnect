@@ -1,9 +1,9 @@
 # Design system
 
-The web app's [mascot fieldbook](mascot-fieldbook.md) uses the supplied pixel
-mascot, dotted mint boards, cream cards, pine rules, and flat underlined
-navigation. Mascot feedback has a global pause control and a static reduced-motion
-fallback; success and error reactions are brief.
+The signed-in [mascot fieldbook](mascot-fieldbook.md) uses the supplied pixel
+mascot, dotted mint boards, pine rules, and flat navigation on the white canvas.
+Mascot feedback has a global pause control and a static reduced-motion fallback;
+success and error reactions are brief. Sign-in and onboarding share this artwork.
 
 Open `/design-system` for the live component gallery. It covers foundations,
 actions, forms, choices, feedback, overlays, navigation, and content with more
@@ -26,14 +26,19 @@ Semantic HTML is still the right choice for page structure and content.
 
 | Reference color | Value     | Role                                       |
 | --------------- | --------- | ------------------------------------------ |
-| Soft mint       | `#CCE0D9` | Framed hero and supporting surfaces        |
+| Soft mint       | `#CCE0D9` | Supporting surfaces and scenery            |
 | Muted teal      | `#8FB3AC` | Water and scenery                          |
 | Pine            | `#174C43` | Primary actions, illustration, focus rings |
 | Emerald depths  | `#1E6348` | Original supporting green                  |
-| Cream           | `#F8F7DE` | Page, cards, clouds, text on pine          |
+| Cream           | `#F8F7DE` | Text on pine, mist and clouds, map roads   |
 | Wheat           | `#F6DFB3` | Warm supporting accent                     |
 | Golden apricot  | `#F0A345` | Illustration accent, warning tint          |
 | Coral           | `#EB5757` | Landing-page calls to action, illustration |
+
+The page canvas and cards are white (`--palette-white`); the reference colours
+sit on it as structure, scenery, and accents rather than as a page tint. Status
+colours are distinct from the primary: success is emerald, info a deep teal,
+warning apricot; muted text is a lighter grey-green than body text.
 
 `app/globals.css` maps these to the complete coss semantic token contract. Use
 `bg-primary`, `text-foreground`, `text-muted-foreground`, etc. in components, not
@@ -46,11 +51,10 @@ text, coral highlight buttons pair the original coral with deep green text, and
 primary buttons pair pine with cream. The current theme is
 intentionally light-only; OS dark-mode preference does not change its colors.
 
-Use the 60/30/10 rule as a visual balance: beige is the main page canvas,
-mint and teal form the full-screen landscape and supporting surfaces, and warm accents
+Use the 60/30/10 rule as a visual balance: white is the main page canvas, pine,
+mint, and teal form structure, supporting surfaces, and scenery, and warm accents
 remain sparse. The reference informs the composition rather than a full-page
-color swap: a mint hero, cream clouds, layered trees, and a teal waterfront sit
-inside the beige page. Keep the original cream, wheat, apricot, and coral values.
+color swap. Keep the original cream, wheat, apricot, and coral values.
 Reserve coral for
 selected calls to action and small illustration details, and apricot for the sun,
 warm roof accents, and warning tints. These are composition guidelines, not fixed
@@ -65,27 +69,38 @@ percentages enforced on every component or the map.
 
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
-- The account-first homepage uses open spacing, bold League Spartan headings,
-  and a mint garden panel beside the sign-in form, with a landscape from the
-  supplied `public/sprites/` collection. Trees, roses, and grass sit on repeating
-  ground tiles above a teal waterfront. Keep
-  decorative artwork out of the accessibility tree; do not treat it as map data.
-  On mobile, the decorative garden panel is hidden so account actions come first.
-  The same shell frames account choice and the four-step developer profile.
-  Short screens scroll rather than clip the heading or actions.
-
-- `components/landing/hero-scene.tsx` owns the sprite composition. There is no
-  loading reveal or foreground curtain; the heading is available immediately.
-  Five native-size clouds drift behind the content in both directions, with
-  independent 180–300 second loops and staggered starting positions defined in
-  `lib/landing-clouds.ts`. Each cloud exits completely before wrapping to the
-  opposite side. Cloud artwork is never scaled, except horizontal reflection.
-  The “Pause clouds” control pauses all tracks without resetting their positions;
-  reduced motion keeps them stationary and hides the control. Animation works
-  without JavaScript; the unavailable pause control is hidden in that case.
-- All 22 supplied SVG files are copied unchanged with lowercase, hyphenated names.
-  macOS archive metadata is excluded. Unused variations and `tets.svg` are retained
-  in the asset folder but are not loaded by the homepage.
+- The landing page uses open spacing, bold League Spartan headings, and a white
+  hero whose heading, lead, and actions are server-rendered and available
+  immediately. The focal point sits between the heading and the two calls to
+  action: a lazily loaded Three.js scene (`components/landing/home-scene.tsx`)
+  with two procedural chairs, a task chair for the developer and a wooden chair
+  for the person who needs one, angled toward a monitor that plays a
+  canvas-drawn campfire. The canvas covers the whole hero rather than a box: a
+  camera view offset frames the furniture into the band beneath the copy at full
+  size while the heading floats in the same space. Every colour comes from `--palette-*`
+  and `--scene-*` tokens read at runtime. Behind the developer chair, low-poly tech marks (brackets, braces, a chip, a
+  terminal, a gear, a diamond, a dot grid) float, turn, and run off the left
+  edge; behind the partner chair, a stand of low-poly pines and bushes runs off
+  the right edge. Both are procedural meshes that sprout from the ground on
+  load, so no asset files are loaded. The header and hero fill at least the first viewport; the remaining
+  sections scroll below. Typography adapts to viewport width and height.
+- The chairs are the calls to action. Each carries a real button above it
+  ("I'm a developer: Find a project" on the task chair, "I need a developer:
+  Post a request" on the wooden chair), positioned from the scene's projected
+  anchors on screens 40rem and wider and shown as a plain row under the scene
+  otherwise, before WebGL is ready, and without WebGL at all. Hovering or
+  focusing a chair or its button lifts the chair and intensifies that side's
+  backdrop: the pines deepen from mint and teal to pine and emerald and sway
+  harder, the marks brighten to pine and apricot, grow, and turn faster. Clicking the developer chair or the
+  monitor starts the map journey; clicking the partner chair opens the request
+  form. The canvas itself is `aria-hidden`. Reduced motion renders one static
+  frame, and the render loop pauses while the tab is hidden or the hero is
+  off-screen.
+- When the map journey begins with the hero visible, the scene registers an
+  approach beat: the canvas breaks out of its box to cover the whole viewport
+  (a camera view offset keeps the furniture where it was while the frame grows),
+  the camera dollies into the monitor while its screen crossfades to the city
+  name, and then the mist takes over.
 
 - No decorative pills. Ordinary labels are plain text. Badges are
   softly rectangular with a small radius, explicit line height, and enough padding
@@ -106,8 +121,9 @@ percentages enforced on every component or the map.
 - Prefer coss variants and sizes. Use local classes for layout, not a replacement
   set of component styles.
 - Body text, navigation, buttons, and compact component headings use League Spartan.
-  Large headings (`h1`, `h2`, and `font-display`) use bold League Spartan. Form labels and
-  legends use DM Mono, also available through `font-mono` for metadata and code.
+  Large headings (`h1`, `h2`, and `font-display`) use bold League Spartan. Form labels use
+  DM Mono, also available through `font-mono` for metadata and code; legends and
+  section headings stay in League Spartan.
   Fonts are self-hosted in `public/fonts/` with their SIL Open Font Licenses and
   use `font-display: swap`; no Google request is made when visiting the app.
 - The isolated application root and relatively positioned body preserve Base UI

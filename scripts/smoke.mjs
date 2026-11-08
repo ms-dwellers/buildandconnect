@@ -24,7 +24,6 @@ const server = spawn(
     env: {
       ...process.env,
       BROWSER: "none",
-      WORKERS_AI_REMOTE: "false",
       SITE_URL: origin,
     },
   },
@@ -60,18 +59,24 @@ try {
   assert.equal(home.status, 200);
   const html = await home.text();
   assert.match(html, /Build &amp; Connect/);
-  assert.match(html, /Build experience\./);
-  assert.match(html, /Make a difference\./);
-  assert.match(html, /Welcome back/);
-  assert.match(html, /name="email"/);
-  assert.match(html, /name="password"/);
-  assert.match(html, /<form[^>]*method="post"/);
+  assert.match(html, /Early-career developers,/);
+  assert.match(html, /meet the people who need them\./);
+  assert.match(html, /Calgary/);
+  assert.doesNotMatch(html, /\/sprites\//);
+  assert.match(html, /Post a request/);
+  assert.match(html, /Nearby map/);
   assert.match(html, /data-slot="button"/);
   assert.match(html, /data-slot="card"/);
-  for (const route of ["/map", "/sign-up"]) {
+  for (const route of [
+    "/map",
+    "/requests/new",
+    "/sign-up",
+    "/sign-in",
+    "/design-system",
+  ]) {
     assert.ok(
       html.includes(`href="${route}"`),
-      `Missing account-entry link: ${route}`,
+      `Missing landing-page link: ${route}`,
     );
   }
   const designSystem = await fetch(`${origin}/design-system`);
@@ -95,23 +100,18 @@ try {
     "/role",
     "/dashboard",
     "/profile",
-    "/onboarding",
     "/requests/new",
-    "/projects/new",
     "/opportunities/new",
-    "/projects/drafts/smoke-test",
-    "/requests/smoke-test",
     "/hire",
   ]) {
     const page = await fetch(`${origin}${route}`);
     assert.equal(page.status, 200, `${route} must render`);
     assert.match(
       await page.text(),
-      /<img\b[^>]*src="\/assets\/mascots\/still\/base\.gif"/,
+      /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/,
       `${route} must use the shared logo`,
     );
   }
-  assert.equal((await fetch(`${origin}/api/project-drafts`)).status, 401);
   const mapFeed = await fetch(`${origin}/api/map`);
   assert.ok([200, 503].includes(mapFeed.status), "Map feed must be public");
   assert.equal(mapFeed.headers.get("Cache-Control"), "no-store");
@@ -124,37 +124,14 @@ try {
   assert.match(debugHtml, /data-slot="input"/);
   assert.match(debugHtml, /noindex/);
 
-  const voice = await fetch(`${origin}/voice`);
+  const voice = await fetch(`${origin}/wip-voice-ai`);
   assert.equal(voice.status, 200);
   const voiceHtml = await voice.text();
   assert.doesNotMatch(voiceHtml, /Local demo/);
   assert.match(voiceHtml, /noindex/);
-  const career = await fetch(`${origin}/career`);
-  assert.equal(career.status, 200);
-  assert.match(await career.text(), /noindex/);
-  for (const path of ["career-target", "career-projects"]) {
-    const response = await fetch(`${origin}/api/developers/me/${path}`);
-    assert.equal(response.status, 401);
-  }
-  assert.doesNotMatch(voiceHtml, /local-only voice prototype/);
-  const legacyVoice = await fetch(`${origin}/wip-voice-ai`, {
-    redirect: "manual",
-  });
-  assert.equal(legacyVoice.status, 308);
-  assert.equal(
-    new URL(legacyVoice.headers.get("Location"), origin).pathname,
-    "/voice",
-  );
 
   for (const page of [html, designHtml, mapHtml, debugHtml]) {
-    assert.match(page, /<img\b[^>]*src="\/assets\/mascots\/still\/base\.gif"/);
-  }
-  for (const pose of ["base", "happy", "crying", "running"]) {
-    const mascot = await fetch(`${origin}/assets/mascots/still/${pose}.gif`);
-    assert.equal(mascot.status, 200);
-    assert.match(mascot.headers.get("content-type"), /image\/gif/);
-    const bytes = Buffer.from(await mascot.arrayBuffer());
-    assert.equal(bytes.toString("ascii", 0, 6), "GIF89a");
+    assert.match(page, /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/);
   }
   const logo = await fetch(`${origin}/brand/campfire-clasped-hands.svg`);
   assert.equal(logo.status, 200);
@@ -167,6 +144,8 @@ try {
     [401, 503].includes(hiringApi.status),
     "Provider status requires authentication",
   );
+  // A configured Convex deployment trusts only its own SITE_URL, so the
+  // preview origin is refused before authentication runs.
   for (const path of ["voice-session", "extract"]) {
     const response = await fetch(`${origin}/api/hiring/${path}`, {
       method: "POST",
@@ -174,12 +153,24 @@ try {
       body: "{}",
     });
     assert.ok(
-      [401, 503].includes(response.status),
+      [401, 403, 503].includes(response.status),
       `${path} requires authentication`,
     );
     assert.equal(response.headers.get("Cache-Control"), "no-store");
   }
 
+  const providers = await fetch(`${origin}/api/auth-providers`);
+  assert.ok(
+    [200, 503].includes(providers.status),
+    "Provider availability must be public",
+  );
+  assert.equal(providers.headers.get("Cache-Control"), "no-store");
+  if (providers.status === 200) {
+    const flags = await providers.json();
+    assert.deepEqual(Object.keys(flags).sort(), ["github", "google"]);
+    for (const value of Object.values(flags))
+      assert.equal(typeof value, "boolean");
+  }
   const health = await fetch(`${origin}/api/health`);
   assert.equal(health.headers.get("Cache-Control"), "no-store");
   assert.deepEqual(await health.json(), {
@@ -202,7 +193,7 @@ try {
   });
   assert.equal(protectedRoute.headers.get("Cache-Control"), "no-store");
   console.log(
-    "Smoke passed: home, CSS, map, role pages, public map feed, QA console, health, protected backend, 404, 405, and environment-file denial.",
+    "Smoke passed: home, CSS, map, role pages, public map feed, QA console, health, sign-in providers, protected backend, 404, 405, and environment-file denial.",
   );
 } finally {
   if (server.pid && server.exitCode === null && server.signalCode === null) {

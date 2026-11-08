@@ -1,0 +1,397 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRightIcon } from "lucide-react";
+import { MapJourneyLink, useMapJourney } from "@/components/map/map-journey";
+import { Button } from "@/components/ui/button";
+import { CITY_NAME } from "@/lib/calgary-area";
+import { homeCopy } from "@/lib/home-copy";
+import {
+  approachTiming,
+  readSceneTokens,
+  sceneResolution,
+} from "@/lib/home-scene";
+import type {
+  HomeSceneController,
+  LabelTarget,
+  PickTarget,
+  Rect,
+} from "./home-scene/scene";
+import "./home-scene.css";
+
+type Renderer = "pending" | "webgl" | "fallback";
+/** How long a chair stays "hovered" after the pointer leaves it, so the
+ * pointer can travel from the chair onto the button that just popped out. */
+const HOVER_GRACE_MS = 180;
+
+/**
+ * The landing hero scene: two chairs around a monitor showing a campfire. The
+ * canvas covers the whole hero, so the furniture shares the page with the
+ * heading instead of sitting in a box; an in-flow spacer marks the band the
+ * camera frames the furniture into. Each chair carries its call to action as a
+ * real button that pops out on hover or focus, so the chairs and the buttons
+ * are one choice. three.js loads lazily on the client; the server renders the
+ * buttons in a plain row.
+ */
+export function HomeScene() {
+  const router = useRouter();
+  const journey = useMapJourney();
+  const wrapper = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const band = useRef<HTMLDivElement>(null);
+  const labels = useRef<Record<LabelTarget, HTMLDivElement | null>>({
+    developer: null,
+    partner: null,
+  });
+  const controller = useRef<HomeSceneController | null>(null);
+  const schedule = useRef<() => void>(() => undefined);
+  const hoverRef = useRef<(target: PickTarget | null) => void>(() => undefined);
+  const phaseRef = useRef(journey.phase);
+  const beginRef = useRef(journey.begin);
+  const registerRef = useRef(journey.registerApproach);
+  const [renderer, setRenderer] = useState<Renderer>("pending");
+  const [ready, setReady] = useState(false);
+  beginRef.current = journey.begin;
+  registerRef.current = journey.registerApproach;
+
+  useEffect(() => {
+    const element = canvas.current;
+    const host = wrapper.current;
+    const spacer = band.current;
+    if (!element || !host || !spacer) return;
+    const root = getComputedStyle(document.documentElement);
+    const tokens = readSceneTokens((name) => root.getPropertyValue(name));
+    if (!tokens) {
+      setRenderer("fallback");
+      return;
+    }
+    const fontFamily =
+      root.getPropertyValue("--app-font-display").trim() || "sans-serif";
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const coarse = window.matchMedia("(hover: none)");
+    let api: HomeSceneController | null = null;
+    let disposed = false;
+    let frame = 0;
+    let visible = true;
+    let intersecting = 0;
+    let registered = false;
+    let hover: PickTarget | null = null;
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    let press: { x: number; y: number; time: number } | null = null;
+
+    /** The band the furniture is framed into, relative to the canvas. */
+    const measureBand = (): Rect => {
+      const canvasRect = element.getBoundingClientRect();
+      const bandRect = spacer.getBoundingClientRect();
+      return {
+        x: bandRect.left - canvasRect.left,
+        y: bandRect.top - canvasRect.top,
+        width: bandRect.width,
+        height: bandRect.height,
+      };
+    };
+    const fit = () => {
+      if (!api) return;
+      const { ratio } = sceneResolution(
+        element.clientWidth,
+        element.clientHeight,
+        window.devicePixelRatio,
+      );
+      api.resize(
+        element.clientWidth,
+        element.clientHeight,
+        ratio,
+        measureBand(),
+      );
+    };
+    const placeLabels = () => {
+      for (const id of ["developer", "partner"] as const) {
+        const node = labels.current[id];
+        const point = api?.project(id);
+        if (!node || !point) continue;
+        node.style.setProperty("--label-x", `${point.x}px`);
+        node.style.setProperty("--label-y", `${point.y}px`);
+      }
+    };
+    const tick = (now: number) => {
+      frame = 0;
+      if (disposed || !api) return;
+      const phase = phaseRef.current;
+      if (
+        document.hidden ||
+        !visible ||
+        phase === "covering" ||
+        phase === "revealing"
+      )
+        return;
+      const more = api.render(now);
+      placeLabels();
+      if (more) kick();
+    };
+    const kick = () => {
+      if (disposed || frame) return;
+      frame = requestAnimationFrame(tick);
+    };
+    schedule.current = kick;
+    const updateRegistration = () => {
+      const should = api !== null && intersecting >= 0.5 && !preference.matches;
+      if (should === registered) return;
+      registered = should;
+      registerRef.current(should ? { durationMs: approachTiming.dolly } : null);
+    };
+    const resize = new ResizeObserver(() => {
+      if (phaseRef.current !== "idle") return;
+      fit();
+      kick();
+    });
+    const intersection = new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting;
+        intersecting = entry.intersectionRatio;
+        updateRegistration();
+        if (visible) kick();
+      },
+      { threshold: [0, 0.5, 1] },
+    );
+    const motionChanged = () => {
+      api?.setMotion(!preference.matches);
+      updateRegistration();
+      kick();
+    };
+    const visibilityChanged = () => kick();
+    const toNdc = (event: PointerEvent) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        x: ((event.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1,
+        y: -(((event.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1),
+      };
+    };
+    const applyHover = (target: PickTarget | null) => {
+      if (target === hover || !api) return;
+      hover = target;
+      api.setHover(target);
+      host.dataset.hover = target ?? "";
+      element.style.cursor = target ? "pointer" : "";
+      kick();
+    };
+    const cancelHide = () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = null;
+    };
+    const scheduleHide = () => {
+      cancelHide();
+      hideTimer = setTimeout(() => {
+        hideTimer = null;
+        applyHover(null);
+      }, HOVER_GRACE_MS);
+    };
+    const setHover = (target: PickTarget | null) => {
+      if (target) {
+        cancelHide();
+        applyHover(target);
+      } else scheduleHide();
+    };
+    hoverRef.current = setHover;
+    const pointerMove = (event: PointerEvent) => {
+      if (!api || coarse.matches) return;
+      const point = toNdc(event);
+      api.setPointer(point.x, point.y);
+      setHover(api.pick(point.x, point.y));
+      kick();
+    };
+    const pointerLeave = () => {
+      api?.setPointer(0, 0);
+      setHover(null);
+      kick();
+    };
+    const pointerDown = (event: PointerEvent) => {
+      press = { x: event.clientX, y: event.clientY, time: performance.now() };
+    };
+    const pointerUp = (event: PointerEvent) => {
+      if (!api || !press) return;
+      const quick =
+        performance.now() - press.time < 300 &&
+        Math.hypot(event.clientX - press.x, event.clientY - press.y) < 6;
+      press = null;
+      if (!quick || phaseRef.current !== "idle") return;
+      const point = toNdc(event);
+      const target = api.pick(point.x, point.y);
+      if (target === "partner") router.push(homeCopy.ctas.post.href);
+      else if (target) beginRef.current();
+    };
+    const contextLost = (event: Event) => {
+      event.preventDefault();
+      teardown();
+      setRenderer("fallback");
+    };
+    function teardown() {
+      if (disposed) return;
+      disposed = true;
+      cancelAnimationFrame(frame);
+      cancelHide();
+      resize.disconnect();
+      intersection.disconnect();
+      preference.removeEventListener("change", motionChanged);
+      document.removeEventListener("visibilitychange", visibilityChanged);
+      element?.removeEventListener("webglcontextlost", contextLost);
+      element?.removeEventListener("pointermove", pointerMove);
+      element?.removeEventListener("pointerleave", pointerLeave);
+      element?.removeEventListener("pointerdown", pointerDown);
+      element?.removeEventListener("pointerup", pointerUp);
+      if (registered) registerRef.current(null);
+      registered = false;
+      api?.dispose();
+      api = null;
+      controller.current = null;
+      schedule.current = () => undefined;
+      hoverRef.current = () => undefined;
+    }
+
+    void import("./home-scene/scene")
+      .then(({ createHomeScene }) => {
+        if (disposed) return;
+        try {
+          api = createHomeScene(element, tokens, {
+            approachMs: approachTiming.dolly,
+            cityName: CITY_NAME,
+            fontFamily,
+          });
+        } catch {
+          setRenderer("fallback");
+          return;
+        }
+        controller.current = api;
+        api.setMotion(!preference.matches);
+        fit();
+        resize.observe(element);
+        resize.observe(spacer);
+        intersection.observe(spacer);
+        preference.addEventListener("change", motionChanged);
+        document.addEventListener("visibilitychange", visibilityChanged);
+        element.addEventListener("webglcontextlost", contextLost);
+        element.addEventListener("pointermove", pointerMove);
+        element.addEventListener("pointerleave", pointerLeave);
+        element.addEventListener("pointerdown", pointerDown);
+        element.addEventListener("pointerup", pointerUp);
+        api.render(performance.now());
+        placeLabels();
+        setRenderer("webgl");
+        setReady(true);
+        kick();
+      })
+      .catch(() => {
+        if (!disposed) setRenderer("fallback");
+      });
+    return teardown;
+  }, [router]);
+
+  useEffect(() => {
+    phaseRef.current = journey.phase;
+    const api = controller.current;
+    const host = wrapper.current;
+    const element = canvas.current;
+    const spacer = band.current;
+    if (!api || !host || !element || !spacer) return;
+    if (journey.phase === "approaching") {
+      // Measure before the canvas breaks out to the whole viewport, so the
+      // furniture stays where it was while the frame grows around it.
+      const rect = element.getBoundingClientRect();
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      host.dataset.expanded = "true";
+      const { ratio } = sceneResolution(
+        viewport.width,
+        viewport.height,
+        window.devicePixelRatio,
+      );
+      api.resize(viewport.width, viewport.height, ratio);
+      api.startApproach(performance.now(), {
+        canvas: {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height,
+        },
+        viewport,
+      });
+    } else if (journey.phase === "idle") {
+      delete host.dataset.expanded;
+      const canvasRect = element.getBoundingClientRect();
+      const bandRect = spacer.getBoundingClientRect();
+      const { ratio } = sceneResolution(
+        element.clientWidth,
+        element.clientHeight,
+        window.devicePixelRatio,
+      );
+      api.resize(element.clientWidth, element.clientHeight, ratio, {
+        x: bandRect.left - canvasRect.left,
+        y: bandRect.top - canvasRect.top,
+        width: bandRect.width,
+        height: bandRect.height,
+      });
+      api.resetApproach(performance.now());
+    }
+    schedule.current();
+  }, [journey.phase]);
+
+  // Pointer or focus on a button counts as hovering its chair, and vice versa.
+  const chairProps = (id: LabelTarget) => ({
+    ref: (node: HTMLDivElement | null) => {
+      labels.current[id] = node;
+    },
+    className: "home-scene-label",
+    "data-chair": id,
+    onPointerEnter: () => hoverRef.current(id),
+    onPointerLeave: () => hoverRef.current(null),
+    onFocusCapture: () => hoverRef.current(id),
+    onBlurCapture: () => hoverRef.current(null),
+  });
+
+  return (
+    <>
+      <div
+        ref={wrapper}
+        className="home-scene"
+        data-renderer={renderer}
+        data-ready={ready || undefined}
+        data-phase={journey.phase}
+      >
+        {renderer !== "fallback" && <canvas ref={canvas} aria-hidden="true" />}
+        <div className="home-scene-labels">
+          <div {...chairProps("developer")}>
+            <MapJourneyLink
+              variant="highlight"
+              size="lg"
+              className="home-scene-action"
+            >
+              <span className="home-scene-action-who">
+                {homeCopy.chairs.developer}
+              </span>
+              <span className="home-scene-action-what">
+                {homeCopy.ctas.find.label}
+                <ArrowRightIcon aria-hidden="true" />
+              </span>
+            </MapJourneyLink>
+          </div>
+          <div {...chairProps("partner")}>
+            <Button
+              render={<a href={homeCopy.ctas.post.href} />}
+              variant="outline"
+              size="lg"
+              className="home-scene-action"
+            >
+              <span className="home-scene-action-who">
+                {homeCopy.chairs.partner}
+              </span>
+              <span className="home-scene-action-what">
+                {homeCopy.ctas.post.label}
+                <ArrowRightIcon aria-hidden="true" />
+              </span>
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div ref={band} className="home-scene-band" aria-hidden="true" />
+    </>
+  );
+}

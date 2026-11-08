@@ -106,6 +106,28 @@ test("fallback and renderer completion share the same navigation lifecycle", () 
   assert.match(component, /setAvailable\(false\)/);
   assert.match(journey, /setTimeout\(navigateToMap, COVER_MS \+ 500\)/);
   assert.match(journey, /REVEAL_MS \+ 250/);
+  assert.match(journey, /clearTimeout\(approachTimer\.current\)/);
+});
+
+test("the approach phase is opt-in and leaves other pages on the plain mist", () => {
+  const journey = readFileSync(
+    new URL("../components/map/map-journey.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(journey, /"approaching"/);
+  assert.match(journey, /registerApproach/);
+  assert.match(journey, /if \(pending\)/);
+  assert.match(journey, /setTimeout\(cover, pending\.durationMs\)/);
+  assert.match(journey, /\} else cover\(\);/);
+  // The mist shader only knows the two mist phases.
+  assert.match(journey, /phase === "covering" \|\| phase === "revealing"/);
+  assert.match(journey, /CITY_NAME/);
+  const scene = readFileSync(
+    new URL("../components/landing/home-scene.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(scene, /durationMs: approachTiming\.dolly/);
+  assert.match(scene, /registerRef\.current\(null\)/);
 });
 
 test("the temporary button removal preserves a document-level Escape shortcut", () => {

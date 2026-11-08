@@ -1,15 +1,9 @@
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { ConvexError } from "convex/values";
-import type { ConvexHttpClient } from "convex/browser";
 import type { FunctionReturnType } from "convex/server";
-import { ZodError } from "zod";
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
 import {
   actor,
   api,
   components,
-  secret,
   setup,
   profile,
   job,
@@ -17,39 +11,59 @@ import {
   embedding,
 } from "./harness";
 import { careerTarget } from "../fixtures/career";
-import { createCareerRoutes } from "../../backend/career/routes";
-import { AnalysisUnavailable } from "../../backend/ai";
-import type { ApiEnv } from "../../backend/api";
-import type { Role } from "../../backend/schemas";
+import { analyzeCareerTarget } from "../../backend/career/analysis";
+import {
+  analyzeDeveloper,
+  analyzeOpportunity,
+  analyzeRequest,
+  type AIService,
+} from "../../backend/ai";
+import { handleApi } from "../../convex/api";
+import type { ActionCtx } from "../../convex/_generated/server";
 
-beforeEach(() => vi.stubEnv("CONVEX_BRIDGE_SECRET", secret));
+beforeEach(() => {
+  vi.stubEnv("SITE_URL", "https://app.example.test");
+  vi.stubEnv("CONVEX_SITE_URL", "https://test.convex.site");
+  vi.stubEnv(
+    "BETTER_AUTH_SECRET",
+    "career-test-only-secret-at-least-32-characters",
+  );
+});
 afterEach(() => vi.unstubAllEnvs());
 
-function httpClient(
-  client: Awaited<ReturnType<typeof actor>>["client"],
-  role: Role,
-  ai?: Ai,
+async function httpClient(
+  t: ReturnType<typeof setup>,
+  member: Awaited<ReturnType<typeof actor>>,
+  ai?: AIService,
 ) {
-  const app = new Hono<ApiEnv>();
-  app.use("*", async (c, next) => {
-    c.env = { CONVEX_BRIDGE_SECRET: secret, AI: ai } as ApiEnv["Bindings"];
-    c.set("role", role);
-    c.set("client", client as unknown as ConvexHttpClient);
-    await next();
-  });
-  app.route("/api/developers/me", createCareerRoutes());
-  app.onError((error, c) => {
-    if (error instanceof HTTPException)
-      return c.json({ error: error.message }, error.status);
-    if (error instanceof ZodError)
-      return c.json({ error: "Invalid fields" }, 400);
-    if (error instanceof AnalysisUnavailable)
-      return c.json({ error: error.message }, 503);
-    if (error instanceof ConvexError)
-      return c.json(error.data, error.data.status);
-    throw error;
-  });
-  return app;
+  const session = await t.run((ctx) =>
+    ctx.runQuery(components.betterAuth.adapter.findOne, {
+      model: "session",
+      where: [{ field: "_id", value: member.sessionId }],
+    }),
+  );
+  if (!session || !("token" in session))
+    throw new Error("Test session missing");
+  return {
+    request(path: string, init: RequestInit = {}) {
+      const headers = new Headers(init.headers);
+      headers.set("Authorization", `Bearer ${session.token}`);
+      headers.set("Content-Type", "application/json");
+      return t.run((ctx) =>
+        handleApi(
+          ctx as unknown as ActionCtx,
+          new Request(`https://test.convex.site${path}`, { ...init, headers }),
+          {
+            analyzeDeveloper,
+            analyzeOpportunity,
+            analyzeRequest,
+            analyzeCareerTarget: (_binding, input) =>
+              analyzeCareerTarget(ai, input),
+          },
+        ),
+      );
+    },
+  };
 }
 
 test("career target HTTP flow saves analyzed source, remains private, and preserves previous data on failure", async () => {
@@ -62,7 +76,7 @@ test("career target HTTP flow saves analyzed source, remains private, and preser
     requirements: careerTarget.requirements,
   };
   const run = vi.fn(async () => ({ response: JSON.stringify(output) }));
-  const app = httpClient(dev.client, "developer", { run } as unknown as Ai);
+  const app = await httpClient(t, dev, { run });
   const path = "/api/developers/me/career-target";
   expect(await (await app.request(path)).json()).toBeNull();
   const save = await app.request(path, {
@@ -77,9 +91,7 @@ test("career target HTTP flow saves analyzed source, remains private, and preser
     developerId: dev.id,
     analysisVersion: "career-v1",
   });
-  expect(await dev.client.query(api.data.ownCareerTarget, { secret })).toEqual(
-    saved,
-  );
+  expect(await dev.client.query(api.data.ownCareerTarget, {})).toEqual(saved);
   const stale = await app.request(path, {
     method: "PUT",
     body: JSON.stringify({
@@ -89,9 +101,7 @@ test("career target HTTP flow saves analyzed source, remains private, and preser
   });
   expect(stale.status).toBe(409);
   expect(run).toHaveBeenCalledTimes(1);
-  expect(
-    await other.client.query(api.data.ownCareerTarget, { secret }),
-  ).toBeNull();
+  expect(await other.client.query(api.data.ownCareerTarget, {})).toBeNull();
   expect(
     (await t.run((ctx) => ctx.db.query("careerTargets").collect())).length,
   ).toBe(1);
@@ -102,9 +112,7 @@ test("career target HTTP flow saves analyzed source, remains private, and preser
     body: JSON.stringify({ sourceText: careerTarget.sourceText }),
   });
   expect(failed.status).toBe(503);
-  expect(await dev.client.query(api.data.ownCareerTarget, { secret })).toEqual(
-    saved,
-  );
+  expect(await dev.client.query(api.data.ownCareerTarget, {})).toEqual(saved);
   expect(
     (
       await app.request(path, {
@@ -117,9 +125,7 @@ test("career target HTTP flow saves analyzed source, remains private, and preser
     ).status,
   ).toBe(400);
 
-  const forbidden = httpClient(company.client, "requester", {
-    run,
-  } as unknown as Ai);
+  const forbidden = await httpClient(t, company, { run });
   expect(
     (
       await forbidden.request(path, {
@@ -129,34 +135,31 @@ test("career target HTTP flow saves analyzed source, remains private, and preser
     ).status,
   ).toBe(403);
   await expect(
-    company.client.query(api.data.ownCareerTarget, { secret }),
+    company.client.query(api.data.ownCareerTarget, {}),
   ).rejects.toThrow(/role/);
 });
 
 test("career persistence revalidates sessions, quotes, and concurrent saves", async () => {
   const t = setup();
   const dev = await actor(t, "developer");
-  await expect(t.query(api.data.ownCareerTarget, { secret })).rejects.toThrow(
+  await expect(t.query(api.data.ownCareerTarget, {})).rejects.toThrow(
     /Sign in/,
   );
   await expect(
-    dev.client.query(api.data.ownCareerTarget, { secret: "wrong" }),
-  ).rejects.toThrow(/application API/);
+    t.query(api.data.ownCareerTarget, { sessionId: "missing" }),
+  ).rejects.toThrow(/Sign in/);
   const saved = await dev.client.mutation(api.data.putCareerTarget, {
-    secret,
     target: careerTarget,
     expectedUpdatedAt: 0,
   });
   await expect(
     dev.client.mutation(api.data.putCareerTarget, {
-      secret,
       target: careerTarget,
       expectedUpdatedAt: 0,
     }),
   ).rejects.toThrow(/changed/);
   await expect(
     dev.client.mutation(api.data.putCareerTarget, {
-      secret,
       expectedUpdatedAt: saved.updatedAt,
       target: {
         ...careerTarget,
@@ -179,7 +182,6 @@ test("career persistence revalidates sessions, quotes, and concurrent saves", as
   );
   await expect(
     dev.client.mutation(api.data.putCareerTarget, {
-      secret,
       target: careerTarget,
       expectedUpdatedAt: saved.updatedAt,
     }),
@@ -192,7 +194,6 @@ test("simultaneous first saves produce one target and reject the stale analysis"
   const saves = await Promise.allSettled(
     ["First target", "Second target"].map((title) =>
       dev.client.mutation(api.data.putCareerTarget, {
-        secret,
         target: { ...careerTarget, title },
         expectedUpdatedAt: 0,
       }),
@@ -211,16 +212,13 @@ test("career recommendations join open projects, prioritize gaps, and keep priva
   const company = await actor(t, "requester");
   const requester = await actor(t, "requester");
   await dev.client.mutation(api.data.putDeveloper, {
-    secret,
     profile: { ...profile, discoverable: false, wantsToLearn: [] },
     embedding,
   });
   await dev.client.mutation(api.data.setLocation, {
-    secret,
     location: { latitude: 43.65, longitude: -79.38, radiusKm: 25 },
   });
   await dev.client.mutation(api.data.putCareerTarget, {
-    secret,
     target: careerTarget,
     expectedUpdatedAt: 0,
   });
@@ -234,7 +232,6 @@ test("career recommendations join open projects, prioritize gaps, and keep priva
   ];
   for (const id of ["legacy", "growth", "closed", "blocked"]) {
     await company.client.mutation(api.data.createOpportunity, {
-      secret,
       id,
       details: {
         ...job,
@@ -246,7 +243,6 @@ test("career recommendations join open projects, prioritize gaps, and keep priva
     });
   }
   await company.client.mutation(api.data.updateOpportunity, {
-    secret,
     id: "closed",
     status: "closed",
   });
@@ -256,7 +252,6 @@ test("career recommendations join open projects, prioritize gaps, and keep priva
     ["claimed", 43.66],
   ] as const) {
     await requester.client.mutation(api.data.createRequest, {
-      secret,
       id,
       details: {
         title: "Food bank scheduling",
@@ -285,7 +280,7 @@ test("career recommendations join open projects, prioritize gaps, and keep priva
     opportunities: await ctx.db.query("opportunities").collect(),
     interests: await ctx.db.query("interests").collect(),
   }));
-  const app = httpClient(dev.client, "developer");
+  const app = await httpClient(t, dev);
   const response = await app.request(
     "/api/developers/me/career-projects?limit=10",
   );
@@ -330,10 +325,10 @@ test("career recommendations join open projects, prioritize gaps, and keep priva
     })),
   ).toEqual(before);
   await expect(
-    company.client.query(api.data.careerRecommendations, { secret, limit: 20 }),
+    company.client.query(api.data.careerRecommendations, { limit: 20 }),
   ).rejects.toThrow(/role/);
   await expect(
-    t.query(api.data.careerRecommendations, { secret, limit: 20 }),
+    t.query(api.data.careerRecommendations, { limit: 20 }),
   ).rejects.toThrow(/Sign in/);
 });
 
@@ -341,16 +336,14 @@ test("career recommendations handle missing setup and bound candidate pools rath
   const t = setup();
   const dev = await actor(t, "developer");
   const query = (limit = 20) =>
-    dev.client.query(api.data.careerRecommendations, { secret, limit });
+    dev.client.query(api.data.careerRecommendations, { limit });
   await expect(query()).rejects.toThrow(/career target/);
   await dev.client.mutation(api.data.putCareerTarget, {
-    secret,
     target: careerTarget,
     expectedUpdatedAt: 0,
   });
   await expect(query()).rejects.toThrow(/profile/);
   await dev.client.mutation(api.data.putDeveloper, {
-    secret,
     profile,
     embedding,
   });

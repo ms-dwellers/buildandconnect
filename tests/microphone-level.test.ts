@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { microphoneLevel } from "../app/voice/microphone-level.ts";
+import { microphoneLevel } from "../components/hiring/voice/microphone-level.ts";
 
 const signal = (amplitude: number) =>
   Float32Array.from(

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOutIcon } from "lucide-react";
@@ -8,7 +9,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { MapJourneyLink } from "@/components/map/map-journey";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/session";
+import { knownAccount, useSession } from "@/lib/session";
 import type { Role } from "@/lib/types";
 import { withNext } from "@/lib/navigation";
 import { DashboardGarden } from "@/components/dashboards/dashboard-garden";
@@ -54,7 +55,7 @@ export function AppHeader({ className }: { className?: string }) {
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const { session, signOut } = useSession();
-  const member = session.status === "member" ? session : null;
+  const member = knownAccount(session);
   const items = navigationFor(member ? member.role : undefined);
   return (
     <header
@@ -63,14 +64,14 @@ export function AppHeader({ className }: { className?: string }) {
         className,
       )}
     >
-      <a
+      <Link
         href="/"
         aria-label="Build & Connect home"
         className="flex items-center gap-2.5 text-base font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
       >
         <BrandLogo />
         Build &amp; Connect
-      </a>
+      </Link>
       <nav
         aria-label="Main"
         className="flex flex-wrap items-center gap-x-1 gap-y-2"
@@ -96,7 +97,7 @@ export function AppHeader({ className }: { className?: string }) {
             <Button
               key={item.href}
               render={
-                <a
+                <Link
                   href={
                     item.href === "/role"
                       ? withNext(item.href, destination)
@@ -154,15 +155,15 @@ export function AppHeader({ className }: { className?: string }) {
         ) : session.status === "guest" ? (
           <span className="ms-2 flex items-center gap-2">
             <Button
-              render={<a href={withNext("/sign-in", destination)} />}
+              render={<Link href={withNext("/sign-in", destination)} />}
               variant="ghost"
               size="sm"
             >
               Sign in
             </Button>
             <Button
-              render={<a href={withNext("/sign-up", destination)} />}
-              variant="outline"
+              render={<Link href={withNext("/sign-up", destination)} />}
+              variant="default"
               size="sm"
             >
               Get started

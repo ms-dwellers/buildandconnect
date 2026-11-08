@@ -1,20 +1,9 @@
-import { beforeEach, afterEach, expect, test, vi } from "vitest";
-import {
-  setup,
-  actor,
-  secret,
-  api,
-  analysis,
-  embedding,
-  profile,
-} from "./harness";
+import { expect, test } from "vitest";
+import { setup, actor, api, analysis, embedding, profile } from "./harness";
 import {
   emptyProjectDraft,
   opportunityFromDraft,
 } from "../../backend/project-drafts";
-
-beforeEach(() => vi.stubEnv("CONVEX_BRIDGE_SECRET", secret));
-afterEach(() => vi.unstubAllEnvs());
 
 const content = {
   ...emptyProjectDraft(),
@@ -31,56 +20,47 @@ test("project drafts are private, versioned, incomplete-friendly and owner-scope
   const other = await actor(t, "requester");
   const dev = await actor(t, "developer");
   const saved = await owner.client.mutation(api.data.saveProjectDraft, {
-    secret,
     id: "draft",
     content: emptyProjectDraft(),
     expectedUpdatedAt: 0,
   });
   expect(saved.content.title).toBe("");
-  expect(await other.client.query(api.data.projectDrafts, { secret })).toEqual(
-    [],
+  expect(await other.client.query(api.data.projectDrafts, {})).toEqual([]);
+  await expect(
+    other.client.query(api.data.getProjectDraft, { id: "draft" }),
+  ).rejects.toThrow(/not found/);
+  await expect(dev.client.query(api.data.projectDrafts, {})).rejects.toThrow(
+    /role/,
   );
   await expect(
-    other.client.query(api.data.getProjectDraft, { secret, id: "draft" }),
-  ).rejects.toThrow(/not found/);
-  await expect(
-    dev.client.query(api.data.projectDrafts, { secret }),
-  ).rejects.toThrow(/role/);
-  await expect(
-    owner.client.query(api.data.projectDrafts, { secret: "wrong" }),
-  ).rejects.toThrow(/application API/);
+    t.query(api.data.projectDrafts, { sessionId: "missing" }),
+  ).rejects.toThrow(/Sign in/);
   const changed = await owner.client.mutation(api.data.saveProjectDraft, {
-    secret,
     id: "draft",
     content,
     expectedUpdatedAt: saved.updatedAt,
   });
   await expect(
     owner.client.mutation(api.data.saveProjectDraft, {
-      secret,
       id: "draft",
       content: { ...content, title: "Stale overwrite" },
       expectedUpdatedAt: saved.updatedAt,
     }),
   ).rejects.toThrow(/another tab/);
   expect(
-    await owner.client.query(api.data.getProjectDraft, { secret, id: "draft" }),
+    await owner.client.query(api.data.getProjectDraft, { id: "draft" }),
   ).toEqual(changed);
   await expect(
     other.client.mutation(api.data.discardProjectDraft, {
-      secret,
       id: "draft",
       expectedUpdatedAt: changed.updatedAt,
     }),
   ).rejects.toThrow(/not found/);
   await owner.client.mutation(api.data.discardProjectDraft, {
-    secret,
     id: "draft",
     expectedUpdatedAt: changed.updatedAt,
   });
-  expect(await owner.client.query(api.data.projectDrafts, { secret })).toEqual(
-    [],
-  );
+  expect(await owner.client.query(api.data.projectDrafts, {})).toEqual([]);
 });
 
 test("publishing atomically links the saved draft and duplicate requests create one opportunity", async () => {
@@ -88,13 +68,11 @@ test("publishing atomically links the saved draft and duplicate requests create 
   const owner = await actor(t, "requester");
   const other = await actor(t, "requester");
   const saved = await owner.client.mutation(api.data.saveProjectDraft, {
-    secret,
     id: "publish",
     content,
     expectedUpdatedAt: 0,
   });
   const args = {
-    secret,
     id: "draft-publish",
     details: opportunityFromDraft(content),
     analysis,
@@ -125,17 +103,13 @@ test("publishing atomically links the saved draft and duplicate requests create 
   expect(
     await t.run((ctx) => ctx.db.query("opportunities").collect()),
   ).toHaveLength(1);
-  expect(await owner.client.query(api.data.projectDrafts, { secret })).toEqual(
-    [],
-  );
+  expect(await owner.client.query(api.data.projectDrafts, {})).toEqual([]);
   const published = await owner.client.query(api.data.getProjectDraft, {
-    secret,
     id: saved.id,
   });
   expect(published.publishedOpportunityId).toBe("draft-publish");
   await expect(
     owner.client.mutation(api.data.saveProjectDraft, {
-      secret,
       id: saved.id,
       content,
       expectedUpdatedAt: published.updatedAt,
@@ -149,7 +123,6 @@ test("request review reports eligibility and concurrent claims remain exclusive"
   const a = await actor(t, "developer");
   const b = await actor(t, "developer");
   await owner.client.mutation(api.data.createRequest, {
-    secret,
     id: "review",
     details: {
       title: "Garden calendar",
@@ -162,40 +135,37 @@ test("request review reports eligibility and concurrent claims remain exclusive"
     embedding,
   });
   expect(
-    (await a.client.query(api.data.ownRequestMatch, { secret, id: "review" }))
+    (await a.client.query(api.data.ownRequestMatch, { id: "review" }))
       .ineligibleReasons,
   ).toEqual(["Create your developer profile first"]);
   for (const dev of [a, b]) {
     await dev.client.mutation(api.data.putDeveloper, {
-      secret,
       profile,
       embedding,
     });
     await dev.client.mutation(api.data.setLocation, {
-      secret,
       location: { latitude: 43.65, longitude: -79.38, radiusKm: 5 },
     });
   }
   expect(
-    (await a.client.query(api.data.ownRequestMatch, { secret, id: "review" }))
+    (await a.client.query(api.data.ownRequestMatch, { id: "review" }))
       .ineligibleReasons,
   ).toEqual([]);
   const claims = await Promise.allSettled(
     [a, b].map((dev) =>
-      dev.client.mutation(api.data.acceptRequest, { secret, id: "review" }),
+      dev.client.mutation(api.data.acceptRequest, { id: "review" }),
     ),
   );
   expect(claims.filter((result) => result.status === "fulfilled")).toHaveLength(
     1,
   );
   const saved = await owner.client.query(api.data.getRequest, {
-    secret,
     id: "review",
   });
   expect(saved.status).toBe("claimed");
   expect([a.id, b.id]).toContain(saved.claimedBy);
   const loser = saved.claimedBy === a.id ? b : a;
   await expect(
-    loser.client.query(api.data.ownRequestMatch, { secret, id: "review" }),
+    loser.client.query(api.data.ownRequestMatch, { id: "review" }),
   ).rejects.toThrow(/available/);
 });

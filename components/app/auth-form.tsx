@@ -12,25 +12,45 @@ import { api } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { afterAuthentication, withNext } from "@/lib/navigation";
 import { ErrorAlert } from "./require-role";
+import { Separator } from "@/components/ui/separator";
+import type { AuthProviders, SocialProvider } from "@/lib/types";
+import { GitHubMark, GoogleMark } from "./provider-marks";
+
+const PROVIDERS: { id: SocialProvider; label: string }[] = [
+  { id: "google", label: "Google" },
+  { id: "github", label: "GitHub" },
+];
 
 export function AuthForm({
   mode,
   next,
+  initialError = null,
 }: {
   mode: "sign-in" | "sign-up";
   next: string | null;
+  initialError?: string | null;
 }) {
   const router = useRouter();
   const { refresh, session, signingOut } = useSession();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [ready, setReady] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [redirecting, setRedirecting] = useState<SocialProvider | null>(null);
+  const [providers, setProviders] = useState<AuthProviders | null>(null);
+  const available = PROVIDERS.filter(({ id }) => providers?.[id]);
   const signUp = mode === "sign-up";
   useEffect(() => {
     setReady(true);
+    let cancelled = false;
+    void api<AuthProviders>("/auth-providers").then((result) => {
+      if (!cancelled && result.ok) setProviders(result.data);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
   useEffect(() => {
     if (session.status === "member" && !busy.current && !signingOut)
@@ -69,7 +89,7 @@ export function AuthForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy.current || authenticated) return;
+    if (busy.current || authenticated || redirecting) return;
     busy.current = true;
     const data = Object.fromEntries(new FormData(event.currentTarget));
     setPending(true);
@@ -95,13 +115,78 @@ export function AuthForm({
     }
   }
 
+  async function continueWith(provider: SocialProvider) {
+    if (busy.current || authenticated || redirecting) return;
+    busy.current = true;
+    setRedirecting(provider);
+    setError(null);
+    const result = await api<{ url?: string }>("/auth/sign-in/social", {
+      method: "POST",
+      body: JSON.stringify({
+        provider,
+        callbackURL: withNext("/sign-in", next),
+        newUserCallbackURL: withNext("/role", next),
+        errorCallbackURL: withNext(signUp ? "/sign-up" : "/sign-in", next),
+      }),
+    });
+    if (!result.ok || !result.data.url) {
+      busy.current = false;
+      setRedirecting(null);
+      setError(
+        result.ok
+          ? "The sign-in provider did not return a link. Try again."
+          : result.error,
+      );
+      return;
+    }
+    window.location.assign(result.data.url);
+  }
+
   return (
     <Card>
-      <CardPanel className="p-6">
+      <CardPanel className="space-y-5 p-6">
+        {available.length > 0 && (
+          <>
+            <div className="grid gap-3">
+              {available.map(({ id, label }) => (
+                <Button
+                  key={id}
+                  variant="outline"
+                  className="w-full"
+                  loading={redirecting === id}
+                  disabled={
+                    !ready ||
+                    pending ||
+                    authenticated ||
+                    (redirecting !== null && redirecting !== id)
+                  }
+                  onClick={() => void continueWith(id)}
+                >
+                  {id === "google" ? (
+                    <GoogleMark className="opacity-100" />
+                  ) : (
+                    <GitHubMark className="opacity-100" />
+                  )}
+                  Continue with {label}
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">
+                or use your email
+              </span>
+              <Separator className="flex-1" />
+            </div>
+          </>
+        )}
         {/* method="post" keeps credentials out of the URL if someone submits
             before hydration; the handler always prevents native submission. */}
         <Form method="post" onSubmit={submit} className="space-y-5">
-          <fieldset disabled={pending || authenticated} className="space-y-5">
+          <fieldset
+            disabled={pending || authenticated || redirecting !== null}
+            className="space-y-5"
+          >
             {signUp && (
               <Field name="name">
                 <FieldLabel>Name</FieldLabel>
@@ -182,7 +267,9 @@ export function AuthForm({
             disabled={
               !ready ||
               authenticated ||
+              redirecting !== null ||
               session.status === "loading" ||
+              session.status === "resuming" ||
               session.status === "unavailable"
             }
             className="w-full"

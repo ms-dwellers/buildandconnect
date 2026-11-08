@@ -1,11 +1,18 @@
 import { AccountEntry } from "@/components/app/account-entry";
-import { safeNext } from "@/lib/navigation";
+import { first, safeNext } from "@/lib/navigation";
+import { socialSignInError } from "@/lib/auth-errors";
 
 export default async function SignInPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { next } = await searchParams;
-  return <AccountEntry mode="sign-in" next={safeNext(next)} />;
+  const { next, error } = await searchParams;
+  return (
+    <AccountEntry
+      mode="sign-in"
+      next={safeNext(next)}
+      initialError={socialSignInError(first(error))}
+    />
+  );
 }

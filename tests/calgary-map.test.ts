@@ -41,6 +41,7 @@ test("GeoJSON contains all postings, stable identifiers, and no private listing 
     assert.deepEqual(feature.properties, {
       id: job.id,
       kind: job.kind,
+      source: job.source,
       label: job.source === "request" ? "R" : job.kind === "paid" ? "P" : "V",
     });
     assert.deepEqual(feature.geometry, {
@@ -109,6 +110,10 @@ test("cluster and point layers share a source and include non-colour labels", ()
   const labels = layers.find((layer) => layer.id === `${POINT_LAYER}-label`);
   assert.ok(labels?.type === "symbol");
   assert.deepEqual(labels.layout?.["text-field"], ["get", "label"]);
+  const points = layers.find((layer) => layer.id === POINT_LAYER);
+  assert.ok(points?.type === "circle");
+  assert.match(JSON.stringify(points.paint?.["circle-color"]), /community/);
+  assert.match(JSON.stringify(points.paint?.["circle-color"]), /request/);
 });
 
 test("the city theme uses semantic colors and retains real 3D objects in daylight", () => {

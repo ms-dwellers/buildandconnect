@@ -6,7 +6,7 @@ import { RequireRole } from "@/components/app/require-role";
 import { DeveloperDashboard } from "@/components/dashboards/developer-dashboard";
 import { RequesterDashboard } from "@/components/dashboards/requester-dashboard";
 import { Button } from "@/components/ui/button";
-import { useSession } from "@/lib/session";
+import { knownAccount, useSession } from "@/lib/session";
 import { useApi } from "@/lib/use-api";
 import { withNext } from "@/lib/navigation";
 import type { OwnProfile, Role } from "@/lib/types";
@@ -29,9 +29,11 @@ const PRIMARY_ACTION: Record<Role, { href: string; label: string }> = {
 
 export default function DashboardPage() {
   const { session } = useSession();
-  const role = session.status === "member" ? session.role : null;
+  const role = knownAccount(session)?.role ?? null;
   const profile = useApi<OwnProfile>(
-    role === "developer" ? "/developers/me" : null,
+    role === "developer" && session.status === "member"
+      ? "/developers/me"
+      : null,
   );
   const action =
     role === "developer" && profile.error?.status === 404

@@ -11,9 +11,10 @@ import { Card, CardPanel } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ConfirmButton } from "@/components/dashboards/parts";
-import { Aurora } from "@/app/voice/aurora";
-import { Waveform } from "@/app/voice/waveform";
-import { useMicrophone } from "@/app/voice/use-microphone";
+import { Aurora } from "./voice/aurora";
+import { Waveform } from "./voice/waveform";
+import { useMicrophone } from "./voice/use-microphone";
+import "./voice/intake.css";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { PublicDeveloper } from "@/lib/types";
@@ -203,18 +204,15 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
       )}
       {config.data && !config.data.matching && (
         <p className="text-sm text-muted-foreground">
-          Gemini is not configured yet. An OpenRouter key is needed to generate
-          briefs and developer suggestions.
+          Drafting is not available on this deployment yet, so briefs and
+          developer suggestions cannot be generated.
         </p>
       )}
       {error && <ErrorAlert title="Please try again" message={error} />}
       {stage === "conversation" && (
-        <div
-          className="voice-studio grid gap-6 lg:grid-cols-2"
-          data-embedded="true"
-        >
+        <div className="grid gap-6 lg:grid-cols-2">
           <section
-            className="voice-stage min-h-96 rounded-xl border"
+            className="hiring-stage min-h-96 rounded-xl border"
             aria-label="Project voice intake"
             data-phase={recording ? "listening" : "ready"}
           >
@@ -267,12 +265,12 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
               )}
             </div>
             <p className="mt-4 max-w-sm text-center text-xs text-muted-foreground">
-              Up to 60 seconds. Stopping sends audio to ElevenLabs. This app
+              Up to 60 seconds. Stopping sends audio for transcription. This app
               does not save recordings.
             </p>
             {config.data && !config.data.transcription && (
               <p className="mt-2 text-xs text-muted-foreground">
-                ElevenLabs is not configured yet. You can type instead.
+                Transcription is not available yet. You can type instead.
               </p>
             )}
             <p
@@ -323,8 +321,8 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
                   placeholder="I need a website for…"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Review the transcription before sending. Answers are sent to
-                  Gemini through OpenRouter.
+                  Review the transcription before sending. Each answer refines
+                  the drafted brief.
                 </p>
                 <Button
                   type="submit"
@@ -333,7 +331,7 @@ function Intake({ initialBrief }: { initialBrief?: HiringBrief }) {
                     !draft.trim() || inputBusy || !config.data?.matching
                   }
                 >
-                  Send to Gemini
+                  Draft the brief
                 </Button>
               </form>
               <Button

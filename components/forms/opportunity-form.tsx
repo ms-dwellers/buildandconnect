@@ -187,7 +187,14 @@ export function OpportunityForm({
     setFailure(null);
     const result = await api<OpportunityRecord>(
       initial ? `/opportunities/${initial.id}` : "/opportunities",
-      { method: initial ? "PUT" : "POST", body: JSON.stringify(body) },
+      {
+        method: initial ? "PUT" : "POST",
+        body: JSON.stringify(body),
+        headers:
+          initial?.revision !== undefined
+            ? { "If-Match": String(initial.revision) }
+            : undefined,
+      },
     );
     setPending(false);
     if (!result.ok) {

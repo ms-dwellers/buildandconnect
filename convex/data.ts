@@ -1,5 +1,8 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import {
+  internalQuery as query,
+  internalMutation as mutation,
+} from "./_generated/server";
 import { access, fail, optionalAccess } from "./access";
 import {
   developerData,
@@ -65,6 +68,8 @@ import {
   projectDraftContentSchema,
 } from "../backend/project-drafts";
 
+const sessionId = v.optional(v.string());
+
 const draftRecord = (row: {
   id: string;
   content: unknown;
@@ -80,9 +85,9 @@ const draftRecord = (row: {
 });
 
 export const projectDrafts = query({
-  args: { secret: v.string() },
+  args: { sessionId },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const rows = await ctx.db
       .query("projectDrafts")
       .withIndex("by_owner", (q) => q.eq("ownerId", user.id))
@@ -92,9 +97,9 @@ export const projectDrafts = query({
   },
 });
 export const getProjectDraft = query({
-  args: { secret: v.string(), id: v.string() },
+  args: { sessionId, id: v.string() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const row = await ctx.db
       .query("projectDrafts")
       .withIndex("by_public_id", (q) => q.eq("id", args.id))
@@ -105,13 +110,13 @@ export const getProjectDraft = query({
 });
 export const saveProjectDraft = mutation({
   args: {
-    secret: v.string(),
+    sessionId,
     id: v.string(),
     content: v.any(),
     expectedUpdatedAt: v.number(),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const content = projectDraftContentSchema.parse(args.content);
     const old = await ctx.db
       .query("projectDrafts")
@@ -159,9 +164,9 @@ export const saveProjectDraft = mutation({
   },
 });
 export const discardProjectDraft = mutation({
-  args: { secret: v.string(), id: v.string(), expectedUpdatedAt: v.number() },
+  args: { sessionId, id: v.string(), expectedUpdatedAt: v.number() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const row = await ctx.db
       .query("projectDrafts")
       .withIndex("by_public_id", (q) => q.eq("id", args.id))
@@ -174,17 +179,24 @@ export const discardProjectDraft = mutation({
   },
 });
 
-const secret = v.string();
 const pagination = { after: v.string(), limit: v.number() };
+const expectedRevision = v.optional(v.number());
+function checkRevision(actual: number, expected: number | undefined) {
+  if (expected !== undefined && actual !== expected)
+    fail(
+      409,
+      "This item changed on another device. Reload the latest version before saving.",
+    );
+}
 function checkLimit(limit: number) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 100)
     fail(400, "Limit must be between 1 and 100");
 }
 
 export const ownCareerTarget = query({
-  args: { secret },
+  args: { sessionId },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const row = await ctx.db
       .query("careerTargets")
       .withIndex("by_developer", (q) => q.eq("developerId", user.id))
@@ -202,12 +214,12 @@ export const ownCareerTarget = query({
 
 export const putCareerTarget = mutation({
   args: {
-    secret,
+    sessionId,
     target: careerTargetValidator,
     expectedUpdatedAt: v.number(),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const target = careerTargetSchema.parse(args.target);
     const old = await ctx.db
       .query("careerTargets")
@@ -233,9 +245,9 @@ export const putCareerTarget = mutation({
 });
 
 export const careerRecommendations = query({
-  args: { secret, limit: v.number() },
+  args: { sessionId, limit: v.number() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     checkLimit(args.limit);
     const targetRow = await ctx.db
       .query("careerTargets")
@@ -347,14 +359,14 @@ export const careerRecommendations = query({
 });
 
 export const me = query({
-  args: { secret },
-  handler: async (ctx, args) => access(ctx, args.secret),
+  args: { sessionId },
+  handler: async (ctx, args) => access(ctx, args.sessionId),
 });
 
 export const setRole = mutation({
-  args: { secret, role },
+  args: { sessionId, role },
   handler: async (ctx, args) => {
-    const actor = await access(ctx, args.secret);
+    const actor = await access(ctx, args.sessionId);
     if (actor.role && actor.role !== args.role)
       fail(409, "Account role is already set");
     if (!actor.role)
@@ -368,12 +380,18 @@ export const setRole = mutation({
 });
 
 export const putDeveloper = mutation({
-  args: { secret, profile, embedding: v.array(v.number()) },
+  args: {
+    sessionId,
+    profile,
+    embedding: v.array(v.number()),
+    expectedRevision,
+  },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const input = developerSchema.parse(args.profile);
     const old = await findDeveloper(ctx, user.id);
     const profile = { ...old?.profile, ...input };
+    checkRevision(old?.updatedAt ?? 0, args.expectedRevision);
     const values = {
       userId: user.id,
       name: user.name,
@@ -381,7 +399,7 @@ export const putDeveloper = mutation({
       profile,
       embedding: vectorSchema.parse(args.embedding),
       embeddingModel: EMBEDDING_MODEL,
-      updatedAt: Date.now(),
+      updatedAt: Math.max(Date.now(), (old?.updatedAt ?? 0) + 1),
     };
     if (old) await ctx.db.patch(old._id, values);
     else await ctx.db.insert("developers", { ...values, location: null });
@@ -390,9 +408,9 @@ export const putDeveloper = mutation({
 });
 
 export const ownProfile = query({
-  args: { secret },
+  args: { sessionId },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const row = await findDeveloper(ctx, user.id);
     if (!row) fail(404, "Create a developer profile first");
     return ownDeveloper(await developerData(ctx, row));
@@ -400,15 +418,15 @@ export const ownProfile = query({
 });
 
 export const updateDeveloperPreferences = mutation({
-  args: { secret, preferences: v.object(developerPreferences) },
+  args: { sessionId, preferences: v.object(developerPreferences) },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const row = await findDeveloper(ctx, user.id);
     if (!row) fail(404, "Create a developer profile first");
     const preferences = developerPreferencesSchema.parse(args.preferences);
     await ctx.db.patch(row._id, {
       profile: { ...row.profile, ...preferences },
-      updatedAt: Date.now(),
+      updatedAt: Math.max(Date.now(), row.updatedAt + 1),
     });
     return { id: user.id, ...preferences };
   },
@@ -416,12 +434,12 @@ export const updateDeveloperPreferences = mutation({
 
 export const patchDeveloper = mutation({
   args: {
-    secret,
+    sessionId,
     available: v.optional(v.boolean()),
     discoverable: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const row = await findDeveloper(ctx, user.id);
     if (!row) fail(404, "Create a developer profile first");
     const update = {
@@ -434,28 +452,31 @@ export const patchDeveloper = mutation({
       fail(400, "Choose availability or discovery visibility");
     await ctx.db.patch(row._id, {
       profile: { ...row.profile, ...update },
-      updatedAt: Date.now(),
+      updatedAt: Math.max(Date.now(), row.updatedAt + 1),
     });
     return { id: user.id, ...update };
   },
 });
 
 export const setLocation = mutation({
-  args: { secret, location },
+  args: { sessionId, location },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const row = await findDeveloper(ctx, user.id);
     if (!row) fail(404, "Create a developer profile first");
     const location = developerLocationSchema.parse(args.location);
-    await ctx.db.patch(row._id, { location, updatedAt: Date.now() });
+    await ctx.db.patch(row._id, {
+      location,
+      updatedAt: Math.max(Date.now(), row.updatedAt + 1),
+    });
     return { id: user.id, location };
   },
 });
 
 export const developers = query({
-  args: { secret, ...pagination },
+  args: { sessionId, ...pagination },
   handler: async (ctx, args) => {
-    await access(ctx, args.secret, ["requester"]);
+    await access(ctx, args.sessionId, ["requester"]);
     checkLimit(args.limit);
     const rows = await ctx.db
       .query("developers")
@@ -472,9 +493,20 @@ export const developers = query({
   },
 });
 
+export const getDeveloper = query({
+  args: { sessionId, id: v.string() },
+  handler: async (ctx, args) => {
+    await access(ctx, args.sessionId, ["requester"]);
+    const row = await findDeveloper(ctx, args.id);
+    if (!row || !row.profile.discoverable)
+      fail(404, "This developer is no longer discoverable");
+    return publicDeveloper(await developerData(ctx, row));
+  },
+});
+
 export const createOpportunity = mutation({
   args: {
-    secret,
+    sessionId,
     id: v.string(),
     details: opportunity,
     analysis,
@@ -483,7 +515,7 @@ export const createOpportunity = mutation({
     draftUpdatedAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const details = opportunitySchema.parse(args.details);
     const analysis = analysisSchema.parse(args.analysis);
     const id = args.id;
@@ -516,8 +548,19 @@ export const createOpportunity = mutation({
       )
         fail(409, "Publishing details must match the saved draft");
     }
-    if (await findOpportunity(ctx, id))
-      fail(409, "An opportunity with this ID already exists");
+    const existing = await findOpportunity(ctx, id);
+    if (existing) {
+      if (
+        existing.ownerId !== user.id ||
+        JSON.stringify(opportunitySchema.parse(existing.details)) !==
+          JSON.stringify(details)
+      )
+        fail(
+          409,
+          "This submission was already published with different details. Refresh your postings before editing it.",
+        );
+      return publicOpportunity(opportunityData(existing));
+    }
     await ctx.db.insert("opportunities", {
       id,
       ownerId: user.id,
@@ -543,13 +586,13 @@ export const createOpportunity = mutation({
 
 export const opportunities = query({
   args: {
-    secret,
+    sessionId,
     ...pagination,
     city: v.optional(v.string()),
     kind: v.optional(v.union(v.literal("paid"), v.literal("volunteer"))),
   },
   handler: async (ctx, args) => {
-    await access(ctx, args.secret);
+    await access(ctx, args.sessionId);
     checkLimit(args.limit);
     const rows = await ctx.db
       .query("opportunities")
@@ -576,9 +619,9 @@ export const opportunities = query({
 });
 
 export const getOpportunity = query({
-  args: { secret, id: v.string() },
+  args: { sessionId, id: v.string() },
   handler: async (ctx, args) => {
-    await access(ctx, args.secret);
+    await access(ctx, args.sessionId);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
     return publicOpportunity(opportunityData(row));
@@ -587,25 +630,28 @@ export const getOpportunity = query({
 
 export const updateOpportunity = mutation({
   args: {
-    secret,
+    sessionId,
     id: v.string(),
     status: v.union(v.literal("open"), v.literal("closed")),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
     if (row.ownerId !== user.id)
       fail(403, "Only the opportunity owner can access this");
-    await ctx.db.patch(row._id, { status: args.status });
+    await ctx.db.patch(row._id, {
+      status: args.status,
+      revision: (row.revision ?? 0) + 1,
+    });
     return { id: row.id, status: args.status };
   },
 });
 
 export const matches = query({
-  args: { secret, id: v.string(), limit: v.number() },
+  args: { sessionId, id: v.string(), limit: v.number() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     checkLimit(args.limit);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
@@ -647,9 +693,9 @@ export const matches = query({
 });
 
 export const ownMatch = query({
-  args: { secret, id: v.string() },
+  args: { sessionId, id: v.string() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const row = await findOpportunity(ctx, args.id);
     const profile = await findDeveloper(ctx, user.id);
     if (!row || !profile) fail(404, "Opportunity or profile not found");
@@ -667,13 +713,13 @@ export const ownMatch = query({
 
 export const setInterest = mutation({
   args: {
-    secret,
+    sessionId,
     id: v.string(),
     developerId: v.optional(v.string()),
     interested: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const actor = await access(ctx, args.secret, ["requester", "developer"]);
+    const actor = await access(ctx, args.sessionId, ["requester", "developer"]);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
     const requester = actor.role === "requester";
@@ -726,13 +772,13 @@ export const setInterest = mutation({
 
 export const connections = query({
   args: {
-    secret,
+    sessionId,
     ...pagination,
     connectedOnly: v.boolean(),
     opportunityId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const actor = await access(ctx, args.secret, ["requester", "developer"]);
+    const actor = await access(ctx, args.sessionId, ["requester", "developer"]);
     checkLimit(args.limit);
     const rows =
       actor.role === "developer"
@@ -776,17 +822,30 @@ export const connections = query({
 
 export const createRequest = mutation({
   args: {
-    secret,
+    sessionId,
     id: v.string(),
     details: request,
     analysis,
     embedding: v.array(v.number()),
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const details = requestSchema.parse(args.details);
     const analysis = analysisSchema.parse(args.analysis);
     const id = args.id;
+    const existing = await findRequest(ctx, id);
+    if (existing) {
+      if (
+        existing.ownerId !== user.id ||
+        JSON.stringify(requestSchema.parse(existing.details)) !==
+          JSON.stringify(details)
+      )
+        fail(
+          409,
+          "This submission was already published with different details. Refresh your postings before editing it.",
+        );
+      return publicRequest(requestData(existing));
+    }
     await ctx.db.insert("requests", {
       id,
       ownerId: user.id,
@@ -816,9 +875,9 @@ export const createRequest = mutation({
 });
 
 export const ownedRequests = query({
-  args: { secret, ...pagination },
+  args: { sessionId, ...pagination },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     checkLimit(args.limit);
     const rows = await ctx.db
       .query("requests")
@@ -833,9 +892,9 @@ export const ownedRequests = query({
 });
 
 export const nearbyRequests = query({
-  args: { secret, limit: v.number() },
+  args: { sessionId, limit: v.number() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     checkLimit(args.limit);
     const profile = await findDeveloper(ctx, user.id);
     if (!profile) fail(404, "Create a developer profile first");
@@ -879,9 +938,9 @@ export const nearbyRequests = query({
 });
 
 export const getRequest = query({
-  args: { secret, id: v.string() },
+  args: { sessionId, id: v.string() },
   handler: async (ctx, args) => {
-    const actor = await access(ctx, args.secret);
+    const actor = await access(ctx, args.sessionId);
     const row = await findRequest(ctx, args.id);
     if (!row) fail(404, "Request not found");
     if (!(
@@ -895,9 +954,9 @@ export const getRequest = query({
 });
 
 export const ownRequestMatch = query({
-  args: { secret, id: v.string() },
+  args: { sessionId, id: v.string() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const row = await findRequest(ctx, args.id);
     if (!row) fail(404, "Request not found");
     if (row.status !== "open" && row.claimedBy !== user.id)
@@ -913,14 +972,15 @@ export const ownRequestMatch = query({
 });
 
 export const closeRequest = mutation({
-  args: { secret, id: v.string() },
+  args: { sessionId, id: v.string() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const row = await findRequest(ctx, args.id);
     if (!row) fail(404, "Request not found");
     if (row.ownerId !== user.id) fail(403, "Only the requester can close this");
     await ctx.db.patch(row._id, {
       status: "closed",
+      revision: (row.revision ?? 0) + 1,
       claimedBy: null,
       claimantName: null,
     });
@@ -929,9 +989,9 @@ export const closeRequest = mutation({
 });
 
 export const acceptRequest = mutation({
-  args: { secret, id: v.string() },
+  args: { sessionId, id: v.string() },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     const profile = await findDeveloper(ctx, user.id);
     if (!profile) fail(404, "Create a developer profile first");
     if (!profile.location)
@@ -949,6 +1009,7 @@ export const acceptRequest = mutation({
       fail(409, "This request is outside your radius or eligibility");
     await ctx.db.patch(row._id, {
       status: "claimed",
+      revision: (row.revision ?? 0) + 1,
       claimedBy: user.id,
       claimantName: user.name,
     });
@@ -964,9 +1025,9 @@ export const acceptRequest = mutation({
 });
 
 export const releaseRequest = mutation({
-  args: { secret, id: v.string() },
+  args: { sessionId, id: v.string() },
   handler: async (ctx, args) => {
-    const actor = await access(ctx, args.secret, ["developer", "requester"]);
+    const actor = await access(ctx, args.sessionId, ["developer", "requester"]);
     const row = await findRequest(ctx, args.id);
     if (!row) fail(404, "Request not found");
     if (!(
@@ -978,6 +1039,7 @@ export const releaseRequest = mutation({
       fail(409, "Only a claimed request can be released");
     await ctx.db.patch(row._id, {
       status: "open",
+      revision: (row.revision ?? 0) + 1,
       claimedBy: null,
       claimantName: null,
     });
@@ -999,9 +1061,9 @@ const MAP_LIMIT = 500;
  * locations without requester names; see backend/listings.ts for the rules.
  */
 export const mapListings = query({
-  args: { secret },
+  args: { sessionId },
   handler: async (ctx, args) => {
-    const actor = await optionalAccess(ctx, args.secret);
+    const actor = await optionalAccess(ctx, args.sessionId);
     const viewer = actor ? { id: actor.user.id, role: actor.role } : null;
     const jobs = await ctx.db
       .query("opportunities")
@@ -1048,9 +1110,9 @@ export const mapListings = query({
 });
 
 export const ownedOpportunities = query({
-  args: { secret, ...pagination },
+  args: { sessionId, ...pagination },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     checkLimit(args.limit);
     const rows = await ctx.db
       .query("opportunities")
@@ -1066,20 +1128,23 @@ export const ownedOpportunities = query({
 
 export const reviseOpportunity = mutation({
   args: {
-    secret,
+    sessionId,
     id: v.string(),
     details: opportunity,
     analysis,
     embedding: v.array(v.number()),
+    expectedRevision,
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const row = await findOpportunity(ctx, args.id);
     if (!row) fail(404, "Opportunity not found");
     if (row.ownerId !== user.id)
       fail(403, "Only the opportunity owner can edit this");
+    checkRevision(row.revision ?? 0, args.expectedRevision);
     const details = opportunitySchema.parse(args.details);
     const values = {
+      revision: (row.revision ?? 0) + 1,
       cityKey: details.city.trim().toLowerCase(),
       details,
       analysis: analysisSchema.parse(args.analysis),
@@ -1094,9 +1159,9 @@ export const reviseOpportunity = mutation({
 });
 
 export const claimedRequests = query({
-  args: { secret, ...pagination },
+  args: { sessionId, ...pagination },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["developer"]);
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
     checkLimit(args.limit);
     const rows = await ctx.db
       .query("requests")
@@ -1114,22 +1179,25 @@ export const claimedRequests = query({
 
 export const reviseRequest = mutation({
   args: {
-    secret,
+    sessionId,
     id: v.string(),
     details: request,
     analysis,
     embedding: v.array(v.number()),
+    expectedRevision,
   },
   handler: async (ctx, args) => {
-    const { user } = await access(ctx, args.secret, ["requester"]);
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
     const row = await findRequest(ctx, args.id);
     if (!row) fail(404, "Request not found");
     if (row.ownerId !== user.id) fail(403, "Only the requester can edit this");
+    checkRevision(row.revision ?? 0, args.expectedRevision);
     // Editing a claimed request could move it outside the claimant's radius.
     if (row.status === "claimed")
       fail(409, "Release the claim before editing this request");
     if (row.status === "closed") fail(409, "Closed requests cannot be edited");
     const values = {
+      revision: (row.revision ?? 0) + 1,
       details: requestSchema.parse(args.details),
       analysis: analysisSchema.parse(args.analysis),
       embedding: vectorSchema.parse(args.embedding),

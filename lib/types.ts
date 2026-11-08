@@ -18,6 +18,7 @@ export type Page<T> = { data: T[]; nextCursor: string | null };
 export type Me = { user: { id: string; name: string }; role: Role | null };
 
 export type OwnProfile = DeveloperProfile & {
+  revision?: number;
   id: string;
   name: string;
   location: DeveloperLocation | null;
@@ -26,6 +27,7 @@ export type OwnProfile = DeveloperProfile & {
 export type PublicDeveloper = DeveloperProfile & { id: string; name: string };
 
 export type OpportunityRecord = OpportunityInput & {
+  revision?: number;
   id: string;
   ownerId: string;
   status: "open" | "closed";
@@ -33,6 +35,7 @@ export type OpportunityRecord = OpportunityInput & {
 };
 
 export type RequestRecord = RequestInput & {
+  revision?: number;
   id: string;
   ownerId: string;
   ownerName: string;
@@ -92,3 +95,7 @@ export type MapFeed = {
   listings: CityJob[];
   truncated: boolean;
 };
+
+/** Social sign-in providers the Convex deployment has credentials for. */
+export type AuthProviders = { google: boolean; github: boolean };
+export type SocialProvider = keyof AuthProviders;

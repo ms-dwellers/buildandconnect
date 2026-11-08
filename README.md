@@ -1,17 +1,20 @@
 # Build & Connect
 
+The native [iPhone app](ios/README.md) lives in `ios/`. Its build and test tasks
+are opt-in and do not add Xcode requirements to web development.
+
 A hackathon app connecting early-career developers with non-technical requesters
 through shared interests and social-impact projects.
 
-**Current state:** account-first homepage and guided onboarding, Mapbox nearby-request UI, `/api/health`, and a
-Hono backend with Better Auth, Convex persistence, Workers AI analysis, growth-oriented
+**Current state:** a Three.js landing scene, Mapbox nearby-request UI, `/api/health`, and a
+Convex backend with Better Auth (email/password, Google, GitHub), Convex HTTP actions, Workers AI analysis, growth-oriented
 matching, consent-based developer discovery, opportunity-specific mutual interest, and exclusive
 local-request claims. See [the backend guide](docs/backend.md) for setup and API
 examples. For browser-based backend QA, run the frontend and open `/debug`.
 Signed-in users land on a role dashboard at `/dashboard` (developer or requester).
 The public Calgary `/map` shows live requests and
 opportunities with role-specific actions. See [the map guide](docs/calgary-map.md).
-The future native Swift iOS app is deliberately not scaffolded or built on Linux.
+Native iPhone builds require macOS and Xcode; web development does not.
 
 ## Develop
 
@@ -59,9 +62,6 @@ the backend requires a Convex development deployment and settings from the backe
 
 ### Connect the backend
 
-For a populated development environment and a judging walkthrough, see
-[the hackathon demo guide](docs/hackathon-demo.md).
-
 ```sh
 bunx convex login
 bunx convex deployment select TEAM:PROJECT:dev
@@ -69,10 +69,11 @@ bun run setup:backend
 bun run dev:backend
 ```
 
-Keep `dev:backend` running in another terminal alongside the frontend. It syncs
-Convex functions to your cloud development deployment; it does not deploy the
-frontend or touch production. Keep the generated `convex/_generated/` files in
-source control. The existing `/api` routes remain the frontend contract.
+Keep `dev:backend` running to sync Convex functions to your cloud development
+deployment; it does not deploy the website or touch production. Once synced, the
+iPhone calls the deployment's HTTPS `.convex.site` URL directly without a local
+web server. Browsers keep same-origin `/api` calls through a forwarding route.
+Keep the generated `convex/_generated/` files in source control.
 
 ### Remote development with Rex
 
@@ -147,27 +148,18 @@ ElevenLabs transcribes recorded answers, and Gemini through OpenRouter drafts a
 reviewable brief and suggests up to ten developers. Both integrations require
 server-only provider keys; no opportunity is posted automatically.
 
-The [voice studio](docs/voice-studio.md) at `/voice` connects a private
+The [voice studio](docs/voice-prototype.md) at `/wip-voice-ai` connects a private
 ElevenLabs interviewer to the microphone and displays its words over the aurora.
 A separate Gemini agent fills the project brief in the background. Requesters
-review the saved project fields before explicitly publishing.
-
-Requesters start at `/projects/new`, talk or type, and review one saved project
-draft before explicitly publishing. Drafts can be resumed from the dashboard.
-See [project drafts](docs/project-drafts.md) for persistence and commitment rules.
-
-Developers can use `/career` to save a private target job, inspect requirements
-and their source quotes, and find relevant project activities on the Calgary map
-and list. See [user flows](docs/user-flows.md) for the current product decisions
-and [the judging plan](docs/product-and-judging-plan.md) for the demo story.
+review the brief before requesting developer suggestions.
 
 The component foundation is [coss ui](https://coss.com/ui/docs), with the supplied
 emerald, cream, wheat, apricot, and coral palette. See
 [docs/design-system.md](docs/design-system.md) before adding UI components.
 
 See [docs/architecture.md](docs/architecture.md) for ownership and integration
-steps. React/Vinext App Router, Tailwind, and Hono run in one Cloudflare Worker.
-Convex owns application data and Better Auth's official Convex component. Workers AI supplies Llama analysis and
+steps. React/Vinext App Router and Tailwind run on the web host. Convex owns the
+HTTP API, application data, authentication, and AI execution. Workers AI supplies Llama analysis and
 BGE Small embeddings; TypeScript owns deterministic matching. Mapbox powers
 location search and nearby maps. Convex is the only application database; the
 Worker remains the browser-facing API.

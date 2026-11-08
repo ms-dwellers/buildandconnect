@@ -18,6 +18,25 @@ export function mergeEnvironment(text, values) {
     .join("\n")}\n`;
 }
 
+/** Social sign-in credentials live only on the Convex deployment. */
+export const PROVIDER_VARIABLES = [
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "GITHUB_CLIENT_ID",
+  "GITHUB_CLIENT_SECRET",
+];
+
+export function providerSummary(names) {
+  const configured = [];
+  if (names.has("GOOGLE_CLIENT_ID") && names.has("GOOGLE_CLIENT_SECRET"))
+    configured.push("Google");
+  if (names.has("GITHUB_CLIENT_ID") && names.has("GITHUB_CLIENT_SECRET"))
+    configured.push("GitHub");
+  return configured.length
+    ? `Social sign-in is configured for ${configured.join(" and ")}.`
+    : "Social sign-in is not configured; email/password remains available. See docs/backend.md.";
+}
+
 export async function configure(siteUrl = process.argv[2]) {
   const info = await lstat(environmentFile);
   if (!info.isFile() || info.isSymbolicLink())
@@ -67,16 +86,15 @@ export async function configure(siteUrl = process.argv[2]) {
       ["env", "set", "BETTER_AUTH_SECRET"],
       randomBytes(48).toString("base64url"),
     );
-  const bridge = names.has("CONVEX_BRIDGE_SECRET")
-    ? convex(["env", "get", "CONVEX_BRIDGE_SECRET"])
-    : randomBytes(48).toString("base64url");
-  if (bridge.length < 32 || /\s/.test(bridge))
-    throw new Error(
-      "The development bridge secret must be at least 32 characters without whitespace.",
-    );
-  if (!names.has("CONVEX_BRIDGE_SECRET"))
-    convex(["env", "set", "CONVEX_BRIDGE_SECRET"], bridge);
   convex(["env", "set", "SITE_URL"], site.origin);
+  // Provider credentials come from the shell environment only, never from
+  // .env.local, and are copied to the deployment without being printed.
+  for (const name of PROVIDER_VARIABLES) {
+    const value = process.env[name]?.trim();
+    if (!value) continue;
+    convex(["env", "set", name], value);
+    names.add(name);
+  }
   const temporary = new URL(
     `../.env.local.${randomBytes(8).toString("hex")}.tmp`,
     import.meta.url,
@@ -84,7 +102,6 @@ export async function configure(siteUrl = process.argv[2]) {
   await writeFile(
     temporary,
     mergeEnvironment(text, {
-      CONVEX_BRIDGE_SECRET: bridge,
       SITE_URL: site.origin,
     }),
     { mode: 0o600, flag: "wx" },
@@ -92,8 +109,9 @@ export async function configure(siteUrl = process.argv[2]) {
   await rename(temporary, environmentFile);
   if (process.platform !== "win32") await chmod(environmentFile, 0o600);
   console.log(
-    "Development auth and Worker bridge configured. Existing credentials and local settings were preserved.",
+    "Development Convex authentication origin configured. Existing credentials and local settings were preserved.",
   );
+  console.log(providerSummary(names));
 }
 
 if (

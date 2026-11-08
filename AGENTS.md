@@ -11,14 +11,15 @@ the only account roles; do not reintroduce Company or Recruiter account types.
   primitives from the `@coss` registry in `components.json`, not shadcn's default
   registry or a parallel custom component set. Native HTML remains appropriate
   for headings, landmarks, and ordinary content.
-- Theme: use the semantic tokens in `app/globals.css`. Soft mint `#CCE0D9`,
-  muted teal `#8FB3AC`, and pine `#174C43` set the calm green foundation.
-  Preserve the original emerald `#1E6348`, cream `#F8F7DE`, wheat `#F6DFB3`,
-  apricot `#F0A345`, and coral `#EB5757` as supporting and warm accent colors.
-  Use beige as the page canvas, mint for the framed landing hero, and teal for
-  landscape/water accents rather than tinting the whole site teal.
-  Keep raw palette values out of components; use contrast-safe text
-  pairings and keep the interface light unless dark mode is explicitly requested.
+- Theme: use the semantic tokens in `app/globals.css`. The page canvas and cards
+  are white. Pine `#174C43` is the primary; soft mint `#CCE0D9` and muted teal
+  `#8FB3AC` are supporting surfaces and landscape/water scenery, used as accents
+  on white rather than as a tint over the whole site. Preserve the original
+  emerald `#1E6348`, cream `#F8F7DE` (text on pine, mist, map roads), wheat
+  `#F6DFB3`, apricot `#F0A345`, and coral `#EB5757` as supporting and warm accent
+  colors. Keep raw palette values out of components; WebGL scenes read tokens at
+  runtime with `getComputedStyle`. Use contrast-safe text pairings and keep the
+  interface light unless dark mode is explicitly requested.
 - Avoid decorative pills. Use plain text for ordinary labels; reserve
   softly rectangular, comfortably padded badges for actual status or metadata.
 - Do not add heading prefixes, decorative section numbers, or eyebrow labels
@@ -26,18 +27,23 @@ the only account roles; do not reintroduce Company or Recruiter account types.
 - Prefer restrained tactile styling: raised solid buttons with a visible lower
   edge and real press travel, subtle card shadows, no heavy gloss. Keep navigation
   links flat and preserve keyboard, disabled, and reduced-motion behavior.
-- Backend and data: Hono mounted in Vinext route handlers, Convex, and Workers AI.
-  `backend/` owns the HTTP facade and AI calls; `convex/` owns auth, schema,
-  persistence, and atomic transitions. D1 has been replaced; `migrations/` is
+- Backend and data: Convex owns HTTP actions, authentication, AI execution,
+  schema, persistence, and atomic transitions. `backend/` contains shared pure
+  validation and matching helpers, not a separately hosted API. D1 has been replaced; `migrations/` is
   legacy reference only. Do not reintroduce a second application database.
 - Authentication: Better Auth's official Convex component. Keep browser requests
-  same-origin through `/api`. Convex functions enforce ownership and roles and
-  require the server-only bridge secret; never expose it to clients.
+  same-origin through a thin `/api` forwarding route. Native clients call the
+  Convex HTTP site directly. Persistence functions are internal and revalidate
+  live sessions, ownership, and roles; clients never submit trusted AI output.
 - Maps: Mapbox.
 - Other infrastructure: prefer Cloudflare products (Workers, R2, Queues,
   Durable Objects, etc.), except the explicitly selected Convex backend.
-- Future iOS app: native Swift. Do not scaffold, build, or require iOS tooling
-  until explicitly requested; the current development host is Linux.
+- iPhone: native SwiftUI in `ios/`; build, test, and formatting commands are in
+  `ios/README.md` and `package.json`. Xcode is required only for iOS tasks, never web
+  development. Edit `ios/project.yml`, not generated Xcode projects or Info.plist.
+- Native UI follows the web design system in `app/globals.css` and `components/ui/`.
+  `ios/Sources/Core/Design.swift` and `Controls.swift` own its SwiftUI equivalents.
+  Use opaque surfaces and tactile controls, not Liquid Glass.
 - Current scope includes growth-oriented matching and opportunity-specific mutual
   interest. Do not invent payment or messaging flows without product direction.
 
@@ -55,8 +61,8 @@ configuration. This permission does not make the chat itself a secret vault.
   before writing a local secret. Prefer stdin over command-line arguments.
 - Keep `.env.example` value-free. Never put secrets in Nix expressions, derivation
   arguments, or store paths; the Nix store is not private storage.
-- `BETTER_AUTH_SECRET` belongs in Convex's environment. `CONVEX_BRIDGE_SECRET`
-  must match between Convex and the Worker. Keep Convex CLI account/deploy keys
+- `BETTER_AUTH_SECRET` and Workers AI credentials belong only in Convex's
+  environment. No application bridge secret is needed. Keep Convex CLI account/deploy keys
   outside tracked source; never publish production changes during local setup.
 - `NEXT_PUBLIC_*` and `VITE_*` values are public. Never place a private key or
   Better Auth secret there. A restricted Mapbox public token is intentionally
@@ -66,8 +72,10 @@ configuration. This permission does not make the chat itself a secret vault.
 
 ## Development
 
-- Use `jj` and the shared Hackr workspace/commit workflows. Commit locally;
+- Use jj in this Git-backed repository and preserve existing worktree changes. Commit locally;
   publish or deploy only when requested. Never add AI co-author attribution.
+- Do not run tests unless the user explicitly requests testing. Building,
+  formatting, installing, and capturing app previews remain allowed.
 - Use Bun for package installation and scripts; `bun.lock` is the only dependency
   lockfile. Keep Node.js 26 for the existing toolchain and `node --test` runner.
 - Run `bun run check`, `bun run build`, and `bun run smoke` for scaffold changes.

@@ -8,7 +8,7 @@ import {
   DEFAULT_GEMINI_MODEL,
   DEFAULT_SCRIBE_MODEL,
   signVoiceConversation,
-} from "../backend/hiring/providers.ts";
+} from "../convex/hiring/providers.ts";
 import {
   confirmedBriefSchema,
   emptyHiringBrief,
@@ -18,8 +18,8 @@ import {
   draftBrief,
   extractBrief,
   recommendDevelopers,
-} from "../backend/hiring/service.ts";
-import type { BackendEnv } from "../backend/env.ts";
+} from "../convex/hiring/service.ts";
+import type { HiringEnv as BackendEnv } from "../convex/hiring/env.ts";
 import type { PublicDeveloper } from "../lib/types.ts";
 
 const env = {
@@ -91,25 +91,33 @@ test("background extraction has no spoken reply and retains previous facts as da
   assert.equal("reply" in result, false);
 });
 
-test("Worker model settings have public defaults while API keys remain secrets", () => {
+test("model settings and provider API keys live in Convex, not the Worker", () => {
   const config = readFileSync(
     new URL("../cloudflare.config.ts", import.meta.url),
     "utf8",
   );
-  assert.match(config, /OPENROUTER_MODEL:\s*bindings\.text\(/);
-  assert.match(config, /ELEVENLABS_STT_MODEL:\s*bindings\.text\(/);
-  assert.match(config, /OPENROUTER_API_KEY:\s*bindings\.secret\(/);
-  assert.match(config, /ELEVENLABS_API_KEY:\s*bindings\.secret\(/);
+  const example = readFileSync(
+    new URL("../.env.example", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(config, /OPENROUTER|ELEVENLABS|WORKERS_AI/);
+  for (const name of [
+    "OPENROUTER_API_KEY",
+    "OPENROUTER_MODEL",
+    "ELEVENLABS_API_KEY",
+    "ELEVENLABS_STT_MODEL",
+  ])
+    assert.match(example, new RegExp(`^# ${name}\\b`, "m"));
+  assert.doesNotMatch(example, /^(OPENROUTER|ELEVENLABS)_[A-Z_]*=/m);
+  assert.ok(DEFAULT_GEMINI_MODEL.length > 0 && DEFAULT_SCRIBE_MODEL.length > 0);
 });
 
-test("Worker config keeps runtime model modules out of Vite's denied config dependencies", () => {
+test("Worker config keeps runtime modules out of Vite's denied config dependencies", () => {
   const config = readFileSync(
     new URL("../cloudflare.config.ts", import.meta.url),
     "utf8",
   );
-  assert.doesNotMatch(config, /from\s+["'][^"']*backend\//);
-  assert.ok(config.includes(JSON.stringify(DEFAULT_GEMINI_MODEL)));
-  assert.ok(config.includes(JSON.stringify(DEFAULT_SCRIBE_MODEL)));
+  assert.doesNotMatch(config, /from\s+["'][^"']*(backend|convex)\//);
 });
 const brief = {
   ...emptyHiringBrief(),

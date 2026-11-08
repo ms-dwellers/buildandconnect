@@ -1,5 +1,9 @@
 # Mascot fieldbook
 
+The mainline integration retains the white page and card canvas and the Three.js
+homepage. The mascot fieldbook frames sign-in, onboarding, and signed-in project
+work; mint boards and pine rules remain accents rather than a page-wide tint.
+
 The web app follows the neighbourhood fieldbook direction: cream paper, pine
 ink, a dotted mint board, tactile cards, and a small pixel mascot. Kinopio is a
 reference for warmth and visible relationships, not a source of copied artwork

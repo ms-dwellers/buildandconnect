@@ -59,7 +59,7 @@ export function JobMarker({
       >
         <div className="space-y-4 pe-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={job.kind === "paid" ? "success" : "secondary"}>
+            <Badge variant={job.kind === "paid" ? "outline" : "secondary"}>
               {listingLabel(job)}
             </Badge>
             {job.status === "claimed" && <Badge variant="info">Accepted</Badge>}

@@ -6,6 +6,7 @@ import {
   AnalysisUnavailable,
   ANALYSIS_MODEL,
   EMBEDDING_MODEL,
+  type AIService,
 } from "../backend/ai.ts";
 import {
   analysis,
@@ -22,7 +23,7 @@ function modelFixture(response: unknown, vector: unknown = embedding) {
       calls.push({ model, input });
       return model === ANALYSIS_MODEL ? { response } : { data: [vector] };
     },
-  } as Ai;
+  } as AIService;
   return { ai, calls };
 }
 

@@ -1,5 +1,6 @@
 import { ConvexError } from "convex/values";
 import { authComponent } from "./auth";
+import { components } from "./_generated/api";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Role } from "../backend/schemas";
 
@@ -7,33 +8,22 @@ export function fail(status: number, message: string): never {
   throw new ConvexError({ status, message });
 }
 
-function requireBridge(secret: string) {
-  if (
-    !process.env.CONVEX_BRIDGE_SECRET ||
-    secret !== process.env.CONVEX_BRIDGE_SECRET
-  ) {
-    fail(403, "Only the application API can access this function");
-  }
-}
-
-/** Public reads still require the bridge; the signed-in user is optional. */
+/** Session IDs reach these internal functions only from the authenticated HTTP action. */
 export async function optionalAccess(
   ctx: QueryCtx | MutationCtx,
-  secret: string,
+  sessionId?: string,
 ) {
-  requireBridge(secret);
-  if (!(await authComponent.safeGetAuthUser(ctx))) return null;
-  return access(ctx, secret);
-}
-
-export async function access(
-  ctx: QueryCtx | MutationCtx,
-  secret: string,
-  roles?: Role[],
-) {
-  requireBridge(secret);
-  const user = await authComponent.safeGetAuthUser(ctx);
-  if (!user) fail(401, "Sign in to continue");
+  if (!sessionId) return null;
+  const session = await ctx.runQuery(components.betterAuth.adapter.findOne, {
+    model: "session",
+    where: [
+      { field: "_id", value: sessionId },
+      { field: "expiresAt", operator: "gt", value: Date.now() },
+    ],
+  });
+  if (!session) return null;
+  const user = await authComponent.getAnyUserById(ctx, session.userId);
+  if (!user) return null;
   const member = await ctx.db
     .query("members")
     .withIndex("by_user", (q) => q.eq("userId", user._id))
@@ -43,11 +33,20 @@ export async function access(
       ? "developer"
       : "requester"
     : null;
-  if (roles && (!role || !roles.includes(role))) {
-    fail(403, "This account role cannot perform that action");
-  }
   return {
     user: { id: user._id, name: user.name },
     role,
   };
+}
+
+export async function access(
+  ctx: QueryCtx | MutationCtx,
+  sessionId?: string,
+  roles?: Role[],
+) {
+  const actor = await optionalAccess(ctx, sessionId);
+  if (!actor) fail(401, "Sign in to continue");
+  if (roles && (!actor.role || !roles.includes(actor.role)))
+    fail(403, "This account role cannot perform that action");
+  return actor;
 }

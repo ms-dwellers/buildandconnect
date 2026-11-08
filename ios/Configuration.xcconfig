@@ -1,0 +1,5 @@
+// Set to the Convex HTTP site, normally https:/$()/your-deployment.convex.site.
+API_BASE_URL =
+MAPBOX_PUBLIC_TOKEN =
+// Optional, ignored machine-specific settings. Never put a bridge secret here.
+#include? "Local.xcconfig"

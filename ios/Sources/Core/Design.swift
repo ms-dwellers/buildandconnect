@@ -1,0 +1,277 @@
+import SwiftUI
+
+enum Theme {
+  static let canvas = Color("LaunchCanvas")
+  static let cream = color(0xF8F7DE)
+  static let card = canvas
+  static let ink = color(0x123D37)
+  static let muted = color(0x254139)
+  static let accent = color(0xA9C8BD)
+  static let accentStrong = color(0x174C43)
+  static let softAccent = color(0xCCE0D9)
+  static let highlight = color(0xEB5757)
+  static let highlightText = color(0x10221D)
+  static let wheat = color(0xF6DFB3)
+  static let apricot = color(0xF0A345)
+  static let border = accentStrong.opacity(0.2)
+  static let inputBorder = color(0x3E5C53)
+  static let shadow = accentStrong
+  static let success = accentStrong
+  static let successSurface = accentStrong.opacity(0.08)
+  static let error = color(0x701A22)
+  static let destructive = color(0xB52D35)
+  static let errorSurface = destructive.opacity(0.08)
+  static let primaryEdge = color(0x103E35)
+  static let primaryHover = color(0x286556)
+  static let highlightEdge = color(0xB84141)
+  static let highlightHover = color(0xEF6B64)
+  static let secondaryEdge = color(0x99713B)
+  static let outlineEdge = color(0x7E9E91)
+  static let destructiveEdge = color(0x7F1E27)
+  static let mapLand = color(0xD7E5D8)
+  static let mapSurface = canvas
+  static let mapBuildings = color(0xC4D8C8)
+  static let mapGreenspace = color(0xA4C2AD)
+  static let mapWater = color(0x8FB3AC)
+  static let mapRoads = cream
+  static let mapHighways = color(0xDFC999)
+  static let mapText = color(0x425F57)
+  static let mapMuted = muted
+
+  fileprivate static func color(_ hex: UInt32) -> Color {
+    Color(
+      .sRGB, red: Double((hex >> 16) & 0xFF) / 255,
+      green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255, opacity: 1)
+  }
+  static func title(_ size: CGFloat = 32) -> Font {
+    .custom("LeagueSpartan-Bold", size: size, relativeTo: .largeTitle)
+  }
+  static func body(_ size: CGFloat = 17) -> Font {
+    .custom("LeagueSpartan-Regular", size: size, relativeTo: .body)
+  }
+  static let metadata = Font.custom("DMMono-Regular", size: 12, relativeTo: .caption)
+  static let caption = Font.custom("LeagueSpartan-Regular", size: 13, relativeTo: .footnote)
+  static let subheading = Font.custom("LeagueSpartan-SemiBold", size: 17, relativeTo: .headline)
+
+  enum Voice {
+    static let paper = color(0xF7F5ED)
+    static let card = color(0xFFFDF7)
+    static let ink = color(0x353A31)
+    static let muted = color(0x696D61)
+    static let border = color(0xD9DCCF)
+    static let sand = color(0xF1E7D6)
+    static let moss = color(0x83947B)
+    static let rust = color(0xC78060)
+    static let plum = color(0x978794)
+    static let soft = color(0xEBEEE3)
+  }
+}
+
+/// Mirrors the web's inherited CSS tokens, including its isolated voice scope.
+struct AppPalette {
+  var canvas = Theme.canvas
+  var card = Theme.card
+  var ink = Theme.ink
+  var muted = Theme.muted
+  var accent = Theme.accent
+  var primary = Theme.accentStrong
+  var primaryForeground = Theme.cream
+  var border = Theme.border
+  var inputBorder = Theme.inputBorder
+  var ring = Theme.accentStrong
+  var primaryEdge = Theme.primaryEdge
+  var primaryHover = Theme.primaryHover
+  var outlineEdge = Theme.outlineEdge
+
+  static let standard = AppPalette()
+  static let voice = AppPalette(
+    canvas: Theme.Voice.paper, card: Theme.Voice.card,
+    ink: Theme.Voice.ink, muted: Theme.Voice.muted, accent: Theme.Voice.soft,
+    primary: Theme.color(0x4C5944), primaryForeground: Theme.Voice.card,
+    border: Theme.Voice.border, inputBorder: Theme.color(0xA1AA94),
+    ring: Theme.color(0x586C4C), primaryEdge: Theme.color(0x35402F),
+    primaryHover: Theme.color(0x3E4D37), outlineEdge: Theme.color(0xC1C6B7))
+}
+
+private struct AppPaletteKey: EnvironmentKey {
+  static let defaultValue = AppPalette.standard
+}
+
+extension EnvironmentValues {
+  var appPalette: AppPalette {
+    get { self[AppPaletteKey.self] }
+    set { self[AppPaletteKey.self] = newValue }
+  }
+}
+
+extension View {
+  func appNavigationTitle(_ title: String) -> some View {
+    modifier(AppNavigationTitle(title: title))
+  }
+  func paperCard() -> some View {
+    padding(24).frame(maxWidth: .infinity, alignment: .leading)
+      .modifier(AppSurface(cornerRadius: 20))
+  }
+  func pageBackground() -> some View {
+    modifier(AppPageBackground())
+  }
+  func controlSurface(cornerRadius: CGFloat = 12) -> some View {
+    modifier(AppSurface(cornerRadius: cornerRadius))
+  }
+}
+
+private struct AppNavigationTitle: ViewModifier {
+  let title: String
+  @Environment(\.appPalette) private var palette
+  func body(content: Content) -> some View {
+    content.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+      .toolbarBackground(palette.canvas, for: .navigationBar)
+      .toolbarBackground(.visible, for: .navigationBar)
+      .toolbar {
+        AppToolbarItem(placement: .principal) {
+          Text(title).font(Theme.body(18).weight(.semibold)).foregroundStyle(palette.ink)
+        }
+      }
+  }
+}
+
+private struct AppPageBackground: ViewModifier {
+  @Environment(\.appPalette) private var palette
+  func body(content: Content) -> some View {
+    content.scrollContentBackground(.hidden).scrollDismissesKeyboard(.interactively)
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .foregroundStyle(palette.ink).background(palette.canvas)
+      .listRowSeparatorTint(palette.border)
+  }
+}
+
+private struct AppSurface: ViewModifier {
+  let cornerRadius: CGFloat
+  @Environment(\.appPalette) private var palette
+  func body(content: Content) -> some View {
+    content.background {
+      RoundedRectangle(cornerRadius: cornerRadius).fill(palette.card)
+        .shadow(color: palette.primary.opacity(0.08), radius: 0, y: 2)
+        .shadow(color: palette.primary.opacity(0.04), radius: 7, y: 5)
+    }
+    .overlay(RoundedRectangle(cornerRadius: cornerRadius).stroke(palette.border))
+  }
+}
+
+struct StatusBadge: View {
+  let text: String
+  var outlined = false
+  @Environment(\.appPalette) private var palette
+  private var positive: Bool {
+    ["open", "available", "connected"].contains(text.lowercased())
+  }
+  var body: some View {
+    Text(text.capitalized).font(Theme.body(12).weight(.medium))
+      .padding(.horizontal, 10).padding(.vertical, 4).frame(minHeight: 28)
+      .foregroundStyle(outlined ? palette.muted : positive ? palette.primary : palette.ink)
+      .background(
+        outlined
+          ? .clear
+          : positive
+            ? Theme.successSurface
+            : text.lowercased() == "claimed" ? Theme.highlight : Theme.softAccent,
+        in: RoundedRectangle(cornerRadius: 5)
+      )
+      .overlay(RoundedRectangle(cornerRadius: 5).stroke(outlined ? palette.border : .clear))
+  }
+}
+
+struct FailureView: View {
+  let error: Error
+  var retry: (() async -> Void)?
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Label(error.localizedDescription, systemImage: "exclamationmark.circle")
+        .foregroundStyle(Theme.error).accessibilityAddTraits(.updatesFrequently)
+      if let apiError = error as? APIError {
+        ForEach(Array(apiError.issues.enumerated()), id: \.offset) { _, issue in
+          Text("\(issue.field): \(issue.message)").font(Theme.caption).foregroundStyle(Theme.error)
+        }
+      }
+      if let retry { Button("Try again") { Task { await retry() } }.buttonStyle(AppButtonStyle()) }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(16)
+    .background(Theme.destructive.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.destructive.opacity(0.32)))
+    .accessibilityElement(children: .contain)
+  }
+}
+
+struct EmptyState: View {
+  let title: String
+  let symbol: String
+  var message: String?
+  var body: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Image(systemName: symbol).font(.system(size: 25, weight: .medium))
+        .foregroundStyle(Theme.accentStrong).frame(width: 52, height: 52)
+        .background(Theme.softAccent, in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityHidden(true)
+      Text(title).font(Theme.title(24))
+      if let message { Text(message).foregroundStyle(Theme.muted) }
+    }.paperCard()
+  }
+}
+
+struct PageList<Item: Decodable & Identifiable, Content: View>: View where Item.ID: Hashable {
+  let store: PageStore<Item>
+  let load: (Bool) async -> Void
+  @ViewBuilder let content: (Item) -> Content
+  var body: some View {
+    if let error = store.error { FailureView(error: error) { await load(true) } }
+    ForEach(store.items) { item in content(item) }
+    if store.loading {
+      ProgressView().frame(maxWidth: .infinity).padding()
+    } else if store.nextCursor != nil {
+      Button("Load more") { Task { await load(false) } }.buttonStyle(AppButtonStyle())
+    }
+  }
+}
+
+struct ConfirmAction: View {
+  let label: String
+  let consequence: String
+  var destructive = false
+  var disabled = false
+  let action: () async -> Void
+  @State private var confirming = false
+  @State private var running = false
+  var body: some View {
+    Button(role: destructive ? .destructive : nil) {
+      confirming = true
+    } label: {
+      Text(label).frame(minHeight: 44)
+    }
+    .buttonStyle(AppButtonStyle(variant: destructive ? .destructive : .outline))
+    .buttonLoading(running)
+    .disabled(disabled)
+    .sheet(isPresented: $confirming) {
+      AppDialog(title: label + "?", message: consequence) {
+        Button(label, role: destructive ? .destructive : nil) {
+          confirming = false
+          running = true
+          Task {
+            await action()
+            running = false
+          }
+        }.buttonStyle(
+          AppButtonStyle(variant: destructive ? .destructive : .primary, fullWidth: true))
+        Button("Cancel", role: .cancel) { confirming = false }
+          .buttonStyle(AppButtonStyle(fullWidth: true))
+      }
+    }
+  }
+}
+
+struct GardenScene: View {
+  var body: some View {
+    HeroLandscape(compact: true).frame(height: 220)
+      .clipShape(RoundedRectangle(cornerRadius: 20)).accessibilityHidden(true)
+  }
+}

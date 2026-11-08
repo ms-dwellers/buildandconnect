@@ -1,10 +1,12 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
 import { betterAuth } from "better-auth/minimal";
+import { bearer } from "better-auth/plugins/bearer";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import authConfig from "./auth.config";
+import { socialProviders } from "./socialProviders";
 
 export const authComponent = createClient<DataModel>(components.betterAuth);
 
@@ -13,15 +15,22 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
   if (!siteUrl || !process.env.BETTER_AUTH_SECRET) {
     throw new Error("Authentication is not configured");
   }
+  const trustedOrigins = [
+    siteUrl,
+    process.env.CONVEX_SITE_URL,
+    process.env.DEV_SITE_URL,
+  ].filter((value): value is string => Boolean(value));
   return betterAuth({
     baseURL: siteUrl,
     secret: process.env.BETTER_AUTH_SECRET,
     database: authComponent.adapter(ctx),
-    trustedOrigins: [
-      siteUrl,
-      ...(process.env.DEV_SITE_URL ? [process.env.DEV_SITE_URL] : []),
-    ],
+    trustedOrigins,
     emailAndPassword: { enabled: true, minPasswordLength: 12 },
+    // Google and GitHub appear only when their credentials are set on the
+    // deployment. Account linking keeps Better Auth's safe default: an existing
+    // unverified email/password account is never linked silently.
+    socialProviders: socialProviders(process.env),
+    account: { encryptOAuthTokens: true },
     rateLimit: {
       enabled: true,
       storage: "database",
@@ -30,26 +39,21 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
         "/convex/.well-known/openid-configuration": false,
       },
     },
-    advanced: { ipAddress: { ipAddressHeaders: ["x-buildandconnect-ip"] } },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        const origin = ctx.headers?.get("origin");
+        if (origin && !trustedOrigins.includes(origin))
+          throw new APIError("FORBIDDEN", { message: "Untrusted origin" });
         if (
-          ["/convex/jwks", "/convex/.well-known/openid-configuration"].includes(
-            ctx.path,
-          )
+          ctx.body &&
+          new TextEncoder().encode(JSON.stringify(ctx.body)).length > 32 * 1024
         )
-          return;
-        if (
-          !process.env.CONVEX_BRIDGE_SECRET ||
-          ctx.headers?.get("x-buildandconnect-bridge") !==
-            process.env.CONVEX_BRIDGE_SECRET
-        ) {
-          throw new APIError("FORBIDDEN", {
-            message: "Use the application authentication endpoint",
+          throw new APIError("PAYLOAD_TOO_LARGE", {
+            message: "Request body exceeds 32 KB",
           });
-        }
       }),
     },
-    plugins: [convex({ authConfig })],
+    // Native sessions use signed bearer tokens; browsers retain cookie auth.
+    plugins: [bearer({ requireSignature: true }), convex({ authConfig })],
   });
 }

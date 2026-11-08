@@ -1,5 +1,5 @@
 import type { FunctionReturnType } from "convex/server";
-import type { api } from "../convex/_generated/api";
+import type { internal as api } from "../convex/_generated/api";
 import type { CityJob } from "./calgary-area";
 
 export type SavedCareerTarget = NonNullable<

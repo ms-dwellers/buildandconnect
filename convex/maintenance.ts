@@ -9,11 +9,6 @@ export const cleanupVerification = internalMutation({
     if (process.env.ALLOW_TEST_CLEANUP !== "true")
       throw new Error("Verification cleanup is disabled");
     for (const id of userIds) {
-      for (const row of await ctx.db
-        .query("projectDrafts")
-        .withIndex("by_owner", (q) => q.eq("ownerId", id))
-        .collect())
-        await ctx.db.delete(row._id);
       const user = await ctx.runQuery(components.betterAuth.adapter.findOne, {
         model: "user",
         where: [{ field: "_id", value: id }],
@@ -22,6 +17,11 @@ export const cleanupVerification = internalMutation({
         throw new Error("Only reserved test-domain accounts can be removed");
     }
     for (const id of userIds) {
+      for (const row of await ctx.db
+        .query("projectDrafts")
+        .withIndex("by_owner", (q) => q.eq("ownerId", id))
+        .collect())
+        await ctx.db.delete(row._id);
       for (const row of await ctx.db
         .query("careerTargets")
         .withIndex("by_developer", (q) => q.eq("developerId", id))
