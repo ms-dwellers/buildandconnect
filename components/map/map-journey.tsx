@@ -12,7 +12,6 @@ import {
 } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowUpRightIcon } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { revealTiming } from "@/lib/map-reveal";
 import { MapReveal } from "./map-reveal";
@@ -114,10 +113,18 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
     const changed = () => {
       if (preference.matches) finish();
     };
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        finish();
+      }
+    };
     preference.addEventListener("change", changed);
+    document.addEventListener("keydown", keydown);
     return () => {
       document.body.style.overflow = previousOverflow;
       preference.removeEventListener("change", changed);
+      document.removeEventListener("keydown", keydown);
     };
   }, [phase, finish]);
   useEffect(
@@ -132,7 +139,7 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
       <div inert={phase !== "idle" || undefined}>{children}</div>
       <div role="status" className="sr-only">
         {phase !== "idle"
-          ? "Travelling to Calgary. Use Skip animation to continue immediately."
+          ? "Travelling to Calgary. Press Escape to skip the animation."
           : ""}
       </div>
       {phase !== "idle" && (
@@ -146,9 +153,6 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
               "--map-reveal-duration": `${REVEAL_MS}ms`,
             } as CSSProperties
           }
-          onKeyDown={(event) => {
-            if (event.key === "Escape") finish();
-          }}
         >
           <MapReveal
             phase={phase}
@@ -157,15 +161,6 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
           <div className="journey-caption" aria-hidden="true">
             <p className="mt-3 font-display text-6xl sm:text-8xl">Calgary.</p>
           </div>
-          <Button
-            variant="outline"
-            onClick={finish}
-            autoFocus
-            className="absolute end-6 bottom-6 z-10"
-          >
-            Skip animation
-            <ArrowUpRightIcon aria-hidden="true" />
-          </Button>
         </div>
       )}
     </JourneyContext.Provider>

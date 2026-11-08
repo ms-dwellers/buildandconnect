@@ -6,7 +6,8 @@ for Mapbox's first loaded render before the cloud banks drift apart over 1000 ms
 Three translucent layers move at different speeds, with rounded puffs and wisps
 trailing the opening. App-header map links use the same transition. Direct map visits
 show a static loading surface without starting the shader. Reduced-motion
-preferences skip it; **Skip animation** or Escape also finishes it immediately.
+preferences skip it; Escape also finishes it immediately. The visible
+**Skip animation** button is temporarily hidden.
 
 The transition uses one WebGL canvas, one triangle, and one 128 × 128 procedural
 density-and-lighting texture (64 KiB, generated once per transition). Overlapping

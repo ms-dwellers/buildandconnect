@@ -107,3 +107,14 @@ test("fallback and renderer completion share the same navigation lifecycle", () 
   assert.match(journey, /setTimeout\(navigateToMap, COVER_MS \+ 500\)/);
   assert.match(journey, /REVEAL_MS \+ 250/);
 });
+
+test("the temporary button removal preserves a document-level Escape shortcut", () => {
+  const journey = readFileSync(
+    new URL("../components/map/map-journey.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(journey, /Skip animation|autoFocus|ArrowUpRightIcon/);
+  assert.match(journey, /document\.addEventListener\("keydown", keydown\)/);
+  assert.match(journey, /document\.removeEventListener\("keydown", keydown\)/);
+  assert.match(journey, /Press Escape to skip the animation/);
+});
