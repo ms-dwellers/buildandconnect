@@ -2,7 +2,7 @@
 
 Open `/hire` from a requester account for record-and-review intake. Use
 **Describe a project with voice** on the requester dashboard for the live
-[`/wip-voice-ai`](voice-prototype.md) interviewer and background brief extraction.
+[`/voice`](voice-studio.md) interviewer and background brief extraction.
 
 ## Provider setup
 
@@ -13,7 +13,7 @@ development, or in the Worker's secret store for production:
 | ---------------------- | ---------------------------------------------------- |
 | `ELEVENLABS_API_KEY`   | ElevenLabs key with speech-to-text and Agents access |
 | `ELEVENLABS_STT_MODEL` | Optional; defaults to `scribe_v2`                    |
-| `ELEVENLABS_AGENT_ID`  | Private interview agent used by `/wip-voice-ai`      |
+| `ELEVENLABS_AGENT_ID`  | Private interview agent used by `/voice`             |
 | `OPENROUTER_API_KEY`   | OpenRouter key with access to a Gemini text model    |
 | `OPENROUTER_MODEL`     | Optional; defaults to `google/gemini-3.8-flash`      |
 

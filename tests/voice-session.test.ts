@@ -5,7 +5,29 @@ import {
   formatDuration,
   isSessionActive,
   phaseLabel,
-} from "../app/wip-voice-ai/session.ts";
+} from "../app/voice/session.ts";
+
+test("voice studio uses its permanent route and redirects the old WIP page", () => {
+  const page = readFileSync(
+    new URL("../app/voice/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const legacy = readFileSync(
+    new URL("../app/wip-voice-ai/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const dashboard = readFileSync(
+    new URL(
+      "../components/dashboards/requester-opportunities.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assert.doesNotMatch(page, /local-only|prototype|wip/i);
+  assert.match(legacy, /permanentRedirect\("\/voice"\)/);
+  assert.match(dashboard, /href="\/voice"/);
+  assert.doesNotMatch(dashboard, /wip-voice-ai/);
+});
 
 test("voice conversation exposes session states and readable durations", () => {
   assert.equal(isSessionActive("ready"), false);
@@ -27,11 +49,11 @@ test("voice conversation exposes session states and readable durations", () => {
 
 test("navigation stays above the unframed voice panel, with the transcript below", () => {
   const source = readFileSync(
-    new URL("../app/wip-voice-ai/voice-studio.tsx", import.meta.url),
+    new URL("../app/voice/voice-studio.tsx", import.meta.url),
     "utf8",
   );
   const css = readFileSync(
-    new URL("../app/wip-voice-ai/voice.css", import.meta.url),
+    new URL("../app/voice/voice.css", import.meta.url),
     "utf8",
   );
   const session = css.match(/\.voice-session\s*\{([^}]+)\}/)?.[1];
@@ -77,7 +99,7 @@ test("navigation stays above the unframed voice panel, with the transcript below
 
 test("manual review stops extraction before allowing edits", () => {
   const hook = readFileSync(
-    new URL("../app/wip-voice-ai/use-voice-conversation.ts", import.meta.url),
+    new URL("../app/voice/use-voice-conversation.ts", import.meta.url),
     "utf8",
   );
   const review = hook.match(/function prepareReview\(\) \{([^}]+)\}/)?.[1];

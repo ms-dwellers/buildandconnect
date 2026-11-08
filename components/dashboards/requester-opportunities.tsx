@@ -39,7 +39,7 @@ export function RequesterOpportunities() {
 
   return (
     <div className="space-y-12">
-      <Button render={<a href="/wip-voice-ai" />}>
+      <Button render={<a href="/voice" />}>
         Describe a project with voice
       </Button>
       <Section

@@ -1,7 +1,8 @@
 # Voice studio
 
-Open `/wip-voice-ai` with a requester account for a spoken project conversation.
+Open `/voice` with a requester account for a spoken project conversation.
 The voice agent and background form-filling agent have separate responsibilities.
+The former `/wip-voice-ai` URL redirects permanently to `/voice`.
 
 ## Two agents
 

@@ -144,7 +144,7 @@ ElevenLabs transcribes recorded answers, and Gemini through OpenRouter drafts a
 reviewable brief and suggests up to ten developers. Both integrations require
 server-only provider keys; no opportunity is posted automatically.
 
-The [voice studio](docs/voice-prototype.md) at `/wip-voice-ai` connects a private
+The [voice studio](docs/voice-studio.md) at `/voice` connects a private
 ElevenLabs interviewer to the microphone and displays its words over the aurora.
 A separate Gemini agent fills the project brief in the background. Requesters
 review the brief before requesting developer suggestions.

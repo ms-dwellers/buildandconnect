@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app/app-shell";
 import { EmployerIntake } from "@/components/hiring/employer-intake";
-import "../wip-voice-ai/voice.css";
+import "../voice/voice.css";
 
 export const metadata: Metadata = {
   title: "Find a developer — Build & Connect",

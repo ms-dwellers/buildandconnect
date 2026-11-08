@@ -123,11 +123,20 @@ try {
   assert.match(debugHtml, /data-slot="input"/);
   assert.match(debugHtml, /noindex/);
 
-  const voice = await fetch(`${origin}/wip-voice-ai`);
+  const voice = await fetch(`${origin}/voice`);
   assert.equal(voice.status, 200);
   const voiceHtml = await voice.text();
   assert.doesNotMatch(voiceHtml, /Local demo/);
   assert.match(voiceHtml, /noindex/);
+  assert.doesNotMatch(voiceHtml, /local-only voice prototype/);
+  const legacyVoice = await fetch(`${origin}/wip-voice-ai`, {
+    redirect: "manual",
+  });
+  assert.equal(legacyVoice.status, 308);
+  assert.equal(
+    new URL(legacyVoice.headers.get("Location"), origin).pathname,
+    "/voice",
+  );
 
   for (const page of [html, designHtml, mapHtml, debugHtml]) {
     assert.match(page, /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/);

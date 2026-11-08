@@ -15,7 +15,7 @@ test("onboarding and public role types expose only developers and requesters", (
   assert.match(choices, /role: "requester"/);
   assert.doesNotMatch(choices, /[Cc]ompany|[Rr]ecruiter/);
   const studio = readFileSync(
-    new URL("../app/wip-voice-ai/voice-studio.tsx", import.meta.url),
+    new URL("../app/voice/voice-studio.tsx", import.meta.url),
     "utf8",
   );
   assert.match(studio, /roles=\{\["requester"\]\}/);

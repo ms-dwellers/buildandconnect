@@ -1,14 +1,5 @@
-import type { Metadata } from "next";
-import { VoiceStudio } from "./voice-studio";
-import "./voice.css";
+import { permanentRedirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Voice studio — Build & Connect",
-  description:
-    "A quiet space to explore your next step. An interactive, local-only voice prototype.",
-  robots: { index: false, follow: false },
-};
-
-export default function VoicePage() {
-  return <VoiceStudio />;
+export default function LegacyVoicePage() {
+  permanentRedirect("/voice");
 }
