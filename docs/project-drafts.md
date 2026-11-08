@@ -51,5 +51,6 @@ attempt. The claimant and requester can both see the acceptance outcome.
 
 Opportunity interest is also confirmed and remains revocable. Scoped interest
 reads avoid losing the current response behind unrelated paginated interests.
-Both parties see whether a response is pending or mutual. The UI does not claim
-that connection provides messaging, assigns work, or confirms delivery.
+Both parties see whether a response is pending or mutual. A mutual connection
+unlocks project-specific chat; it does not assign work or confirm delivery.
+Withdrawing interest pauses new messages without deleting the conversation.
