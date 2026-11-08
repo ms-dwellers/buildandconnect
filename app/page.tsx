@@ -1,4 +1,4 @@
-import { ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
+import { ArrowUpRightIcon, ArrowRightIcon } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { AccountLinks } from "@/components/app/account-links";
 import { HomeScene } from "@/components/landing/home-scene";
@@ -51,19 +51,6 @@ export default function Home() {
             </p>
           </div>
           <HomeScene />
-          <div className="landing-hero-actions flex flex-wrap justify-center gap-x-4 gap-y-5">
-            <MapJourneyLink variant="highlight" size="lg">
-              {homeCopy.ctas.find.label}
-              <ArrowRightIcon aria-hidden="true" />
-            </MapJourneyLink>
-            <Button
-              render={<a href={homeCopy.ctas.post.href} />}
-              variant="outline"
-              size="lg"
-            >
-              {homeCopy.ctas.post.label}
-            </Button>
-          </div>
         </section>
         <section
           aria-label="Ways to get involved"

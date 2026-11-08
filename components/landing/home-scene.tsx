@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMapJourney } from "@/components/map/map-journey";
+import { ArrowRightIcon } from "lucide-react";
+import { MapJourneyLink, useMapJourney } from "@/components/map/map-journey";
+import { Button } from "@/components/ui/button";
 import { CITY_NAME } from "@/lib/calgary-area";
 import { homeCopy } from "@/lib/home-copy";
 import {
@@ -10,29 +12,33 @@ import {
   readSceneTokens,
   sceneResolution,
 } from "@/lib/home-scene";
-import type { HomeSceneController, PickTarget } from "./home-scene/scene";
+import type {
+  HomeSceneController,
+  LabelTarget,
+  PickTarget,
+} from "./home-scene/scene";
 import "./home-scene.css";
 
 type Renderer = "pending" | "webgl" | "fallback";
 
 /**
- * The landing hero: two chairs around a monitor showing a campfire. three.js
- * loads lazily on the client; the server renders an empty white band so the
- * heading and actions above it never wait for WebGL.
+ * The landing hero: two chairs around a monitor showing a campfire. Each chair
+ * carries its call to action as a real button, so the chairs and the buttons
+ * are one choice. three.js loads lazily on the client; the server renders the
+ * buttons in a plain row under an empty band so nothing waits for WebGL.
  */
 export function HomeScene() {
   const router = useRouter();
   const journey = useMapJourney();
   const wrapper = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const labels = useRef<
-    Record<"developer" | "partner", HTMLParagraphElement | null>
-  >({
+  const labels = useRef<Record<LabelTarget, HTMLDivElement | null>>({
     developer: null,
     partner: null,
   });
   const controller = useRef<HomeSceneController | null>(null);
   const schedule = useRef<() => void>(() => undefined);
+  const hoverRef = useRef<(target: PickTarget | null) => void>(() => undefined);
   const phaseRef = useRef(journey.phase);
   const beginRef = useRef(journey.begin);
   const registerRef = useRef(journey.registerApproach);
@@ -68,8 +74,9 @@ export function HomeScene() {
       for (const id of ["developer", "partner"] as const) {
         const node = labels.current[id];
         const point = api?.project(id);
-        if (node && point)
-          node.style.transform = `translate(${point.x}px, ${point.y}px)`;
+        if (!node || !point) continue;
+        node.style.setProperty("--label-x", `${point.x}px`);
+        node.style.setProperty("--label-y", `${point.y}px`);
       }
     };
     const tick = (now: number) => {
@@ -137,6 +144,10 @@ export function HomeScene() {
       host.dataset.hover = target ?? "";
       element.style.cursor = target ? "pointer" : "";
     };
+    hoverRef.current = (target) => {
+      setHover(target);
+      kick();
+    };
     const pointerMove = (event: PointerEvent) => {
       if (!api || coarse.matches) return;
       const point = toNdc(event);
@@ -188,6 +199,7 @@ export function HomeScene() {
       api = null;
       controller.current = null;
       schedule.current = () => undefined;
+      hoverRef.current = () => undefined;
     }
 
     void import("./home-scene/scene")
@@ -235,44 +247,93 @@ export function HomeScene() {
   useEffect(() => {
     phaseRef.current = journey.phase;
     const api = controller.current;
-    if (!api) return;
-    if (journey.phase === "approaching") api.startApproach(performance.now());
-    else if (journey.phase === "idle") api.resetApproach(performance.now());
+    const host = wrapper.current;
+    const element = canvas.current;
+    if (!api || !host || !element) return;
+    if (journey.phase === "approaching") {
+      // Measure the box before the canvas breaks out to the whole viewport, so
+      // the furniture stays where it was while the frame grows around it.
+      const box = element.getBoundingClientRect();
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      host.dataset.expanded = "true";
+      const { ratio } = sceneResolution(
+        viewport.width,
+        viewport.height,
+        window.devicePixelRatio,
+      );
+      api.resize(viewport.width, viewport.height, ratio);
+      api.startApproach(performance.now(), {
+        box: { x: box.left, y: box.top, width: box.width, height: box.height },
+        viewport,
+      });
+    } else if (journey.phase === "idle") {
+      delete host.dataset.expanded;
+      const { ratio } = sceneResolution(
+        element.clientWidth,
+        element.clientHeight,
+        window.devicePixelRatio,
+      );
+      api.resize(element.clientWidth, element.clientHeight, ratio);
+      api.resetApproach(performance.now());
+    }
     schedule.current();
   }, [journey.phase]);
+
+  // Hovering or focusing a button lifts its chair, exactly like hovering the chair.
+  const chairProps = (id: LabelTarget) => ({
+    ref: (node: HTMLDivElement | null) => {
+      labels.current[id] = node;
+    },
+    className: "home-scene-label",
+    "data-chair": id,
+    onPointerEnter: () => hoverRef.current(id),
+    onPointerLeave: () => hoverRef.current(null),
+    onFocusCapture: () => hoverRef.current(id),
+    onBlurCapture: () => hoverRef.current(null),
+  });
 
   return (
     <div
       ref={wrapper}
       className="home-scene"
-      aria-hidden="true"
       data-renderer={renderer}
       data-ready={ready || undefined}
       data-phase={journey.phase}
     >
-      {renderer !== "fallback" && <canvas ref={canvas} />}
-      {renderer === "webgl" && (
-        <>
-          <p
-            ref={(node) => {
-              labels.current.developer = node;
-            }}
-            className="home-scene-label"
-            data-chair="developer"
+      {renderer !== "fallback" && <canvas ref={canvas} aria-hidden="true" />}
+      <div className="home-scene-labels">
+        <div {...chairProps("developer")}>
+          <MapJourneyLink
+            variant="highlight"
+            size="lg"
+            className="home-scene-action"
           >
-            {homeCopy.chairs.developer}
-          </p>
-          <p
-            ref={(node) => {
-              labels.current.partner = node;
-            }}
-            className="home-scene-label"
-            data-chair="partner"
+            <span className="home-scene-action-who">
+              {homeCopy.chairs.developer}
+            </span>
+            <span className="home-scene-action-what">
+              {homeCopy.ctas.find.label}
+              <ArrowRightIcon aria-hidden="true" />
+            </span>
+          </MapJourneyLink>
+        </div>
+        <div {...chairProps("partner")}>
+          <Button
+            render={<a href={homeCopy.ctas.post.href} />}
+            variant="outline"
+            size="lg"
+            className="home-scene-action"
           >
-            {homeCopy.chairs.partner}
-          </p>
-        </>
-      )}
+            <span className="home-scene-action-who">
+              {homeCopy.chairs.partner}
+            </span>
+            <span className="home-scene-action-what">
+              {homeCopy.ctas.post.label}
+              <ArrowRightIcon aria-hidden="true" />
+            </span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
