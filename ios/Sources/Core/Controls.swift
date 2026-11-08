@@ -34,10 +34,11 @@ struct AppButtonStyle: ButtonStyle {
   private var fill: Color {
     switch variant {
     case .primary: hovering && enabled ? Theme.primaryHover : Theme.accentStrong
-    case .highlight: Theme.highlight
-    case .secondary: Theme.softAccent
-    case .destructive: Theme.destructive
-    case .ghost, .link: hovering && enabled ? Theme.accent : .clear
+    case .highlight: hovering && enabled ? Theme.highlightHover : Theme.highlight
+    case .secondary: hovering && enabled ? Theme.softAccent.opacity(0.9) : Theme.softAccent
+    case .destructive: hovering && enabled ? Theme.destructive.opacity(0.9) : Theme.destructive
+    case .ghost: hovering && enabled ? Theme.accent : .clear
+    case .link: .clear
     case .outline: hovering && enabled ? Theme.accent.opacity(0.5) : Theme.card
     }
   }
@@ -66,12 +67,22 @@ struct AppButtonStyle: ButtonStyle {
       .fixedSize(horizontal: !fullWidth, vertical: false)
       .foregroundStyle(configuration.role == .destructive ? Color.white : foreground)
       .background {
-        shape.fill(configuration.role == .destructive ? Theme.destructive : fill)
-          .shadow(
-            color: configuration.role == .destructive ? Theme.destructiveEdge : edge,
-            radius: 0, y: depth)
+        shape.fill(
+          configuration.role == .destructive
+            ? Theme.destructive
+            : variant == .ghost && pressed ? Theme.accent : fill
+        )
+        .shadow(
+          color: configuration.role == .destructive ? Theme.destructiveEdge : edge,
+          radius: 0, y: depth)
       }
-      .overlay(shape.stroke(raised ? (variant == .outline ? Theme.inputBorder : edge) : .clear))
+      .overlay(
+        shape.stroke(
+          raised
+            ? (configuration.role == .destructive
+              ? Theme.destructiveEdge
+              : variant == .outline ? Theme.inputBorder : edge) : .clear)
+      )
       .overlay {
         if focused {
           RoundedRectangle(cornerRadius: 13).stroke(Theme.accentStrong, lineWidth: 2).padding(-3)
@@ -262,12 +273,15 @@ struct AppSelect<Value: Hashable>: View {
       Button {
         expanded = true
       } label: {
-        HStack {
-          Text(options.first { $0.0 == selection }?.1 ?? title)
+        HStack(spacing: 8) {
+          Text(options.first { $0.0 == selection }?.1 ?? title).lineLimit(1)
           Spacer()
-          Image(systemName: "chevron.down").font(.system(size: 12, weight: .semibold))
-        }
-      }.buttonStyle(AppButtonStyle(fullWidth: true))
+          Image(systemName: "chevron.up.chevron.down").font(.system(size: 12, weight: .medium))
+        }.font(Theme.body(16)).foregroundStyle(Theme.ink)
+          .padding(.horizontal, 12).frame(minHeight: 44)
+          .modifier(AppInputSurface(focused: expanded))
+          .contentShape(RoundedRectangle(cornerRadius: 12))
+      }.buttonStyle(.plain)
         .accessibilityLabel(title).accessibilityValue(options.first { $0.0 == selection }?.1 ?? "")
     }.sheet(isPresented: $expanded) {
       VStack(alignment: .leading, spacing: 16) {

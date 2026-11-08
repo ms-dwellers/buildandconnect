@@ -24,6 +24,7 @@ enum Theme {
   static let primaryEdge = color(0x103E35)
   static let primaryHover = color(0x286556)
   static let highlightEdge = color(0xB84141)
+  static let highlightHover = color(0xEF6B64)
   static let secondaryEdge = color(0x99713B)
   static let outlineEdge = color(0x7E9E91)
   static let destructiveEdge = color(0x7F1E27)
@@ -34,7 +35,7 @@ enum Theme {
   static let mapWater = color(0x8FB3AC)
   static let mapRoads = cream
   static let mapHighways = color(0xDFC999)
-  static let mapText = ink
+  static let mapText = color(0x425F57)
   static let mapMuted = muted
 
   private static func color(_ hex: UInt32) -> Color {
@@ -93,7 +94,8 @@ struct StatusBadge: View {
     ["open", "available", "connected"].contains(text.lowercased())
   }
   var body: some View {
-    Text(text.capitalized).font(Theme.metadata).padding(.horizontal, 10).padding(.vertical, 7)
+    Text(text.capitalized).font(Theme.body(12).weight(.medium))
+      .padding(.horizontal, 10).padding(.vertical, 4).frame(minHeight: 28)
       .foregroundStyle(positive ? Theme.success : Theme.ink)
       .background(
         positive
@@ -119,7 +121,8 @@ struct FailureView: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(16)
-    .background(Theme.errorSurface, in: RoundedRectangle(cornerRadius: 16))
+    .background(Theme.destructive.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.destructive.opacity(0.32)))
     .accessibilityElement(children: .contain)
   }
 }
