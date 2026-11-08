@@ -19,8 +19,9 @@ It reuses existing development secrets rather
 than rotating them. The script refuses production selections and deploy keys.
 An optional argument changes the local origin: `bun run setup:backend http://localhost:5173`.
 
-`BETTER_AUTH_SECRET` exists only in Convex's environment. No bridge secret or
-Convex JWT exchange is needed by the application. The public Convex URLs may be
+`BETTER_AUTH_SECRET` exists only in Convex's environment. No bridge secret is
+needed. The messages stream uses Better Auth's short-lived Convex JWT on the web
+host, never a deploy key or browser-supplied session ID. The public Convex URLs may be
 browser-visible. Set Convex's `SITE_URL` to the website's exact origin. The web
 host needs only that origin and `VITE_CONVEX_SITE_URL` for forwarding. No
 production deployment is part of local setup.
@@ -52,7 +53,9 @@ with `?error=account_not_linked` and a plain-language explanation. OAuth tokens
 are encrypted at rest.
 
 Run `bun run dev` in a second terminal for the website. Browser requests stay on
-`/api`, forwarded without application logic to Convex HTTP actions. Native apps
+`/api`, forwarded without application logic to Convex HTTP actions. The messages
+stream is a transport-only exception: the web host forwards a Convex reactive
+subscription as server-sent events. Native apps
 call `https://<deployment>.convex.site/api/...` directly and do not need the website
 or Vite running. Use the HTTP `.convex.site` URL, not the `.convex.cloud` RPC URL.
 Internal Convex functions enforce live sessions, ownership, roles, and atomic
@@ -123,6 +126,50 @@ Personal career exploration does not require public profile discoverability. Exi
 availability, location, volunteer, time and essential-technology gates still
 apply. `actionIneligibleReasons` retains existing claim/interest restrictions,
 including discovery consent: a private recommendation does not bypass them.
+
+## Project messages
+
+Web users open **Message** from a mutual connection or opportunity, then use
+`/messages` to return to conversations. A thread belongs to one opportunity and
+one developer. Both interest flags must be true to start a thread or send a new
+message. Closing an opportunity keeps existing conversations usable; withdrawing
+either side's interest pauses sending for both, but preserves participant-only
+history. Reconnecting the same pair reuses its thread. Local community request
+claims are not connected to this messaging flow.
+
+| Method | Path                                            | Input and response                                                                                                   |
+| ------ | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/chat/conversations`                       | `{opportunityId,developerId?}`; requester supplies the developer, developer acts only for themselves; returns `{id}` |
+| POST   | `/api/chat/conversations/:id/messages`          | `{body,clientId}`; trimmed plain text, 1-4000 characters, UUID retry key; returns the saved message                  |
+| GET    | `/api/chat/conversations/:id/messages?before=N` | Up to 50 earlier messages in ascending sequence order and `hasMore`                                                  |
+| PUT    | `/api/chat/conversations/:id/read`              | `{sequence}`; advances only this participant's read position, never beyond the latest saved message                  |
+| GET    | `/api/chat/stream?conversation=ID&limit=20`     | Web-only, same-origin SSE; `snapshot`, `connection`, and terminal `unavailable` events                               |
+
+The stream uses the existing `VITE_CONVEX_SITE_URL` and `SITE_URL` configuration.
+Convex's built-in `CONVEX_CLOUD_URL` supplies the subscription address; there are
+no new service bindings or secrets. The web host obtains a short-lived JWT from
+the authenticated `/api/chat/stream-session` action and holds it only for that
+stream. Convex's read-only `chat:watch` query derives its live session and member
+role from that signed identity and validates thread membership. Writes stay
+internal and revalidate live sessions, ownership, and mutual interest atomically.
+Session revocation invalidates the subscription. Streams close at session expiry
+or after five minutes and reconnect with fresh credentials; no database polling
+is used. Client disconnects and slow consumers release the subscription/socket.
+
+Snapshots include the newest 50 messages, unread counts, and the peer's read
+sequence. The inbox loads 20 conversations at a time, up to 200 most recent;
+older threads remain reachable from their project connection. Earlier message
+pages use stable sequence cursors. The UI marks messages read only when the
+visible, focused thread is at its latest messages. Message text is rendered as
+plain text, not HTML or Markdown. Sending is limited to 30 new messages per
+sender per minute across projects. Retrying an identical `clientId` returns the
+same message without consuming the quota; changing its text returns 409.
+
+This rollout adds two tables and indexes without modifying existing rows. Sync
+Convex functions/schema to the chosen development deployment and run the updated
+web host before using chat. This does not add payments, attachments, typing or
+presence indicators, email/push notifications, blocking/reporting, or native chat.
+Add abuse controls before offering messaging at public-registration scale.
 
 ## Browser QA console
 

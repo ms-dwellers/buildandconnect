@@ -26,6 +26,11 @@ import {
   type Role,
 } from "../backend/schemas";
 import { readRequestBody, RequestBodyTooLarge } from "../backend/http";
+import {
+  chatStartSchema,
+  chatMessageSchema,
+  chatReadSchema,
+} from "../backend/chat";
 import { analyzeCareerTarget } from "../backend/career/analysis";
 import { careerTargetInputSchema } from "../backend/career/schemas";
 import {
@@ -124,6 +129,62 @@ export async function handleApi(
     if (path === "/map" && method === "GET")
       return json(await ctx.runQuery(internal.data.mapListings, { sessionId }));
     const actor = await ctx.runQuery(internal.data.me, { sessionId });
+    if (path === "/chat/stream-session" && method === "GET") {
+      if (!actor.role) fail(403, "Choose an account type to use messages");
+      const { token } = await createAuth(ctx).api.getConvexToken({
+        headers: request.headers,
+      });
+      return json({
+        token,
+        url: process.env.CONVEX_CLOUD_URL,
+        expiresAt: new Date(session!.session.expiresAt).getTime(),
+      });
+    }
+    if (path === "/chat/conversations" && method === "POST") {
+      return json(
+        await ctx.runMutation(internal.chat.start, {
+          sessionId,
+          ...chatStartSchema.parse(await body(request)),
+        }),
+        201,
+      );
+    }
+    const chatRoute =
+      /^\/chat\/conversations\/([a-z0-9]+)\/(messages|read)$/.exec(path);
+    if (chatRoute) {
+      const conversationId = chatRoute[1];
+      if (chatRoute[2] === "messages" && method === "GET") {
+        const before = z.coerce
+          .number()
+          .int()
+          .positive()
+          .parse(url.searchParams.get("before"));
+        return json(
+          await ctx.runQuery(internal.chat.older, {
+            sessionId,
+            conversationId,
+            before,
+          }),
+        );
+      }
+      if (chatRoute[2] === "messages" && method === "POST")
+        return json(
+          await ctx.runMutation(internal.chat.send, {
+            sessionId,
+            conversationId,
+            ...chatMessageSchema.parse(await body(request)),
+          }),
+          201,
+        );
+      if (chatRoute[2] === "read" && method === "PUT")
+        return json(
+          await ctx.runMutation(internal.chat.markRead, {
+            sessionId,
+            conversationId,
+            ...chatReadSchema.parse(await body(request)),
+          }),
+        );
+    }
     if (path.startsWith("/hiring/")) {
       const app = new Hono<HiringApiEnv>();
       app.use("*", async (c, next) => {

@@ -96,7 +96,11 @@ colluding-account abuse prevention is outside this MVP.
   not emails, auth records, embeddings, or private exposure counts. Only an
   opportunity owner sees its full candidate ranking. Only participants see their
   connections and pending interests. Visibility/availability can be changed without
-  inference. There is no messaging or automatic contact-detail release.
+  inference. Opportunity chat is available only to mutual-interest participants;
+  there is no automatic contact-detail release. `convex/chat.ts` owns threads,
+  messages, unread/read positions, and authorization. Internal mutations use the
+  existing HTTP facade. A read-only JWT-authenticated query supplies reactive
+  updates through the same-origin SSE bridge in `lib/chat-stream.ts`.
 - Use same-origin cookie requests. Mutation origins are checked; Better Auth
   retains its own CSRF/cookie protections. API responses are never shared-cached.
   Request bodies are capped at 32 KB and input fields/collections are bounded.
@@ -114,7 +118,7 @@ colluding-account abuse prevention is outside this MVP.
 - Owners can revise opportunity details and open request details. Profile updates regenerate
   embeddings; matching always uses the latest profile. Embeddings use mean pooling,
   384 dimensions, and a bounded 1,800-character summary. Long profiles lose detail.
-- No payment, messaging, verified project outcomes, identity verification, or
+- No payment, community-request messaging, verified project outcomes, identity verification, or
   account deletion UI is implemented here. Local request accept is exclusive and
   does not require requester confirmation before the claim.
 
