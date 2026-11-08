@@ -33,6 +33,38 @@ export const SCENE = {
 /** 16:10 like the monitor; large enough to stay sharp when it fills the viewport. */
 export const SCREEN_TEXTURE = { width: 1280, height: 800 } as const;
 
+/** Matches the source GIF's per-frame delay (10 × 1/100 s). */
+export const CAMPFIRE_FRAME_MS = 100;
+export const CAMPFIRE_FRAME_COUNT = 5;
+export const CAMPFIRE_FRAME_SRCS = Array.from(
+  { length: CAMPFIRE_FRAME_COUNT },
+  (_, index) => `/assets/campfire/frame-${index}.png`,
+);
+/** Higher-resolution still used when motion is reduced. */
+export const CAMPFIRE_STILL_SRC = "/assets/campfire/still.png";
+
+/**
+ * Fit the square campfire art inside the screen with a small margin, keeping
+ * its pixel edges crisp.
+ */
+export function campfireDest(
+  screen: { width: number; height: number },
+  art: { width: number; height: number },
+) {
+  const margin = 0.12;
+  const maxWidth = screen.width * (1 - margin * 2);
+  const maxHeight = screen.height * (1 - margin * 2);
+  const scale = Math.min(maxWidth / art.width, maxHeight / art.height);
+  const width = art.width * scale;
+  const height = art.height * scale;
+  return {
+    x: (screen.width - width) / 2,
+    y: (screen.height - height) / 2,
+    width,
+    height,
+  };
+}
+
 export type Vec3 = readonly [number, number, number];
 export type Pose = { position: Vec3; target: Vec3 };
 export type CameraRig = {

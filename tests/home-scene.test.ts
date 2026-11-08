@@ -1,14 +1,19 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 import { CITY_NAME } from "../lib/calgary-area.ts";
 import { homeCopy } from "../lib/home-copy.ts";
 import {
+  CAMPFIRE_FRAME_COUNT,
+  CAMPFIRE_FRAME_MS,
+  CAMPFIRE_FRAME_SRCS,
+  CAMPFIRE_STILL_SRC,
   SCENE,
   SCREEN_TEXTURE,
   approachProgress,
   approachTiming,
   cameraRig,
+  campfireDest,
   createEmbers,
   dollyPose,
   emberPosition,
@@ -126,7 +131,28 @@ test("token parsing accepts every hex form the CSS minifier emits and rejects th
   );
 });
 
-test("the fire model is deterministic and stays inside the screen", () => {
+test("the monitor campfire ships discrete frames and fits the screen", () => {
+  assert.equal(CAMPFIRE_FRAME_COUNT, 5);
+  assert.equal(CAMPFIRE_FRAME_MS, 100);
+  assert.equal(CAMPFIRE_FRAME_SRCS.length, CAMPFIRE_FRAME_COUNT);
+  for (const src of [...CAMPFIRE_FRAME_SRCS, CAMPFIRE_STILL_SRC]) {
+    assert.ok(
+      existsSync(new URL(`../public${src}`, import.meta.url)),
+      `${src} must ship`,
+    );
+  }
+  const dest = campfireDest(
+    { width: SCREEN_TEXTURE.width, height: SCREEN_TEXTURE.height },
+    { width: 320, height: 320 },
+  );
+  assert.ok(dest.width <= SCREEN_TEXTURE.width * 0.76);
+  assert.ok(dest.height <= SCREEN_TEXTURE.height * 0.76);
+  assert.ok(dest.x > 0 && dest.y > 0);
+  assert.equal(
+    Math.round(dest.x + dest.width / 2),
+    Math.round(SCREEN_TEXTURE.width / 2),
+  );
+  // Procedural flame helpers remain available for the idle ember math tests.
   assert.deepEqual(createEmbers(12, 7), createEmbers(12, 7));
   assert.notDeepEqual(createEmbers(12, 7), createEmbers(12, 8));
   const embers = createEmbers(12, 7);
