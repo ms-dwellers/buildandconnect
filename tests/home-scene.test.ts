@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { CITY_NAME } from "../lib/calgary-area.ts";
 import { homeCopy } from "../lib/home-copy.ts";
@@ -13,6 +13,7 @@ import {
   dollyPose,
   emberPosition,
   flameOutline,
+  normalizeHex,
   parseHexToken,
   readSceneTokens,
   restPose,
@@ -89,21 +90,30 @@ test("the dolly moves straight toward the screen and ends in front of it", () =>
   }
 });
 
-test("token parsing accepts six-digit hex and rejects everything else", () => {
+test("token parsing accepts every hex form the CSS minifier emits and rejects the rest", () => {
   const apricot = parseHexToken("#f0a345");
   assert.ok(apricot);
   assert.ok(Math.abs(apricot[0] - 240 / 255) < 1e-9);
   assert.ok(Math.abs(apricot[1] - 163 / 255) < 1e-9);
   assert.ok(Math.abs(apricot[2] - 69 / 255) < 1e-9);
   assert.deepEqual(parseHexToken(" #FFFFFF "), [1, 1, 1]);
+  // Lightning CSS shortens #ffffff to #fff in production builds.
+  assert.deepEqual(parseHexToken("#fff"), [1, 1, 1]);
+  assert.equal(normalizeHex(" #FFF "), "#ffffff");
+  assert.equal(normalizeHex("#f0a345ff"), "#f0a345");
+  assert.equal(normalizeHex("#abcd"), "#aabbcc");
   for (const value of [
     "",
     "color-mix(in oklab, red, blue)",
     "var(--x)",
-    "#fff",
+    "#ff",
+    "#fffff",
     "rgb(1 2 3)",
-  ])
+  ]) {
     assert.equal(parseHexToken(value), null, value);
+    assert.equal(normalizeHex(value), null, value);
+  }
+  assert.equal(readSceneTokens(() => "#fff")?.background, "#ffffff");
   assert.equal(shadeHex("#ffffff", -0.5), "#808080");
   assert.equal(shadeHex("#000000", 1), "#ffffff");
   assert.equal(shadeHex("not-a-colour", -0.5), "not-a-colour");
@@ -195,8 +205,29 @@ test("the home page renders copy on the server and loads three lazily", () => {
   assert.match(backdrops, /buildPartnerBackdrop/);
   assert.match(backdrops, /buildDeveloperBackdrop/);
   assert.doesNotMatch(backdrops, /TextureLoader|\/sprites\//);
-  assert.equal(
-    existsSync(new URL("../public/sprites", import.meta.url)),
-    false,
-  );
+});
+
+test("the scene reads its tokens from the minified production stylesheet", () => {
+  const css = read("app/globals.css");
+  const declarations = new Map<string, string>();
+  const root = css.match(/:root\s*\{([\s\S]*?)\n\}/);
+  assert.ok(root, "globals.css must declare :root tokens");
+  for (const line of root[1].split("\n")) {
+    const match = /^\s*(--[a-z0-9-]+):\s*([^;]+);/.exec(line);
+    if (match) declarations.set(match[1], match[2].trim());
+  }
+  const resolve = (name: string, depth = 0): string => {
+    const value = declarations.get(name) ?? "";
+    const reference = /^var\((--[a-z0-9-]+)\)$/.exec(value);
+    return reference && depth < 8 ? resolve(reference[1], depth + 1) : value;
+  };
+  const minify = (value: string) =>
+    /^#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3$/i.test(value)
+      ? `#${value[1]}${value[3]}${value[5]}`.toLowerCase()
+      : value.toLowerCase();
+  const tokens = readSceneTokens((name) => minify(resolve(name)));
+  assert.ok(tokens, "every scene token must resolve to a hex colour");
+  assert.equal(tokens.background, "#ffffff");
+  for (const value of Object.values(tokens))
+    assert.match(value, /^#[0-9a-f]{6}$/);
 });

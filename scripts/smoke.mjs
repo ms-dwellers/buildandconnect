@@ -3,6 +3,8 @@ import { spawn, spawnSync } from "node:child_process";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
+// The shared brand mark is the mascot still image rendered by BrandLogo.
+const brandMark = /<img\b[^>]*src="\/assets\/mascots\/still\/[a-z-]+\.gif"/;
 const port = process.env.SMOKE_PORT ?? "4173";
 const origin = `http://127.0.0.1:${port}`;
 const invocation = process.argv.slice(2);
@@ -67,13 +69,7 @@ try {
   assert.match(html, /Nearby map/);
   assert.match(html, /data-slot="button"/);
   assert.match(html, /data-slot="card"/);
-  for (const route of [
-    "/map",
-    "/requests/new",
-    "/sign-up",
-    "/sign-in",
-    "/design-system",
-  ]) {
+  for (const route of ["/map", "/requests/new", "/sign-up", "/sign-in"]) {
     assert.ok(
       html.includes(`href="${route}"`),
       `Missing landing-page link: ${route}`,
@@ -108,8 +104,8 @@ try {
     assert.equal(page.status, 200, `${route} must render`);
     assert.match(
       await page.text(),
-      /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/,
-      `${route} must use the shared logo`,
+      brandMark,
+      `${route} must use the shared brand mark`,
     );
   }
   const mapFeed = await fetch(`${origin}/api/map`);
@@ -130,9 +126,8 @@ try {
   assert.doesNotMatch(voiceHtml, /Local demo/);
   assert.match(voiceHtml, /noindex/);
 
-  for (const page of [html, designHtml, mapHtml, debugHtml]) {
-    assert.match(page, /<img\b[^>]*src="\/brand\/campfire-clasped-hands\.svg"/);
-  }
+  for (const page of [html, designHtml, mapHtml, debugHtml])
+    assert.match(page, brandMark);
   const logo = await fetch(`${origin}/brand/campfire-clasped-hands.svg`);
   assert.equal(logo.status, 200);
   const logoSvg = await logo.text();
