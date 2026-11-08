@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOutIcon, SproutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MapJourneyLink } from "@/components/map/map-journey";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/session";
 import type { Role } from "@/lib/types";
@@ -79,6 +80,19 @@ export function AppHeader({ className }: { className?: string }) {
           const current =
             pathname === item.href ||
             (item.href !== "/map" && pathname.startsWith(`${item.href}/`));
+          if (item.href === "/map") {
+            return (
+              <MapJourneyLink
+                key={item.href}
+                variant="ghost"
+                size="sm"
+                aria-current={current ? "page" : undefined}
+                className="aria-[current=page]:bg-accent"
+              >
+                {item.label}
+              </MapJourneyLink>
+            );
+          }
           return (
             <Button
               key={item.href}

@@ -7,6 +7,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import Link from "next/link";
@@ -15,6 +16,8 @@ import { ArrowUpRightIcon } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 
 type Phase = "idle" | "covering" | "revealing";
+const FADE_IN_MS = 650;
+const FADE_OUT_MS = 900;
 const JourneyContext = createContext({
   phase: "idle" as Phase,
   begin: () => {},
@@ -22,14 +25,90 @@ const JourneyContext = createContext({
 });
 export const useMapJourney = () => useContext(JourneyContext);
 
+const transitionClouds = [
+  {
+    sprite: "cloud-2",
+    width: 249,
+    height: 120,
+    left: "5%",
+    top: "8%",
+    reflected: false,
+  },
+  {
+    sprite: "cloud-1",
+    width: 171,
+    height: 136,
+    left: "42%",
+    top: "3%",
+    reflected: true,
+  },
+  {
+    sprite: "cloud-3",
+    width: 299,
+    height: 196,
+    left: "73%",
+    top: "16%",
+    reflected: false,
+  },
+  {
+    sprite: "foreground-cloud-3",
+    width: 240,
+    height: 128,
+    left: "13%",
+    top: "48%",
+    reflected: true,
+  },
+  {
+    sprite: "cloud-3",
+    width: 299,
+    height: 196,
+    left: "4%",
+    top: "76%",
+    reflected: true,
+  },
+  {
+    sprite: "cloud-2",
+    width: 249,
+    height: 120,
+    left: "53%",
+    top: "79%",
+    reflected: false,
+  },
+  {
+    sprite: "foreground-cloud-1",
+    width: 151,
+    height: 114,
+    left: "83%",
+    top: "64%",
+    reflected: true,
+  },
+] as const;
+
 export function MapClouds() {
   return (
     <>
       <div className="cloud-veil" aria-hidden="true" />
-      <div className="cloud-bank cloud-bank-nw" aria-hidden="true" />
-      <div className="cloud-bank cloud-bank-ne" aria-hidden="true" />
-      <div className="cloud-bank cloud-bank-sw" aria-hidden="true" />
-      <div className="cloud-bank cloud-bank-se" aria-hidden="true" />
+      <div className="map-cloud-sprites" aria-hidden="true">
+        {transitionClouds.map((cloud, index) => (
+          <img
+            key={index}
+            src={`/sprites/${cloud.sprite}.svg`}
+            width={cloud.width}
+            height={cloud.height}
+            alt=""
+            className="map-cloud-sprite"
+            data-reflected={cloud.reflected}
+            style={
+              {
+                "--cloud-width": `${cloud.width}px`,
+                "--cloud-height": `${cloud.height}px`,
+                "--cloud-left": cloud.left,
+                "--cloud-top": cloud.top,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </div>
     </>
   );
 }
@@ -39,6 +118,8 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [phase, setPhase] = useState<Phase>("idle");
   const navigating = useRef(false);
+  const restoreFocus = useRef(false);
+  const sourcePath = useRef(pathname);
   const navigationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ready = useCallback(
     () =>
@@ -46,12 +127,17 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const finish = useCallback(() => {
+  const complete = useCallback(() => {
     if (navigationTimer.current) clearTimeout(navigationTimer.current);
     setPhase("idle");
     navigating.current = false;
+    restoreFocus.current = true;
+  }, []);
+
+  const finish = useCallback(() => {
+    complete();
     if (pathname !== "/map") router.push("/map");
-  }, [pathname, router]);
+  }, [complete, pathname, router]);
   function begin() {
     if (navigating.current || pathname === "/map") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -59,36 +145,41 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
       return;
     }
     navigating.current = true;
+    sourcePath.current = pathname;
     router.prefetch("/map");
     setPhase("covering");
-    navigationTimer.current = setTimeout(() => router.push("/map"), 650);
+    navigationTimer.current = setTimeout(() => router.push("/map"), FADE_IN_MS);
   }
 
   useEffect(() => {
     if (phase === "idle") return;
     if (phase === "covering" && pathname === "/map") return;
     const timeout = setTimeout(
-      () => {
-        setPhase("idle");
-        navigating.current = false;
-        requestAnimationFrame(() =>
-          document
-            .getElementById("calgary-map-title")
-            ?.focus({ preventScroll: true }),
-        );
-      },
-      phase === "revealing" ? 1900 : 5000,
+      complete,
+      phase === "revealing" ? FADE_OUT_MS + 250 : 5000,
     );
     return () => clearTimeout(timeout);
+  }, [complete, phase, pathname]);
+  useEffect(() => {
+    if (phase !== "idle" || pathname !== "/map" || !restoreFocus.current)
+      return;
+    restoreFocus.current = false;
+    const frame = requestAnimationFrame(() =>
+      document
+        .getElementById("calgary-map-title")
+        ?.focus({ preventScroll: true }),
+    );
+    return () => cancelAnimationFrame(frame);
   }, [phase, pathname]);
   useEffect(() => {
     if (
-      (pathname !== "/" && pathname !== "/map") ||
+      (pathname !== sourcePath.current && pathname !== "/map") ||
       (pathname !== "/map" && phase === "revealing")
     ) {
       if (navigationTimer.current) clearTimeout(navigationTimer.current);
       setPhase("idle");
       navigating.current = false;
+      restoreFocus.current = false;
     }
   }, [pathname, phase]);
   useEffect(() => {
@@ -125,8 +216,22 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
           className="map-journey"
           data-phase={phase}
           data-testid="map-journey"
+          style={
+            {
+              "--map-fade-in": `${FADE_IN_MS}ms`,
+              "--map-fade-out": `${FADE_OUT_MS}ms`,
+            } as CSSProperties
+          }
           onKeyDown={(event) => {
             if (event.key === "Escape") finish();
+          }}
+          onAnimationEnd={(event) => {
+            if (
+              event.target === event.currentTarget &&
+              event.animationName === "clouds-unveil" &&
+              phase === "revealing"
+            )
+              complete();
           }}
         >
           <MapClouds />

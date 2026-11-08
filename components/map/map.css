@@ -42,6 +42,8 @@
   z-index: 1000;
   overflow: hidden;
   isolation: isolate;
+  animation: cloud-cover var(--map-fade-in) ease-in-out both;
+  will-change: opacity;
 }
 
 .map-loading-clouds {
@@ -52,69 +54,27 @@
   background: var(--cloud);
 }
 
-.map-loading-clouds .cloud-veil,
-.map-loading-clouds .cloud-bank {
-  animation: none;
-  opacity: 1;
-}
-
-.map-loading-clouds .cloud-bank {
-  width: 110%;
-  height: 110%;
-  filter: blur(12px);
-}
-
-.map-loading-clouds .cloud-veil {
-  background: color-mix(in oklab, var(--map-water) 24%, var(--cloud));
-}
-
 .cloud-veil {
   position: absolute;
   inset: 0;
-  background: var(--cloud);
-  animation: cloud-cover 650ms ease-in forwards;
+  background: color-mix(in oklab, var(--map-water) 24%, var(--cloud));
 }
 
-.cloud-bank {
+.map-cloud-sprites {
   position: absolute;
-  width: 110vw;
-  height: 110svh;
-  filter: blur(18px);
-  background:
-    radial-gradient(ellipse at 35% 35%, var(--cloud) 0 24%, transparent 57%),
-    radial-gradient(ellipse at 65% 65%, var(--cloud) 0 27%, transparent 61%),
-    radial-gradient(ellipse at 58% 30%, var(--card) 0 20%, transparent 56%),
-    radial-gradient(
-      ellipse at 28% 72%,
-      var(--background) 0 24%,
-      transparent 60%
-    );
-  animation: clouds-gather 650ms cubic-bezier(0.2, 0, 0, 1) both;
+  inset: 0;
 }
 
-.cloud-bank-nw {
-  top: -45%;
-  left: -40%;
-  --cloud-x: -60%;
-  --cloud-y: -60%;
+.map-cloud-sprite {
+  position: absolute;
+  left: clamp(0px, var(--cloud-left), calc(100% - var(--cloud-width)));
+  top: clamp(0px, var(--cloud-top), calc(100% - var(--cloud-height)));
+  max-width: none;
+  image-rendering: pixelated;
 }
-.cloud-bank-ne {
-  top: -45%;
-  right: -40%;
-  --cloud-x: 60%;
-  --cloud-y: -60%;
-}
-.cloud-bank-sw {
-  bottom: -45%;
-  left: -40%;
-  --cloud-x: -60%;
-  --cloud-y: 60%;
-}
-.cloud-bank-se {
-  bottom: -45%;
-  right: -40%;
-  --cloud-x: 60%;
-  --cloud-y: 60%;
+
+.map-cloud-sprite[data-reflected="true"] {
+  transform: scaleX(-1);
 }
 
 .journey-caption {
@@ -125,35 +85,16 @@
   align-items: center;
   justify-content: center;
   color: var(--primary);
-  opacity: 0;
-  animation: cloud-cover 350ms 300ms ease-out forwards;
+  text-shadow: 0 2px 0 var(--cloud);
 }
 
-.map-journey[data-phase="revealing"] .cloud-veil {
-  animation: clouds-unveil 1200ms ease-out both;
-}
-.map-journey[data-phase="revealing"] .cloud-bank {
-  animation: clouds-part 1850ms cubic-bezier(0.2, 0, 0, 1) both;
-}
-.map-journey[data-phase="revealing"] .journey-caption {
-  animation: clouds-unveil 450ms ease-out both;
+.map-journey[data-phase="revealing"] {
+  animation: clouds-unveil var(--map-fade-out) ease-in-out both;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .map-loading-clouds .cloud-bank {
-    animation: clouds-drift 6s ease-in-out infinite alternate;
-  }
   .city-preview-arriving {
     animation: city-arrival 1850ms cubic-bezier(0.2, 0, 0, 1) both;
-  }
-}
-
-@keyframes clouds-drift {
-  from {
-    transform: translate(0, 0) scale(1);
-  }
-  to {
-    transform: translate(3%, -2%) scale(1.06);
   }
 }
 
@@ -170,26 +111,6 @@
     opacity: 1;
   }
   to {
-    opacity: 0;
-  }
-}
-@keyframes clouds-gather {
-  from {
-    transform: translate(var(--cloud-x), var(--cloud-y)) scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-  }
-}
-@keyframes clouds-part {
-  from {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: translate(var(--cloud-x), var(--cloud-y)) scale(1.25);
     opacity: 0;
   }
 }
