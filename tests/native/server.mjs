@@ -4,13 +4,15 @@ import { createServer as createViteServer } from "vite";
 import { developer, opportunity } from "../fixtures/matching.ts";
 
 // Ephemeral, loopback-only Convex test runtime. Never connects to any cloud database.
-process.env.SITE_URL = "http://127.0.0.1:5199";
-process.env.CONVEX_SITE_URL = "http://127.0.0.1:5199";
+const port = Number(process.env.NATIVE_TEST_PORT ?? 5199);
+const origin = `http://127.0.0.1:${port}`;
+process.env.SITE_URL = origin;
+process.env.CONVEX_SITE_URL = origin;
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString("base64url");
 process.env.WORKERS_AI_ENABLED = "false";
 const vite = await createViteServer({
   configFile: false,
-  server: { middlewareMode: true },
+  server: { middlewareMode: true, hmr: false },
   ssr: { noExternal: ["@convex-dev/better-auth"] },
 });
 const { default: runtime } = await vite.ssrLoadModule(
@@ -23,7 +25,7 @@ async function call(path, { method = "GET", body, token, cookie } = {}) {
     method,
     headers: {
       "Content-Type": "application/json",
-      Origin: "http://127.0.0.1:5199",
+      Origin: origin,
       "x-forwarded-for": `192.0.2.${nextIP++}`,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(cookie ? { Cookie: cookie } : {}),
@@ -111,6 +113,7 @@ const request = await call("/requests", {
 });
 context.requestId = request.data.id;
 
+let nextProfileResponse;
 const server = createServer(async (request, response) => {
   try {
     if (request.url === "/__test/context") {
@@ -146,6 +149,31 @@ const server = createServer(async (request, response) => {
     }
     const chunks = [];
     for await (const chunk of request) chunks.push(chunk);
+    if (
+      request.url === "/__test/profile-response" &&
+      request.method === "POST"
+    ) {
+      nextProfileResponse = JSON.parse(Buffer.concat(chunks).toString());
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end("{}");
+      return;
+    }
+    if (request.url === "/api/developers/me" && request.method === "GET") {
+      const override = nextProfileResponse;
+      nextProfileResponse = undefined;
+      if (override?.delayMs) {
+        await new Promise((resolve) => setTimeout(resolve, override.delayMs));
+      }
+      if (override?.status) {
+        response.writeHead(override.status, {
+          "Content-Type": "application/json",
+        });
+        response.end(
+          JSON.stringify({ error: "Unable to load profile. Try again." }),
+        );
+        return;
+      }
+    }
     const result = await runtime.fetch(request.url, {
       method: request.method,
       headers: {
@@ -168,9 +196,9 @@ const server = createServer(async (request, response) => {
     );
   }
 });
-server.listen(5199, "127.0.0.1", () =>
+server.listen(port, "127.0.0.1", () =>
   console.log(
-    "Native verification API ready at http://127.0.0.1:5199. Ephemeral Convex test runtime; synthetic data and substituted AI, no cloud services.",
+    `Native verification API ready at ${origin}. Ephemeral Convex test runtime; synthetic data and substituted AI, no cloud services.`,
   ),
 );
 for (const signal of ["SIGINT", "SIGTERM"])

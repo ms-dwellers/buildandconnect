@@ -194,17 +194,21 @@ enum SessionKeychain {
   var value: Value?
   var error: Error?
   var loading = false
+  private var loadGeneration = 0
   func load(_ api: APIClient, _ path: String, query: [String: String] = [:]) async {
-    guard !loading else { return }
+    loadGeneration += 1
+    let generation = loadGeneration
     loading = true
-    defer { loading = false }
+    defer { if generation == loadGeneration { loading = false } }
     do {
       let result: Value = try await api.get(path, query: query)
       try Task.checkCancellation()
+      guard generation == loadGeneration else { return }
       value = result
       error = nil
     } catch is CancellationError {} catch let failure as URLError where failure.code == .cancelled {
     } catch {
+      guard generation == loadGeneration else { return }
       if let failure = error as? APIError, [401, 403, 404].contains(failure.status) { value = nil }
       self.error = error
     }

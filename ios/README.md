@@ -107,6 +107,16 @@ Without that server, integration and role tests explicitly skip; model and launc
 tests still run. A skipped integration test is not evidence of backend parity.
 Restart the harness with fresh accounts before repeating mutating walkthroughs.
 
+For isolated profile tests when the default port is busy:
+
+```sh
+NATIVE_TEST_PORT=5299 bun run ios:test:server
+TEST_RUNNER_BUILD_CONNECT_TEST_API=http://127.0.0.1:5299 bun run ios:test -only-testing:BuildConnectUITests/ProfileFlowTests -parallel-testing-enabled NO
+```
+
+Profile tests use one-shot delayed and failed responses in the local harness to
+check loading layout, retry, and returning to the app during a request.
+
 ## Deployment and product gates
 
 The Convex changes must be deployed separately, with approval, before an existing

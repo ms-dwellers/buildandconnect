@@ -47,8 +47,9 @@ extension View {
       .shadow(color: Theme.pine.opacity(0.045), radius: 8, y: 4)
   }
   func pageBackground() -> some View {
-    self.scrollContentBackground(.hidden).scrollDismissesKeyboard(.interactively).background(
-      Theme.canvas)
+    self.scrollContentBackground(.hidden).scrollDismissesKeyboard(.interactively)
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(Theme.canvas)
   }
   func mapControlSurface(cornerRadius: CGFloat = 24) -> some View {
     modifier(LiquidSurface(cornerRadius: cornerRadius))
