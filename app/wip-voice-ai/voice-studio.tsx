@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -253,7 +252,7 @@ export function VoiceStudio() {
         <span className="voice-nav-divider" aria-hidden="true" />
         <span className="voice-nav-title">Voice studio</span>
         <div className="voice-nav-end">
-          <Badge variant="outline">Local demo</Badge>
+          <span className="text-sm text-muted-foreground">Local demo</span>
           <Button variant="ghost" render={<a href="/" />}>
             <ArrowLeftIcon aria-hidden="true" />
             Back home

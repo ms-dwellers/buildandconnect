@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
+import { pageTitle } from "@/lib/page-title";
 import { AppShell } from "@/components/app/app-shell";
 import { RequestScreen } from "@/components/forms/request-screen";
 import { pinFromParams } from "@/lib/pin-params";
+
+export const metadata: Metadata = {
+  title: pageTitle("Post a community request"),
+};
 
 export default async function NewRequestPage({
   searchParams,

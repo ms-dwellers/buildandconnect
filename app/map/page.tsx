@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { pageTitle } from "@/lib/page-title";
 import { CalgaryExplorer } from "@/components/map/calgary-explorer";
 import { first } from "@/lib/navigation";
 
 export const metadata: Metadata = {
-  title: "Explore Calgary | Build & Connect",
+  title: pageTitle("Explore Calgary"),
   description:
     "Community requests and developer opportunities across Calgary, on one map.",
 };

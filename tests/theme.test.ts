@@ -99,6 +99,11 @@ test("theme text pairings meet WCAG AA normal-text contrast", () => {
     ["var(--highlight-foreground)", "var(--button-highlight-hover)"],
     ["var(--foreground)", "var(--map-water)"],
     ["var(--accent-foreground)", "var(--accent)"],
+    ["var(--success-foreground)", "var(--background)"],
+    ["var(--info-foreground)", "var(--background)"],
+    ["var(--warning-foreground)", "var(--background)"],
+    ["var(--muted-foreground)", "var(--muted)"],
+    ["var(--foreground)", "var(--accent)"],
     ["var(--destructive-foreground)", "var(--background)"],
     ["#ffffff", "var(--destructive)"],
   ];

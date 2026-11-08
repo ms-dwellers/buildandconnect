@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
+import { pageTitle } from "@/lib/page-title";
 import { AppShell } from "@/components/app/app-shell";
 import { OpportunityScreen } from "@/components/forms/opportunity-screen";
 import { pinFromParams } from "@/lib/pin-params";
+
+export const metadata: Metadata = { title: pageTitle("Post an opportunity") };
 
 export default async function NewOpportunityPage({
   searchParams,

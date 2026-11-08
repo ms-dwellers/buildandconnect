@@ -22,10 +22,10 @@ export function Input({
   ...props
 }: InputProps): React.ReactElement {
   const inputClassName = cn(
-    "h-8.5 w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] text-foreground leading-8.5 outline-none [transition:background-color_5000000s_ease-in-out_0s] placeholder:text-muted-foreground sm:h-7.5 sm:leading-7.5 autofill:[-webkit-text-fill-color:var(--foreground)]",
+    "h-10 w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] text-foreground leading-10 outline-none [transition:background-color_5000000s_ease-in-out_0s] placeholder:text-muted-foreground sm:h-10 sm:leading-10 autofill:[-webkit-text-fill-color:var(--foreground)]",
     size === "sm" &&
-      "h-7.5 px-[calc(--spacing(2.5)-1px)] leading-7.5 sm:h-6.5 sm:leading-6.5",
-    size === "lg" && "h-9.5 leading-9.5 sm:h-8.5 sm:leading-8.5",
+      "h-9 px-[calc(--spacing(2.5)-1px)] leading-9 sm:h-9 sm:leading-9",
+    size === "lg" && "h-11 leading-11 sm:h-11 sm:leading-11",
     props.type === "search" &&
       "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
     props.type === "file" &&
