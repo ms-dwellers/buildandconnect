@@ -27,7 +27,9 @@ import {
   jobCamera,
   jobFeatures,
   jobLayers,
+  type MapPalette,
 } from "@/lib/calgary-map";
+import { useRootTheme } from "@/lib/use-root-theme";
 
 export type LiveCityMap = {
   map: MapboxMap;
@@ -41,6 +43,18 @@ type CameraState = {
 };
 const reducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function markerPalette(styles: CSSStyleDeclaration): MapPalette {
+  const color = (name: string) => styles.getPropertyValue(name).trim();
+  return {
+    primary: color("--primary"),
+    surface: color("--card"),
+    secondary: color("--secondary"),
+    community: color("--map-community"),
+    foreground: color("--foreground"),
+    primaryForeground: color("--primary-foreground"),
+  };
+}
 
 export function useCalgaryMap({
   container,
@@ -65,6 +79,7 @@ export function useCalgaryMap({
   const [failed, setFailed] = useState(false);
   const [warning, setWarning] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const theme = useRootTheme();
   const overviewActive = useRef(true);
   const [camera, setCamera] = useState<CameraState>({
     zoom: 0,
@@ -137,15 +152,7 @@ export function useCalgaryMap({
         if (disposed || broken || !container.current) return;
         try {
           const styles = getComputedStyle(container.current);
-          const color = (name: string) => styles.getPropertyValue(name).trim();
-          const palette = {
-            primary: color("--primary"),
-            surface: color("--card"),
-            secondary: color("--secondary"),
-            community: color("--map-community"),
-            foreground: color("--foreground"),
-            primaryForeground: color("--primary-foreground"),
-          };
+          const palette = markerPalette(styles);
           const instance = new sdk.Map({
             container: container.current,
             accessToken: token,
@@ -335,6 +342,22 @@ export function useCalgaryMap({
   useEffect(() => {
     live?.map.getSource<GeoJSONSource>(JOB_SOURCE)?.setData(jobFeatures(jobs));
   }, [live, jobs]);
+  // Retint in place when the role theme changes, keeping the camera and markers.
+  useEffect(() => {
+    const element = container.current;
+    if (!live || !element) return;
+    const styles = getComputedStyle(element);
+    live.map.setConfig("basemap", cityMapConfigFromStyles(styles));
+    for (const layer of jobLayers(markerPalette(styles))) {
+      if (!live.map.getLayer(layer.id) || !("paint" in layer)) continue;
+      for (const [name, value] of Object.entries(layer.paint ?? {}))
+        live.map.setPaintProperty(
+          layer.id,
+          name as Parameters<MapboxMap["setPaintProperty"]>[1],
+          value,
+        );
+    }
+  }, [live, theme, container]);
   useEffect(() => {
     if (!live) return;
     // The selected DOM marker replaces all three GPU-rendered point layers.

@@ -7,6 +7,7 @@ import { MapJourneyLink, useMapJourney } from "@/components/map/map-journey";
 import { Button } from "@/components/ui/button";
 import { CITY_NAME } from "@/lib/calgary-area";
 import { homeCopy } from "@/lib/home-copy";
+import { useRootTheme } from "@/lib/use-root-theme";
 import {
   approachTiming,
   readSceneTokens,
@@ -24,7 +25,6 @@ type Renderer = "pending" | "webgl" | "fallback";
 /** How long a chair stays "hovered" after the pointer leaves it, so the
  * pointer can travel from the chair onto the button that just popped out. */
 const HOVER_GRACE_MS = 180;
-
 /**
  * The landing hero scene: two chairs around a monitor showing a campfire. The
  * canvas covers the whole hero, so the furniture shares the page with the
@@ -52,6 +52,7 @@ export function HomeScene() {
   const registerRef = useRef(journey.registerApproach);
   const [renderer, setRenderer] = useState<Renderer>("pending");
   const [ready, setReady] = useState(false);
+  const theme = useRootTheme();
   beginRef.current = journey.begin;
   registerRef.current = journey.registerApproach;
 
@@ -284,7 +285,7 @@ export function HomeScene() {
         if (!disposed) setRenderer("fallback");
       });
     return teardown;
-  }, [router]);
+  }, [router, theme]);
 
   useEffect(() => {
     phaseRef.current = journey.phase;
@@ -356,7 +357,10 @@ export function HomeScene() {
         data-ready={ready || undefined}
         data-phase={journey.phase}
       >
-        {renderer !== "fallback" && <canvas ref={canvas} aria-hidden="true" />}
+        {renderer !== "fallback" && (
+          // A disposed renderer forces context loss, so a retheme needs a fresh canvas.
+          <canvas key={theme} ref={canvas} aria-hidden="true" />
+        )}
         <div className="home-scene-labels">
           <div {...chairProps("developer")}>
             <MapJourneyLink

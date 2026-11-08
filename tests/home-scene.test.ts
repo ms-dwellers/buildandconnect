@@ -124,7 +124,7 @@ test("token parsing accepts every hex form the CSS minifier emits and rejects th
   assert.equal(shadeHex("not-a-colour", -0.5), "not-a-colour");
   const complete = readSceneTokens(() => "#123456");
   assert.ok(complete);
-  assert.equal(Object.keys(complete).length, 17);
+  assert.equal(Object.keys(complete).length, 18);
   assert.equal(
     readSceneTokens((name) => (name === "--scene-wood" ? "" : "#123456")),
     null,

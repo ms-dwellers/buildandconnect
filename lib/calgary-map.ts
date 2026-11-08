@@ -43,10 +43,15 @@ export type CityMapPalette = {
   labels: string;
 };
 
-export function cityMapConfig(colors: CityMapPalette) {
+export type CityLightPreset = "day" | "dusk" | "dawn" | "night";
+
+export function cityMapConfig(
+  colors: CityMapPalette,
+  lightPreset: CityLightPreset = "day",
+) {
   return {
     theme: "default",
-    lightPreset: "day",
+    lightPreset,
     font: "Manrope",
     show3dObjects: true,
     showPointOfInterestLabels: false,
@@ -64,19 +69,25 @@ export function cityMapConfig(colors: CityMapPalette) {
   };
 }
 
+const LIGHT_PRESETS: CityLightPreset[] = ["day", "dusk", "dawn", "night"];
+
 export function cityMapConfigFromStyles(
   styles: Pick<CSSStyleDeclaration, "getPropertyValue">,
 ) {
   const color = (name: string) => styles.getPropertyValue(name).trim();
-  return cityMapConfig({
-    land: color("--map-base"),
-    water: color("--map-water"),
-    greenspace: color("--map-park"),
-    roads: color("--map-road"),
-    motorways: color("--map-arterial"),
-    buildings: color("--map-building"),
-    labels: color("--map-label"),
-  });
+  const preset = color("--map-light-preset").replace(/["']/g, "");
+  return cityMapConfig(
+    {
+      land: color("--map-base"),
+      water: color("--map-water"),
+      greenspace: color("--map-park"),
+      roads: color("--map-road"),
+      motorways: color("--map-arterial"),
+      buildings: color("--map-building"),
+      labels: color("--map-label"),
+    },
+    LIGHT_PRESETS.find((candidate) => candidate === preset) ?? "day",
+  );
 }
 
 export function cityPerspective(tilted: boolean, reducedMotion: boolean) {

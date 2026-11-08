@@ -272,6 +272,7 @@
   --map-water: var(--palette-teal);
   --map-water-edge: #719b92;
   --map-arterial: #dfc999;
+  --map-building: #c4d8c8;
   --map-label: #425f57;
   --cloud: var(--palette-cream);
   --map-mist-light: #fbfcfa;
@@ -284,6 +285,12 @@
   --scene-shadow: #c9d6d1;
   --scene-fabric: var(--palette-pine);
   --scene-cushion: var(--palette-wheat);
+  --scene-light: var(--palette-white);
+  --scene-pine: var(--palette-pine);
+  --scene-mint: var(--palette-mint);
+  --scene-teal: var(--palette-teal);
+  --scene-emerald: var(--palette-emerald);
+  --map-light-preset: day;
   --fieldbook-dot: --alpha(var(--palette-pine) / 16%);
   --dashboard-paper: var(--palette-white);
   --map-base: #ececda;
@@ -393,20 +400,37 @@
   --sidebar-ring: var(--ring);
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
-  --map-land: #6e3a1c;
-  --map-block: #5e3218;
-  --map-road: #3a1e10;
-  --map-park: #5e3218;
-  --map-water: #e8a070;
-  --map-water-edge: #c26e0b;
-  --map-arterial: #8a4a1c;
-  --map-label: #e8b888;
+  /*
+   * Evening city under firelight: lifted warm earth so Standard 3D is not a
+   * black void, cream roads, olive parks, slate water.
+   */
+  --map-land: #6e452c;
+  --map-block: #7a5134;
+  --map-road: #f0d9b5;
+  --map-park: #6a7a48;
+  --map-water: #4a6e6a;
+  --map-water-edge: #355552;
+  --map-arterial: #f0a345;
+  --map-building: #9a6340;
+  --map-label: #ffe8cc;
+  --map-light-preset: dusk;
   --cloud: #6e3a1c;
   --map-mist-light: #5e3218;
   --map-mist-shadow: #1a0e08;
   --dashboard-paper: #5e3218;
-  --map-base: #4a2816;
+  --map-base: #6e452c;
   --map-community: #e8a070;
+  /* Landing scene under firelight: warm key light, olive pines, dark shadows. */
+  --scene-light: #ffe0bd;
+  --scene-pine: #24200f;
+  --scene-mint: #9a9a62;
+  --scene-teal: #5e6b3f;
+  --scene-emerald: #3f4a28;
+  --scene-shadow: #2a160c;
+  --scene-metal: #8a6a55;
+  --scene-metal-edge: #3a2418;
+  --scene-bezel: #1a0e08;
+  --scene-fabric: #8a3f22;
   /* Hard pixel drop — no blur (blurred card shadows read soft, not itch). */
   --shadow-card: 3px 3px 0 0 var(--button-pixel-outline);
   --fire-glow:

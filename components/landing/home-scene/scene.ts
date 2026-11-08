@@ -126,20 +126,14 @@ export function createHomeScene(
 
   scene.add(
     new THREE.HemisphereLight(
-      new THREE.Color(tokens.background),
+      new THREE.Color(tokens.light),
       new THREE.Color(tokens.mint),
       1.1,
     ),
   );
-  const key = new THREE.DirectionalLight(
-    new THREE.Color(tokens.background),
-    1.4,
-  );
+  const key = new THREE.DirectionalLight(new THREE.Color(tokens.light), 1.4);
   key.position.set(3, 5, 4);
-  const fill = new THREE.DirectionalLight(
-    new THREE.Color(tokens.background),
-    0.35,
-  );
+  const fill = new THREE.DirectionalLight(new THREE.Color(tokens.light), 0.35);
   fill.position.set(-4, 2, -2);
   scene.add(key, fill);
 

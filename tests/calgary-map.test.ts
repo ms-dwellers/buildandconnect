@@ -11,6 +11,7 @@ import {
   cityBounds,
   cityOverviewPadding,
   cityMapConfig,
+  cityMapConfigFromStyles,
   cityPerspective,
   isMapInteraction,
   jobCamera,
@@ -137,6 +138,31 @@ test("the city theme uses semantic colors and retains real 3D objects in dayligh
   assert.equal(config.colorGreenspace, colors.greenspace);
   assert.equal(config.colorBuildings, colors.buildings);
   assert.equal(config.colorPlaceLabels, colors.labels);
+  assert.equal(cityMapConfig(colors, "dusk").lightPreset, "dusk");
+});
+
+test("map styles read the light preset token from the active theme", () => {
+  const styles = {
+    getPropertyValue(name: string) {
+      return (
+        {
+          "--map-base": "#6e452c",
+          "--map-water": "#4a6e6a",
+          "--map-park": "#6a7a48",
+          "--map-road": "#f0d9b5",
+          "--map-arterial": "#f0a345",
+          "--map-building": "#9a6340",
+          "--map-label": "#ffe8cc",
+          "--map-light-preset": "dusk",
+        }[name] ?? ""
+      );
+    },
+  };
+  const config = cityMapConfigFromStyles(styles);
+  assert.equal(config.lightPreset, "dusk");
+  assert.equal(config.colorLand, "#6e452c");
+  assert.equal(config.colorBuildings, "#9a6340");
+  assert.equal(config.colorRoads, "#f0d9b5");
 });
 
 test("perspective toggles preserve location and zoom, and skip motion when requested", () => {
