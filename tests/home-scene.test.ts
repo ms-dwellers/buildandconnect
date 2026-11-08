@@ -227,9 +227,10 @@ test("the home page renders copy on the server and loads three lazily", () => {
   assert.match(css, /--home-scene-height/);
   // The backdrops are procedural meshes; no sprite assets ship any more.
   const backdrops = read("components/landing/home-scene/backdrops.ts");
-  assert.match(backdrops, /ConeGeometry/);
+  assert.match(backdrops, /IcosahedronGeometry/);
   assert.match(backdrops, /buildPartnerBackdrop/);
   assert.match(backdrops, /buildDeveloperBackdrop/);
+  assert.match(backdrops, /buildAutumnTree|IcosahedronGeometry/);
   assert.doesNotMatch(backdrops, /TextureLoader|\/sprites\//);
 });
 

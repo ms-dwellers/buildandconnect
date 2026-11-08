@@ -71,23 +71,59 @@ export function cityMapConfig(
 
 const LIGHT_PRESETS: CityLightPreset[] = ["day", "dusk", "dawn", "night"];
 
+/** Mapbox Standard paints buildings black until colorBuildings is a real colour. */
+function cssColor(
+  styles: Pick<CSSStyleDeclaration, "getPropertyValue">,
+  name: string,
+  fallback: string,
+) {
+  const value = styles.getPropertyValue(name).trim();
+  return value && value !== "transparent" ? value : fallback;
+}
+
 export function cityMapConfigFromStyles(
   styles: Pick<CSSStyleDeclaration, "getPropertyValue">,
 ) {
-  const color = (name: string) => styles.getPropertyValue(name).trim();
-  const preset = color("--map-light-preset").replace(/["']/g, "");
+  const preset = cssColor(styles, "--map-light-preset", "day").replace(
+    /["']/g,
+    "",
+  );
   return cityMapConfig(
     {
-      land: color("--map-base"),
-      water: color("--map-water"),
-      greenspace: color("--map-park"),
-      roads: color("--map-road"),
-      motorways: color("--map-arterial"),
-      buildings: color("--map-building"),
-      labels: color("--map-label"),
+      land: cssColor(styles, "--map-base", "#ececda"),
+      water: cssColor(styles, "--map-water", "#8fb3ac"),
+      greenspace: cssColor(styles, "--map-park", "#a4c2ad"),
+      roads: cssColor(styles, "--map-road", "#f8f7de"),
+      motorways: cssColor(styles, "--map-arterial", "#dfc999"),
+      // Prefer the dedicated building token; fall back to block fill, never "".
+      buildings: cssColor(
+        styles,
+        "--map-building",
+        cssColor(styles, "--map-block", "#c4d8c8"),
+      ),
+      labels: cssColor(styles, "--map-label", "#425f57"),
     },
     LIGHT_PRESETS.find((candidate) => candidate === preset) ?? "day",
   );
+}
+
+/**
+ * Standard's import finishes after Map construction; re-apply basemap colours
+ * on style.load so colorBuildings is not left at the default black.
+ */
+export function applyCityMapBasemap(
+  map: {
+    setConfigProperty: (
+      importId: string,
+      configName: string,
+      value: unknown,
+    ) => unknown;
+  },
+  styles: Pick<CSSStyleDeclaration, "getPropertyValue">,
+) {
+  const config = cityMapConfigFromStyles(styles);
+  for (const [key, value] of Object.entries(config))
+    map.setConfigProperty("basemap", key, value);
 }
 
 export function cityPerspective(tilted: boolean, reducedMotion: boolean) {

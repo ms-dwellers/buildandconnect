@@ -10,6 +10,7 @@ import {
   cityMapMode,
   cityBounds,
   cityOverviewPadding,
+  applyCityMapBasemap,
   cityMapConfig,
   cityMapConfigFromStyles,
   cityPerspective,
@@ -146,23 +147,56 @@ test("map styles read the light preset token from the active theme", () => {
     getPropertyValue(name: string) {
       return (
         {
-          "--map-base": "#6e452c",
-          "--map-water": "#4a6e6a",
-          "--map-park": "#c07838",
-          "--map-road": "#f0d9b5",
+          "--map-base": "#c4a07a",
+          "--map-water": "#7a9e9a",
+          "--map-park": "#e09a48",
+          "--map-road": "#f8f0de",
           "--map-arterial": "#f0a345",
-          "--map-building": "#9a6340",
-          "--map-label": "#ffe8cc",
-          "--map-light-preset": "dusk",
+          "--map-building": "#d4a070",
+          "--map-label": "#5a3820",
+          "--map-light-preset": "day",
         }[name] ?? ""
       );
     },
   };
   const config = cityMapConfigFromStyles(styles);
-  assert.equal(config.lightPreset, "dusk");
-  assert.equal(config.colorLand, "#6e452c");
-  assert.equal(config.colorBuildings, "#9a6340");
-  assert.equal(config.colorRoads, "#f0d9b5");
+  assert.equal(config.lightPreset, "day");
+  assert.equal(config.colorLand, "#c4a07a");
+  assert.equal(config.colorBuildings, "#d4a070");
+  assert.equal(config.colorRoads, "#f8f0de");
+});
+
+test("empty building tokens fall back instead of leaving Mapbox black defaults", () => {
+  const styles = {
+    getPropertyValue(name: string) {
+      return (
+        {
+          "--map-base": "#ececda",
+          "--map-water": "#8fb3ac",
+          "--map-park": "#a4c2ad",
+          "--map-road": "#f8f7de",
+          "--map-arterial": "#dfc999",
+          "--map-block": "#c4d8c8",
+          "--map-label": "#425f57",
+          "--map-light-preset": "day",
+        }[name] ?? ""
+      );
+    },
+  };
+  assert.equal(cityMapConfigFromStyles(styles).colorBuildings, "#c4d8c8");
+  const applied: Array<[string, unknown]> = [];
+  applyCityMapBasemap(
+    {
+      setConfigProperty(_fragment, key, value) {
+        applied.push([key, value]);
+      },
+    },
+    styles,
+  );
+  assert.deepEqual(
+    applied.find(([key]) => key === "colorBuildings"),
+    ["colorBuildings", "#c4d8c8"],
+  );
 });
 
 test("perspective toggles preserve location and zoom, and skip motion when requested", () => {

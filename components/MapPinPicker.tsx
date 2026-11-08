@@ -10,7 +10,11 @@ import { Input } from "@/components/ui/input";
 import { FieldMessage } from "@/components/forms/form-kit";
 import { mapboxToken } from "@/lib/api";
 import { CALGARY_BOUNDS, CALGARY_CENTER } from "@/lib/calgary-area";
-import { CITY_MAP_STYLE, cityMapConfigFromStyles } from "@/lib/calgary-map";
+import {
+  CITY_MAP_STYLE,
+  applyCityMapBasemap,
+  cityMapConfigFromStyles,
+} from "@/lib/calgary-map";
 
 export type Pin = {
   latitude: number;
@@ -69,6 +73,10 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
           "Some of the map could not load. Search still works, or try again later.",
         ),
       );
+      map.on("style.load", () => {
+        if (!containerRef.current) return;
+        applyCityMapBasemap(map!, getComputedStyle(containerRef.current));
+      });
       map.on("load", () => {
         setMapError(null);
         setReady(true);

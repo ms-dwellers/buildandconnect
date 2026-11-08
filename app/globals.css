@@ -401,31 +401,31 @@
   --illustration-sun: var(--palette-apricot);
   --illustration-flower: var(--palette-coral);
   /*
-   * Autumn evening city: lifted warm earth, cream roads, rust/amber canopy
-   * instead of greenspace green, slate water.
+   * Autumn day city: warm earth and clay buildings kept light enough to read
+   * under daylight, amber canopy, soft slate water. Dusk crushed the 3D.
    */
-  --map-land: #6e452c;
-  --map-block: #7a5134;
-  --map-road: #f0d9b5;
-  --map-park: #c07838;
-  --map-water: #4a6e6a;
-  --map-water-edge: #355552;
+  --map-land: #c4a07a;
+  --map-block: #d2b08a;
+  --map-road: #f8f0de;
+  --map-park: #e09a48;
+  --map-water: #7a9e9a;
+  --map-water-edge: #5f8581;
   --map-arterial: #f0a345;
-  --map-building: #9a6340;
-  --map-label: #ffe8cc;
-  --map-light-preset: dusk;
+  --map-building: #d4a070;
+  --map-label: #5a3820;
+  --map-light-preset: day;
   --cloud: #6e3a1c;
   --map-mist-light: #5e3218;
   --map-mist-shadow: #1a0e08;
   --dashboard-paper: #5e3218;
-  --map-base: #6e452c;
+  --map-base: #c4a07a;
   --map-community: #e8a070;
-  /* Landing scene under firelight: warm key light, olive pines, dark shadows. */
+  /* Landing scene: warm key light, autumn canopy (amber/rust), dark shadows. */
   --scene-light: #ffe0bd;
   --scene-pine: #24200f;
-  --scene-mint: #9a9a62;
-  --scene-teal: #5e6b3f;
-  --scene-emerald: #3f4a28;
+  --scene-mint: #e8b060;
+  --scene-teal: #d4843c;
+  --scene-emerald: #c45e28;
   --scene-shadow: #2a160c;
   --scene-metal: #8a6a55;
   --scene-metal-edge: #3a2418;

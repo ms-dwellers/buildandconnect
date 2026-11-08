@@ -167,8 +167,8 @@ export function createHomeScene(
   scene.add(developer, partner, table, monitor, ...shadows);
 
   // Personality behind each chair: low-poly tech marks for the developer, a
-  // stand of pines for the partner. Both sprout on load; hovering a chair
-  // deepens and animates its side.
+  // stand of autumn trees for the partner. Both sprout on load; hovering a
+  // chair deepens and animates its side.
   const developerBackdrop = buildDeveloperBackdrop(tokens);
   const partnerBackdrop = buildPartnerBackdrop(tokens);
   const backdrops: BackdropField[] = [developerBackdrop, partnerBackdrop];

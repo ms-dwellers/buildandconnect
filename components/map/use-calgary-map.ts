@@ -19,6 +19,7 @@ import {
   JOB_SOURCE,
   CLUSTER_LAYER,
   POINT_LAYER,
+  applyCityMapBasemap,
   cityBounds,
   cityOverviewPadding,
   cityMapConfigFromStyles,
@@ -194,7 +195,9 @@ export function useCalgaryMap({
               });
           };
           instance.on("style.load", () => {
-            if (disposed || broken) return;
+            if (disposed || broken || !container.current) return;
+            // Standard finishes importing after construct; paint buildings now.
+            applyCityMapBasemap(instance, getComputedStyle(container.current));
             if (instance.getSource(JOB_SOURCE)) return;
             instance.addSource(JOB_SOURCE, {
               type: "geojson",
@@ -347,7 +350,7 @@ export function useCalgaryMap({
     const element = container.current;
     if (!live || !element) return;
     const styles = getComputedStyle(element);
-    live.map.setConfig("basemap", cityMapConfigFromStyles(styles));
+    applyCityMapBasemap(live.map, styles);
     for (const layer of jobLayers(markerPalette(styles))) {
       if (!live.map.getLayer(layer.id) || !("paint" in layer)) continue;
       for (const [name, value] of Object.entries(layer.paint ?? {}))

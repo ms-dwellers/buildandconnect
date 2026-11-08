@@ -140,62 +140,114 @@ function makeField(
   };
 }
 
-/** A low-poly pine: a short trunk and three stacked cones. */
-function buildPine(
+/**
+ * Sketchfab-style low-poly deciduous tree: tapered trunk and a chunky
+ * icosahedron canopy (plus one offset blob). We build our own mesh — the
+ * Sketchfab file is reference only, not imported.
+ */
+function buildAutumnTree(
   height: number,
   trunk: THREE.Material,
   foliage: THREE.Material[],
+  seed: number,
 ) {
   const tree = new THREE.Group();
-  const unit = height / 1.6;
-  const trunkHeight = 0.3 * unit;
+  const unit = height / 1.7;
+  const trunkHeight = 0.55 * unit;
+  const trunkTop = 0.04 * unit;
+  const trunkBottom = 0.07 * unit;
   tree.add(
     mesh(
-      new THREE.CylinderGeometry(0.035 * unit, 0.05 * unit, trunkHeight, 7),
+      new THREE.CylinderGeometry(trunkTop, trunkBottom, trunkHeight, 6),
       trunk,
       0,
       trunkHeight / 2,
       0,
     ),
   );
-  const radii = [0.3, 0.24, 0.17];
-  const heights = [0.5, 0.44, 0.4];
-  let y = trunkHeight * 0.7;
-  radii.forEach((radius, index) => {
-    const coneHeight = heights[index] * unit;
-    tree.add(
-      mesh(
-        new THREE.ConeGeometry(radius * unit, coneHeight, 7),
-        foliage[index],
-        0,
-        y + coneHeight / 2,
-        0,
-      ),
+  // Slight lean on the trunk tip so canopies do not stack like cones.
+  const canopyY = trunkHeight * 0.92;
+  const main = mesh(
+    new THREE.IcosahedronGeometry(0.42 * unit, 0),
+    foliage[seed % foliage.length],
+    (seed % 3) * 0.02 * unit,
+    canopyY + 0.12 * unit,
+    0,
+  );
+  main.scale.set(1.05, 0.92 + (seed % 2) * 0.08, 1.0);
+  main.rotation.set(degrees(8 + seed * 7), degrees(seed * 37), degrees(-6));
+  tree.add(main);
+  const side = mesh(
+    new THREE.IcosahedronGeometry(0.26 * unit, 0),
+    foliage[(seed + 1) % foliage.length],
+    0.22 * unit,
+    canopyY - 0.02 * unit,
+    0.12 * unit,
+  );
+  side.scale.set(1.1, 0.85, 0.95);
+  side.rotation.y = degrees(seed * 51);
+  tree.add(side);
+  if (seed % 2 === 0) {
+    const tip = mesh(
+      new THREE.IcosahedronGeometry(0.18 * unit, 0),
+      foliage[(seed + 2) % foliage.length],
+      -0.14 * unit,
+      canopyY + 0.28 * unit,
+      -0.08 * unit,
     );
-    y += coneHeight * 0.58;
-  });
+    tip.scale.set(1, 0.9, 1);
+    tree.add(tip);
+  }
   return tree;
 }
 
+function buildAutumnBush(
+  size: number,
+  materials: THREE.Material[],
+  seed: number,
+) {
+  const shrub = new THREE.Group();
+  const a = mesh(
+    new THREE.IcosahedronGeometry(size * 0.55, 0),
+    materials[seed % materials.length],
+    0,
+    size * 0.4,
+    0,
+  );
+  a.scale.set(1.15, 0.75, 1.05);
+  shrub.add(a);
+  const b = mesh(
+    new THREE.IcosahedronGeometry(size * 0.38, 0),
+    materials[(seed + 1) % materials.length],
+    size * 0.35,
+    size * 0.32,
+    size * 0.15,
+  );
+  b.scale.set(1.05, 0.7, 0.95);
+  shrub.add(b);
+  return shrub;
+}
+
 /**
- * A stand of pines and bushes behind the partner's wooden chair, running off
- * the right edge of the screen. Rest colours are soft mint and teal; hovering
- * deepens them toward pine and emerald and strengthens the sway.
+ * A stand of autumn trees and shrubs behind the partner's wooden chair.
+ * Community tokens keep the canopy leafy green; Developer remaps them to
+ * amber/rust. Hover deepens toward apricot and coral and strengthens sway.
  */
 export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
   const group = new THREE.Group();
   group.userData.backdrop = "partner";
-  const trunk = tint(tokens.shadow, tokens.woodEdge);
+  const trunk = tint(tokens.woodEdge, shadeHex(tokens.woodEdge, -0.15));
   const foliage = [
-    tint(tokens.teal, tokens.pine),
-    tint(shadeHex(tokens.teal, 0.25), tokens.emerald),
-    tint(tokens.mint, shadeHex(tokens.emerald, 0.2)),
+    tint(tokens.teal, tokens.apricot),
+    tint(shadeHex(tokens.mint, -0.05), tokens.coral),
+    tint(tokens.mint, shadeHex(tokens.apricot, -0.1)),
   ];
-  const bush = tint(shadeHex(tokens.mint, 0.1), shadeHex(tokens.teal, -0.1));
+  const bush = tint(shadeHex(tokens.mint, 0.05), shadeHex(tokens.teal, -0.08));
   const tints = [trunk, ...foliage, bush];
+  const canopy = [...foliage.map((entry) => entry.material), bush.material];
   const items: Sprout[] = [];
 
-  const pines = [
+  const trees = [
     { x: 1.85, z: -0.95, height: 1.9 },
     { x: 2.35, z: -0.45, height: 1.45 },
     { x: 2.75, z: -1.25, height: 2.2 },
@@ -209,17 +261,18 @@ export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
     { x: 7.0, z: -1.2, height: 2.2 },
     { x: 7.6, z: -0.75, height: 1.85 },
   ];
-  pines.forEach((pine, index) => {
-    const tree = buildPine(
-      pine.height,
+  trees.forEach((entry, index) => {
+    const tree = buildAutumnTree(
+      entry.height,
       trunk.material,
-      foliage.map((entry) => entry.material),
+      foliage.map((item) => item.material),
+      index,
     );
-    tree.position.set(pine.x, 0, pine.z);
+    tree.position.set(entry.x, 0, entry.z);
     tree.rotation.y = degrees((index * 47) % 360);
     const shadow = buildContactShadow(
-      pine.height * 0.42,
-      pine.height * 0.42,
+      entry.height * 0.38,
+      entry.height * 0.38,
       tokens.shadow,
       0,
       0,
@@ -244,25 +297,7 @@ export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
     { x: 6.15, z: -0.3, size: 0.44 },
   ];
   bushes.forEach((entry, index) => {
-    const shrub = new THREE.Group();
-    shrub.add(
-      mesh(
-        new THREE.ConeGeometry(entry.size * 0.5, entry.size, 6),
-        bush.material,
-        0,
-        entry.size / 2,
-        0,
-      ),
-    );
-    shrub.add(
-      mesh(
-        new THREE.ConeGeometry(entry.size * 0.36, entry.size * 0.8, 6),
-        foliage[2].material,
-        entry.size * 0.4,
-        entry.size * 0.4,
-        entry.size * 0.2,
-      ),
-    );
+    const shrub = buildAutumnBush(entry.size, canopy, index);
     shrub.position.set(entry.x, 0, entry.z);
     group.add(shrub);
     items.push({
