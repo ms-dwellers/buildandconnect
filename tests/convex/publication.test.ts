@@ -3,8 +3,8 @@ import { actor, analysis, api, embedding, job, setup } from "./harness";
 
 test("publication is deduplicated and cannot be reused by another owner or changed details", async () => {
   const t = setup();
-  const company = await actor(t, "company");
-  const other = await actor(t, "company");
+  const company = await actor(t, "requester");
+  const other = await actor(t, "requester");
   const input = { id: crypto.randomUUID(), details: job, analysis, embedding };
   await company.client.mutation(api.data.createOpportunity, input);
   await company.client.mutation(api.data.createOpportunity, input);

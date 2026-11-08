@@ -34,7 +34,7 @@ test("profile revision checks prevent stale native saves from undoing visibility
 
 test("opportunity revisions reject concurrent edits while legacy callers remain compatible", async () => {
   const t = setup();
-  const owner = await actor(t, "company");
+  const owner = await actor(t, "requester");
   const { id } = await owner.client.mutation(api.data.createOpportunity, {
     id: crypto.randomUUID(),
     details: job,
