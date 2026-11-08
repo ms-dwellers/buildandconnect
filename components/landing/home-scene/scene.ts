@@ -172,28 +172,13 @@ export function createHomeScene(
   ].filter((shadow): shadow is THREE.Mesh => shadow !== null);
   scene.add(developer, partner, table, monitor, ...shadows);
 
-  // Personality behind each chair: tech marks for the developer, pixel trees
-  // for the partner. Hovering a chair intensifies its side.
+  // Personality behind each chair: low-poly tech marks for the developer, a
+  // stand of pines for the partner. Both sprout on load; hovering a chair
+  // deepens and animates its side.
   const developerBackdrop = buildDeveloperBackdrop(tokens);
-  scene.add(developerBackdrop.group);
-  const backdrops: BackdropField[] = [developerBackdrop];
-  let partnerBackdrop: BackdropField | null = null;
-  let cancelled = false;
-  void buildPartnerBackdrop(tokens).then((field) => {
-    if (!field || cancelled) {
-      field?.group.traverse((object) => {
-        if (!(object instanceof THREE.Mesh)) return;
-        object.geometry.dispose();
-        const material = object.material as THREE.MeshBasicMaterial;
-        material.map?.dispose();
-        material.dispose();
-      });
-      return;
-    }
-    partnerBackdrop = field;
-    backdrops.push(field);
-    scene.add(field.group);
-  });
+  const partnerBackdrop = buildPartnerBackdrop(tokens);
+  const backdrops: BackdropField[] = [developerBackdrop, partnerBackdrop];
+  scene.add(developerBackdrop.group, partnerBackdrop.group);
 
   const groups: Record<PickTarget, THREE.Group> = {
     developer,
@@ -388,7 +373,7 @@ export function createHomeScene(
       ][])
         group.position.y = id === target ? 0.015 : 0;
       developerBackdrop.setTarget(target === "developer" ? 1 : 0);
-      partnerBackdrop?.setTarget(target === "partner" ? 1 : 0);
+      partnerBackdrop.setTarget(target === "partner" ? 1 : 0);
     },
     setMotion(enabled) {
       motion = enabled;
@@ -453,7 +438,6 @@ export function createHomeScene(
           material.dispose();
         }
       });
-      cancelled = true;
       for (const field of backdrops) field.dispose();
       firepit?.dispose();
       renderer.dispose();

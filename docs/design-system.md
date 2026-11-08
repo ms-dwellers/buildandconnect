@@ -73,11 +73,11 @@ percentages enforced on every component or the map.
   canvas-drawn campfire. The canvas covers the whole hero rather than a box: a
   camera view offset frames the furniture into the band beneath the copy at full
   size while the heading floats in the same space. Every colour comes from `--palette-*`
-  and `--scene-*` tokens read at runtime. Behind the developer chair, canvas-drawn
-  tech marks (brackets, braces, a chip, a prompt) sit in pine and apricot; behind
-  the partner chair, a light set of pixel trees and garden accents from
-  `public/sprites/` return some of the old personality without the full cloud
-  layer. The header and hero fill at least the first viewport; the remaining
+  and `--scene-*` tokens read at runtime. Behind the developer chair, low-poly tech marks (brackets, braces, a chip, a
+  terminal, a gear, a diamond, a dot grid) float, turn, and run off the left
+  edge; behind the partner chair, a stand of low-poly pines and bushes runs off
+  the right edge. Both are procedural meshes that sprout from the ground on
+  load, so no asset files are loaded. The header and hero fill at least the first viewport; the remaining
   sections scroll below. Typography adapts to viewport width and height.
 - The chairs are the calls to action. Each carries a real button above it
   ("I'm a developer: Find a project" on the task chair, "I need a developer:
@@ -85,7 +85,8 @@ percentages enforced on every component or the map.
   anchors on screens 40rem and wider and shown as a plain row under the scene
   otherwise, before WebGL is ready, and without WebGL at all. Hovering or
   focusing a chair or its button lifts the chair and intensifies that side's
-  backdrop (scale, opacity, a soft bob). Clicking the developer chair or the
+  backdrop: the pines deepen from mint and teal to pine and emerald and sway
+  harder, the marks brighten to pine and apricot, grow, and turn faster. Clicking the developer chair or the
   monitor starts the map journey; clicking the partner chair opens the request
   form. The canvas itself is `aria-hidden`. Reduced motion renders one static
   frame, and the render loop pauses while the tab is hidden or the hero is

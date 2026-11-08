@@ -162,6 +162,8 @@ export const SCENE_TOKENS = {
   wheat: "--palette-wheat",
   apricot: "--palette-apricot",
   coral: "--palette-coral",
+  teal: "--palette-teal",
+  emerald: "--palette-emerald",
   wood: "--scene-wood",
   woodEdge: "--scene-wood-edge",
   metal: "--scene-metal",
