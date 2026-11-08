@@ -15,6 +15,9 @@ dialogs do not use Liquid Glass. System permission prompts remain OS-owned.
 Shared inputs include focus rings, labeled form sections, whole-row switches,
 and opaque sliders with native accessibility. Filter groups keep labels intact
 and move whole buttons to another row when needed.
+`AppPalette` scopes shared surfaces and controls like the web's CSS tokens. Voice
+studio uses the isolated `.voice-studio` paper/moss palette from `app/globals.css`;
+its backdrop, cards, fields, navigation, and actions do not change other screens.
 
 ## Build and run
 

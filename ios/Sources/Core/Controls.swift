@@ -3,6 +3,7 @@ import UIKit
 
 /// Native equivalents of components/ui/button.tsx and app/globals.css.
 struct AppButtonStyle: ButtonStyle {
+  @Environment(\.appPalette) private var palette
   enum Variant { case primary, highlight, secondary, outline, ghost, link, destructive }
   enum Size {
     case regular, large, icon, small
@@ -25,30 +26,30 @@ struct AppButtonStyle: ButtonStyle {
   private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 10) }
   private var foreground: Color {
     switch variant {
-    case .primary: Theme.cream
+    case .primary: palette.primaryForeground
     case .highlight: Theme.highlightText
     case .destructive: .white
-    default: Theme.ink
+    default: palette.ink
     }
   }
   private var fill: Color {
     switch variant {
-    case .primary: hovering && enabled ? Theme.primaryHover : Theme.accentStrong
+    case .primary: hovering && enabled ? palette.primaryHover : palette.primary
     case .highlight: hovering && enabled ? Theme.highlightHover : Theme.highlight
     case .secondary: hovering && enabled ? Theme.softAccent.opacity(0.9) : Theme.softAccent
     case .destructive: hovering && enabled ? Theme.destructive.opacity(0.9) : Theme.destructive
-    case .ghost: hovering && enabled ? Theme.accent : .clear
+    case .ghost: hovering && enabled ? palette.accent : .clear
     case .link: .clear
-    case .outline: hovering && enabled ? Theme.accent.opacity(0.5) : Theme.card
+    case .outline: hovering && enabled ? palette.accent.opacity(0.5) : palette.card
     }
   }
   private var edge: Color {
     switch variant {
-    case .primary: Theme.primaryEdge
+    case .primary: palette.primaryEdge
     case .highlight: Theme.highlightEdge
     case .secondary: Theme.secondaryEdge
     case .destructive: Theme.destructiveEdge
-    default: Theme.outlineEdge
+    default: palette.outlineEdge
     }
   }
 
@@ -71,7 +72,7 @@ struct AppButtonStyle: ButtonStyle {
         shape.fill(
           configuration.role == .destructive
             ? Theme.destructive
-            : variant == .ghost && pressed ? Theme.accent : fill
+            : variant == .ghost && pressed ? palette.accent : fill
         )
         .shadow(
           color: configuration.role == .destructive ? Theme.destructiveEdge : edge,
@@ -82,11 +83,11 @@ struct AppButtonStyle: ButtonStyle {
           raised
             ? (configuration.role == .destructive
               ? Theme.destructiveEdge
-              : variant == .outline ? Theme.inputBorder : edge) : .clear)
+              : variant == .outline ? palette.inputBorder : edge) : .clear)
       )
       .overlay {
         if focused {
-          RoundedRectangle(cornerRadius: 13).stroke(Theme.accentStrong, lineWidth: 2).padding(-3)
+          RoundedRectangle(cornerRadius: 13).stroke(palette.ring, lineWidth: 2).padding(-3)
         }
       }
       .offset(y: raised && pressed ? size.depth : 0)
@@ -105,17 +106,19 @@ struct AppTextFieldStyle: TextFieldStyle {
 }
 
 struct AppField<Content: View>: View {
+  @Environment(\.appPalette) private var palette
   let title: String
   @ViewBuilder let content: () -> Content
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       Text(title).font(Theme.metadata).accessibilityHidden(true)
       content()
-    }.listRowBackground(Theme.card)
+    }.listRowBackground(palette.card)
   }
 }
 
 struct AppSection<Content: View>: View {
+  @Environment(\.appPalette) private var palette
   let title: String
   @ViewBuilder let content: () -> Content
 
@@ -128,7 +131,7 @@ struct AppSection<Content: View>: View {
     Section {
       content()
     } header: {
-      Text(title).font(Theme.metadata).foregroundStyle(Theme.muted).textCase(nil)
+      Text(title).font(Theme.metadata).foregroundStyle(palette.muted).textCase(nil)
     }
   }
 }
@@ -144,17 +147,18 @@ private struct AppFieldSurface: ViewModifier {
 }
 
 struct AppInputSurface: ViewModifier {
+  @Environment(\.appPalette) private var palette
   var focused = false
   @Environment(\.isEnabled) private var enabled
   func body(content: Content) -> some View {
     content
-      .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
+      .background(palette.canvas, in: RoundedRectangle(cornerRadius: 12))
       .overlay(
-        RoundedRectangle(cornerRadius: 12).stroke(focused ? Theme.accentStrong : Theme.inputBorder)
+        RoundedRectangle(cornerRadius: 12).stroke(focused ? palette.ring : palette.inputBorder)
       )
       .overlay {
         if focused {
-          RoundedRectangle(cornerRadius: 15).stroke(Theme.accentStrong.opacity(0.24), lineWidth: 3)
+          RoundedRectangle(cornerRadius: 15).stroke(palette.ring.opacity(0.24), lineWidth: 3)
             .padding(-2)
         }
       }
@@ -163,6 +167,7 @@ struct AppInputSurface: ViewModifier {
 }
 
 struct AppSwitchStyle: ToggleStyle {
+  @Environment(\.appPalette) private var palette
   @Environment(\.isEnabled) private var enabled
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   func makeBody(configuration: Configuration) -> some View {
@@ -173,10 +178,10 @@ struct AppSwitchStyle: ToggleStyle {
         configuration.label.font(Theme.body(16)).multilineTextAlignment(.leading)
         Spacer(minLength: 0)
         RoundedRectangle(cornerRadius: 11)
-          .fill(configuration.isOn ? Theme.accentStrong : Theme.inputBorder)
+          .fill(configuration.isOn ? palette.primary : palette.inputBorder)
           .frame(width: 38, height: 22)
           .overlay(alignment: configuration.isOn ? .trailing : .leading) {
-            Circle().fill(Theme.canvas).frame(width: 20, height: 20).padding(1)
+            Circle().fill(palette.canvas).frame(width: 20, height: 20).padding(1)
           }
           .frame(width: 44, height: 44)
       }.contentShape(Rectangle())
@@ -264,6 +269,7 @@ private struct AppFlowLayout: Layout {
 }
 
 struct AppSelect<Value: Hashable>: View {
+  @Environment(\.appPalette) private var palette
   let title: String
   @Binding var selection: Value
   let options: [(Value, String)]
@@ -278,7 +284,7 @@ struct AppSelect<Value: Hashable>: View {
           Text(options.first { $0.0 == selection }?.1 ?? title).lineLimit(1)
           Spacer()
           Image(systemName: "chevron.up.chevron.down").font(.system(size: 12, weight: .medium))
-        }.font(Theme.body(16)).foregroundStyle(Theme.ink)
+        }.font(Theme.body(16)).foregroundStyle(palette.ink)
           .padding(.horizontal, 12).frame(minHeight: 44)
           .modifier(AppInputSurface(focused: expanded))
           .contentShape(RoundedRectangle(cornerRadius: 12))
@@ -309,8 +315,8 @@ struct AppSelect<Value: Hashable>: View {
             }
           }
         }
-      }.padding(24).foregroundStyle(Theme.ink)
-        .presentationDetents([.medium]).presentationBackground(Theme.canvas)
+      }.padding(24).foregroundStyle(palette.ink)
+        .presentationDetents([.medium]).presentationBackground(palette.canvas)
         .presentationCornerRadius(20)
     }
   }
@@ -344,6 +350,7 @@ struct AppStepper: View {
 
 /// Keep native slider input and accessibility with the web's opaque track and thumb.
 struct AppSlider: UIViewRepresentable {
+  @Environment(\.appPalette) private var palette
   @Binding var value: Double
   let bounds: ClosedRange<Double>
   let step: Double
@@ -351,7 +358,7 @@ struct AppSlider: UIViewRepresentable {
 
   func makeUIView(context: Context) -> NativeSlider {
     let slider = NativeSlider()
-    for (minimum, color) in [(true, Theme.accentStrong), (false, Theme.inputBorder)] {
+    for (minimum, color) in [(true, palette.primary), (false, palette.inputBorder)] {
       let image = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { _ in
         UIColor(color).setFill()
         UIBezierPath(roundedRect: CGRect(x: 0, y: 0, width: 4, height: 4), cornerRadius: 2).fill()
@@ -365,9 +372,9 @@ struct AppSlider: UIViewRepresentable {
     for (state, size) in [(UIControl.State.normal, CGFloat(20)), (.highlighted, CGFloat(24))] {
       let image = UIGraphicsImageRenderer(size: CGSize(width: size, height: size)).image { _ in
         let circle = UIBezierPath(ovalIn: CGRect(x: 0.5, y: 0.5, width: size - 1, height: size - 1))
-        UIColor(Theme.card).setFill()
+        UIColor(palette.card).setFill()
         circle.fill()
-        UIColor(Theme.inputBorder).setStroke()
+        UIColor(palette.inputBorder).setStroke()
         circle.stroke()
       }
       slider.setThumbImage(image, for: state)
@@ -424,16 +431,17 @@ struct AppSlider: UIViewRepresentable {
 }
 
 struct AppDialog<Actions: View>: View {
+  @Environment(\.appPalette) private var palette
   let title: String
   let message: String
   @ViewBuilder let actions: () -> Actions
   var body: some View {
     VStack(alignment: .leading, spacing: 20) {
       Text(title).font(Theme.title(26)).accessibilityAddTraits(.isHeader)
-      Text(message).font(Theme.body(17)).foregroundStyle(Theme.muted)
+      Text(message).font(Theme.body(17)).foregroundStyle(palette.muted)
       actions()
     }.padding(24).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-      .foregroundStyle(Theme.ink).presentationBackground(Theme.canvas)
+      .foregroundStyle(palette.ink).presentationBackground(palette.canvas)
       .presentationDetents([.medium]).presentationCornerRadius(20)
   }
 }

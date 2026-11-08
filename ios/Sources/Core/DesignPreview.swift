@@ -18,7 +18,7 @@
           destination("Private area", route: .area)
           destination("Account", route: .account)
           destination("Request editor", route: .newRequest, role: .requester)
-          NavigationLink("Voice controls") { VoiceStudioView() }
+          destination("Voice controls", route: .voice)
         }.pageBackground().appNavigationTitle("Design preview")
       }.environment(app).environment(app.api)
     }

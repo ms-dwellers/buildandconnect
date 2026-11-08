@@ -64,6 +64,13 @@ import SwiftUI
 }
 
 struct VoiceStudioView: View {
+  var body: some View {
+    VoiceStudioContent().environment(\.appPalette, .voice).tint(AppPalette.voice.primary)
+  }
+}
+
+private struct VoiceStudioContent: View {
+  @Environment(\.appPalette) private var palette
   @Environment(\.scenePhase) private var scenePhase
   @State private var microphone = MicrophoneMeter()
   @State private var speech = AVSpeechSynthesizer()
@@ -83,7 +90,7 @@ struct VoiceStudioView: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 22) {
-        StatusBadge(text: "Local prototype")
+        StatusBadge(text: "Local prototype", outlined: true)
         Text("A little space to think.").font(Theme.title(34))
         AuroraView(
           rate: 0.25 + microphone.level * 3.75,
@@ -93,7 +100,7 @@ struct VoiceStudioView: View {
         Text(
           "Scripted replies, not live AI. Audio levels stay on this device; nothing is recorded, transcribed, or uploaded."
         )
-        .font(Theme.caption).foregroundStyle(Theme.muted)
+        .font(Theme.caption).foregroundStyle(palette.muted)
         AppSegmentedControl(
           title: "Voice style", selection: $style,
           options: [
@@ -116,7 +123,7 @@ struct VoiceStudioView: View {
         if active {
           TextField(
             "Type a thought", text: $input,
-            prompt: Text("Type a thought").foregroundStyle(Theme.muted), axis: .vertical)
+            prompt: Text("Type a thought").foregroundStyle(palette.muted), axis: .vertical)
           Button("Send thought") {
             begin(input)
             input = ""
@@ -212,7 +219,7 @@ private struct AuroraView: View {
   var body: some View {
     TimelineView(.animation(minimumInterval: 1.0 / 30, paused: paused || reduceMotion)) { context in
       Canvas { graphics, size in
-        graphics.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.ink))
+        graphics.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.Voice.sand))
         for ribbon in 0..<4 {
           var path = Path()
           for step in 0...80 {
@@ -230,9 +237,9 @@ private struct AuroraView: View {
             path,
             with: .linearGradient(
               Gradient(colors: [
-                Theme.softAccent.opacity(0.1),
-                ribbon.isMultiple(of: 2) ? Theme.accent : Theme.highlight,
-                Theme.softAccent.opacity(0.2),
+                Theme.Voice.moss.opacity(0.2),
+                ribbon.isMultiple(of: 2) ? Theme.Voice.moss : Theme.Voice.rust,
+                Theme.Voice.plum.opacity(0.25),
               ]), startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height)),
             style: StrokeStyle(lineWidth: 15, lineCap: .round))
         }

@@ -38,7 +38,7 @@ enum Theme {
   static let mapText = color(0x425F57)
   static let mapMuted = muted
 
-  private static func color(_ hex: UInt32) -> Color {
+  fileprivate static func color(_ hex: UInt32) -> Color {
     Color(
       .sRGB, red: Double((hex >> 16) & 0xFF) / 255,
       green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255, opacity: 1)
@@ -52,56 +52,132 @@ enum Theme {
   static let metadata = Font.custom("DMMono-Regular", size: 12, relativeTo: .caption)
   static let caption = Font.custom("LeagueSpartan-Regular", size: 13, relativeTo: .footnote)
   static let subheading = Font.custom("LeagueSpartan-SemiBold", size: 17, relativeTo: .headline)
+
+  enum Voice {
+    static let paper = color(0xF7F5ED)
+    static let card = color(0xFFFDF7)
+    static let ink = color(0x353A31)
+    static let muted = color(0x696D61)
+    static let border = color(0xD9DCCF)
+    static let sand = color(0xF1E7D6)
+    static let moss = color(0x83947B)
+    static let rust = color(0xC78060)
+    static let plum = color(0x978794)
+    static let soft = color(0xEBEEE3)
+  }
+}
+
+/// Mirrors the web's inherited CSS tokens, including its isolated voice scope.
+struct AppPalette {
+  var canvas = Theme.canvas
+  var card = Theme.card
+  var ink = Theme.ink
+  var muted = Theme.muted
+  var accent = Theme.accent
+  var primary = Theme.accentStrong
+  var primaryForeground = Theme.cream
+  var border = Theme.border
+  var inputBorder = Theme.inputBorder
+  var ring = Theme.accentStrong
+  var primaryEdge = Theme.primaryEdge
+  var primaryHover = Theme.primaryHover
+  var outlineEdge = Theme.outlineEdge
+
+  static let standard = AppPalette()
+  static let voice = AppPalette(
+    canvas: Theme.Voice.paper, card: Theme.Voice.card,
+    ink: Theme.Voice.ink, muted: Theme.Voice.muted, accent: Theme.Voice.soft,
+    primary: Theme.color(0x4C5944), primaryForeground: Theme.Voice.card,
+    border: Theme.Voice.border, inputBorder: Theme.color(0xA1AA94),
+    ring: Theme.color(0x586C4C), primaryEdge: Theme.color(0x35402F),
+    primaryHover: Theme.color(0x3E4D37), outlineEdge: Theme.color(0xC1C6B7))
+}
+
+private struct AppPaletteKey: EnvironmentKey {
+  static let defaultValue = AppPalette.standard
+}
+
+extension EnvironmentValues {
+  var appPalette: AppPalette {
+    get { self[AppPaletteKey.self] }
+    set { self[AppPaletteKey.self] = newValue }
+  }
 }
 
 extension View {
   func appNavigationTitle(_ title: String) -> some View {
-    self.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+    modifier(AppNavigationTitle(title: title))
+  }
+  func paperCard() -> some View {
+    padding(24).frame(maxWidth: .infinity, alignment: .leading)
+      .modifier(AppSurface(cornerRadius: 20))
+  }
+  func pageBackground() -> some View {
+    modifier(AppPageBackground())
+  }
+  func controlSurface(cornerRadius: CGFloat = 12) -> some View {
+    modifier(AppSurface(cornerRadius: cornerRadius))
+  }
+}
+
+private struct AppNavigationTitle: ViewModifier {
+  let title: String
+  @Environment(\.appPalette) private var palette
+  func body(content: Content) -> some View {
+    content.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+      .toolbarBackground(palette.canvas, for: .navigationBar)
+      .toolbarBackground(.visible, for: .navigationBar)
       .toolbar {
         AppToolbarItem(placement: .principal) {
-          Text(title).font(Theme.body(18).weight(.semibold)).foregroundStyle(Theme.ink)
+          Text(title).font(Theme.body(18).weight(.semibold)).foregroundStyle(palette.ink)
         }
       }
   }
-  func paperCard() -> some View {
-    self.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-      .background {
-        RoundedRectangle(cornerRadius: 20).fill(Theme.card)
-          .shadow(color: Theme.shadow.opacity(0.08), radius: 0, y: 2)
-          .shadow(color: Theme.shadow.opacity(0.04), radius: 7, y: 5)
-      }
-      .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border))
-  }
-  func pageBackground() -> some View {
-    self.scrollContentBackground(.hidden).scrollDismissesKeyboard(.interactively)
+}
+
+private struct AppPageBackground: ViewModifier {
+  @Environment(\.appPalette) private var palette
+  func body(content: Content) -> some View {
+    content.scrollContentBackground(.hidden).scrollDismissesKeyboard(.interactively)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .background(Theme.canvas)
-      .listRowSeparatorTint(Theme.border)
+      .foregroundStyle(palette.ink).background(palette.canvas)
+      .listRowSeparatorTint(palette.border)
   }
-  func controlSurface(cornerRadius: CGFloat = 12) -> some View {
-    self.background {
-      RoundedRectangle(cornerRadius: cornerRadius).fill(Theme.card)
-        .shadow(color: Theme.shadow.opacity(0.08), radius: 0, y: 2)
-        .shadow(color: Theme.shadow.opacity(0.04), radius: 7, y: 5)
+}
+
+private struct AppSurface: ViewModifier {
+  let cornerRadius: CGFloat
+  @Environment(\.appPalette) private var palette
+  func body(content: Content) -> some View {
+    content.background {
+      RoundedRectangle(cornerRadius: cornerRadius).fill(palette.card)
+        .shadow(color: palette.primary.opacity(0.08), radius: 0, y: 2)
+        .shadow(color: palette.primary.opacity(0.04), radius: 7, y: 5)
     }
-    .overlay(RoundedRectangle(cornerRadius: cornerRadius).stroke(Theme.border))
+    .overlay(RoundedRectangle(cornerRadius: cornerRadius).stroke(palette.border))
   }
 }
 
 struct StatusBadge: View {
   let text: String
+  var outlined = false
+  @Environment(\.appPalette) private var palette
   private var positive: Bool {
     ["open", "available", "connected"].contains(text.lowercased())
   }
   var body: some View {
     Text(text.capitalized).font(Theme.body(12).weight(.medium))
       .padding(.horizontal, 10).padding(.vertical, 4).frame(minHeight: 28)
-      .foregroundStyle(positive ? Theme.success : Theme.ink)
+      .foregroundStyle(outlined ? palette.muted : positive ? palette.primary : palette.ink)
       .background(
-        positive
-          ? Theme.successSurface
-          : text.lowercased() == "claimed" ? Theme.highlight : Theme.softAccent,
-        in: RoundedRectangle(cornerRadius: 5))
+        outlined
+          ? .clear
+          : positive
+            ? Theme.successSurface
+            : text.lowercased() == "claimed" ? Theme.highlight : Theme.softAccent,
+        in: RoundedRectangle(cornerRadius: 5)
+      )
+      .overlay(RoundedRectangle(cornerRadius: 5).stroke(outlined ? palette.border : .clear))
   }
 }
 

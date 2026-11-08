@@ -345,7 +345,7 @@ struct AccountView: View {
         .foregroundStyle(Theme.muted)
       }
       #if DEBUG
-        AppSection("Labs") { NavigationLink("Voice studio") { VoiceStudioView() } }
+        AppSection("Labs") { NavigationLink("Voice studio", value: Route.voice) }
       #endif
       Section {
         Button(signingOut ? "Signing out…" : "Sign out", role: .destructive) {
