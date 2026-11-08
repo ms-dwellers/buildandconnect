@@ -1,14 +1,46 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { convexToJson } from "convex/values";
 import {
   emptyProjectDraft,
   projectDraftContentSchema,
   projectDraftFromBrief,
   opportunityFromDraft,
+  sameProjectDraftContent,
+  type ProjectDraftContent,
 } from "../backend/project-drafts.ts";
 import { emptyHiringBrief } from "../backend/hiring/schemas.ts";
 import { requestEligibility } from "../backend/matching.ts";
 import { developer, analysis, embedding } from "./fixtures/matching.ts";
+
+test("draft equality ignores Convex key ordering but detects changed fields", () => {
+  const content = {
+    ...emptyProjectDraft(),
+    title: "Garden calendar",
+    pin: { latitude: 51.05, longitude: -114.07, place: "Calgary" },
+  };
+  const reordered = convexToJson(content) as unknown as ProjectDraftContent;
+  assert.notEqual(JSON.stringify(content), JSON.stringify(reordered));
+  assert.equal(sameProjectDraftContent(content, reordered), true);
+  assert.equal(
+    sameProjectDraftContent(content, {
+      ...reordered,
+      title: "Another project",
+    }),
+    false,
+  );
+  assert.equal(
+    sameProjectDraftContent(content, { ...reordered, pin: null }),
+    false,
+  );
+  assert.equal(
+    sameProjectDraftContent(content, {
+      ...reordered,
+      pin: { ...content.pin, latitude: 51.06 },
+    }),
+    false,
+  );
+});
 
 test("drafts preserve incomplete edits but cannot publish without required details", () => {
   const draft = emptyProjectDraft();

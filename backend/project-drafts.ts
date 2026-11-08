@@ -36,6 +36,29 @@ export type ProjectDraftRecord = {
   publishedOpportunityId?: string;
 };
 
+export function sameProjectDraftContent(
+  left: ProjectDraftContent,
+  right: ProjectDraftContent,
+) {
+  return (
+    left.title === right.title &&
+    left.description === right.description &&
+    left.city === right.city &&
+    left.kind === right.kind &&
+    left.remote === right.remote &&
+    left.collaboration === right.collaboration &&
+    left.essentialTechnologies === right.essentialTechnologies &&
+    left.interests === right.interests &&
+    left.minimumWeeklyHours === right.minimumWeeklyHours &&
+    left.compensation === right.compensation &&
+    left.commitment === right.commitment &&
+    left.place === right.place &&
+    left.pin?.latitude === right.pin?.latitude &&
+    left.pin?.longitude === right.pin?.longitude &&
+    left.pin?.place === right.pin?.place
+  );
+}
+
 export function emptyProjectDraft(): ProjectDraftContent {
   return {
     title: "",

@@ -66,6 +66,7 @@ import {
 import {
   opportunityFromDraft,
   projectDraftContentSchema,
+  sameProjectDraftContent,
 } from "../backend/project-drafts";
 
 const sessionId = v.optional(v.string());
@@ -127,7 +128,7 @@ export const saveProjectDraft = mutation({
       old &&
       args.expectedUpdatedAt === 0 &&
       !old.publishedOpportunityId &&
-      JSON.stringify(old.content) === JSON.stringify(content)
+      sameProjectDraftContent(old.content, content)
     )
       return draftRecord(old);
     if (old?.publishedOpportunityId)

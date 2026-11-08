@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import type {
-  ProjectDraftContent,
-  ProjectDraftRecord,
+import {
+  sameProjectDraftContent,
+  type ProjectDraftContent,
+  type ProjectDraftRecord,
 } from "@/backend/project-drafts";
 
 export function useDraftSave(initial: ProjectDraftRecord) {
@@ -25,10 +26,7 @@ export function useDraftSave(initial: ProjectDraftRecord) {
     if (flight.current) return flight.current;
     if (conflicted.current) return Promise.resolve(false);
     const save = async () => {
-      while (
-        JSON.stringify(saved.current.content) !==
-        JSON.stringify(content.current)
-      ) {
+      while (!sameProjectDraftContent(saved.current.content, content.current)) {
         const snapshot = content.current;
         const controller = new AbortController();
         request.current = controller;
@@ -86,7 +84,7 @@ export function useDraftSave(initial: ProjectDraftRecord) {
 
   const change = useCallback(
     (next: ProjectDraftContent) => {
-      if (JSON.stringify(content.current) === JSON.stringify(next)) return;
+      if (sameProjectDraftContent(content.current, next)) return;
       content.current = next;
       dirty.current = true;
       setStatus("Unsaved changes");
