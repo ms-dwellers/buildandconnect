@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRightIcon } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { mapClouds } from "@/lib/map-clouds";
 
 type Phase = "idle" | "covering" | "revealing";
 const COVER_MS = 900;
@@ -25,55 +26,36 @@ const JourneyContext = createContext({
 });
 export const useMapJourney = () => useContext(JourneyContext);
 
-const transitionClouds = [
-  {
-    sprite: "large-cloud",
-    width: 267,
-    height: 325,
-    layer: "tall",
-  },
-  {
-    sprite: "foreground-cloud-3",
-    width: 240,
-    height: 128,
-    layer: "low",
-  },
-  {
-    sprite: "cloud-2",
-    width: 249,
-    height: 120,
-    layer: "middle",
-  },
-] as const;
-
 export function MapClouds() {
   return (
     <>
       <div className="cloud-veil" aria-hidden="true" />
-      {["left", "right"].map((side) => (
-        <div
-          key={side}
-          className={`map-cloud-bank map-cloud-bank-${side}`}
-          aria-hidden="true"
-        >
-          {transitionClouds.map((cloud) => (
+      <div className="map-cloud-field" aria-hidden="true">
+        {mapClouds.map((cloud) => (
+          <div
+            key={cloud.id}
+            className="map-cloud-cell"
+            data-depth={cloud.depth}
+            style={
+              {
+                "--cloud-x": `${cloud.offsetX}%`,
+                "--cloud-y": `${cloud.offsetY}%`,
+                "--cloud-scale": cloud.scale,
+                "--cloud-travel-y": `${cloud.travelY}vh`,
+                "--cloud-reflection": cloud.reflected ? -1 : 1,
+              } as CSSProperties
+            }
+          >
             <img
-              key={cloud.sprite}
-              src={`/sprites/${cloud.sprite}.svg`}
-              width={cloud.width}
-              height={cloud.height}
+              src={`/sprites/${cloud.sprite.name}.svg`}
+              width={cloud.sprite.width}
+              height={cloud.sprite.height}
               alt=""
-              className={`map-cloud-sprite map-cloud-sprite-${cloud.layer}`}
-              style={
-                {
-                  "--sprite-width": `${cloud.width}px`,
-                  "--sprite-height": `${cloud.height}px`,
-                } as CSSProperties
-              }
+              className="map-cloud-sprite"
             />
-          ))}
-        </div>
-      ))}
+          </div>
+        ))}
+      </div>
     </>
   );
 }
@@ -205,8 +187,8 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
               navigateToMap();
             if (
               event.target instanceof HTMLElement &&
-              event.target.classList.contains("map-cloud-bank-left") &&
-              event.animationName === "map-clouds-part" &&
+              event.target.classList.contains("cloud-veil") &&
+              event.animationName === "clouds-unveil" &&
               phase === "revealing"
             )
               complete();
