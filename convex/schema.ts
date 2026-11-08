@@ -128,6 +128,24 @@ export const request = v.object({
 });
 
 export default defineSchema({
+  projectSkillEvidence: defineTable({
+    source: v.union(v.literal("opportunity"), v.literal("request")),
+    projectId: v.string(),
+    projectTitle: v.string(),
+    developerId: v.string(),
+    developerName: v.string(),
+    requesterId: v.string(),
+    requesterName: v.string(),
+    skills: tags,
+    contribution: v.string(),
+    confirmedSkills: tags,
+    confirmedAt: v.union(v.number(), v.null()),
+    createdAt: v.number(),
+  })
+    .index("by_project", ["source", "projectId"])
+    .index("by_project_developer", ["source", "projectId", "developerId"])
+    .index("by_developer", ["developerId"])
+    .index("by_requester", ["requesterId"]),
   demoSnapshots: defineTable({
     key: v.literal("production-demo"),
     users: v.array(v.object({ id: v.string(), name: v.string() })),

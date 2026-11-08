@@ -62,19 +62,22 @@ does not risk approximate retrieval dropping promising juniors.
 All factor scores and the overall score use a 0-100 scale. The final score uses
 unrounded factors, rounded to one decimal place. Ties sort by developer ID.
 
-| Factor               | Weight | Meaning                                                                           |
-| -------------------- | ------ | --------------------------------------------------------------------------------- |
-| Technical readiness  | 30%    | 75% required-technology proficiency, 25% experience/requirement cosine similarity |
-| Growth potential     | 30%    | 65% desired-learning alignment, 35% supported challenge fit; scaled by readiness  |
-| Developer interest   | 20%    | Shared explicit project interests; neutral when the opportunity has none          |
-| Collaboration        | 10%    | Compatible async/sync preference, with flexible matching either                   |
-| Opportunity exposure | 10%    | `1 / (1 + recentRequesterInterestCount / 3)`                                      |
+| Factor               | Weight | Meaning                                                                                      |
+| -------------------- | ------ | -------------------------------------------------------------------------------------------- |
+| Technical readiness  | 30%    | Required skills/proficiency, semantic relevance, bounded requester-confirmed project backing |
+| Growth potential     | 30%    | 65% desired-learning alignment, 35% supported challenge fit; scaled by readiness             |
+| Developer interest   | 20%    | Shared explicit project interests; neutral when the opportunity has none                     |
+| Collaboration        | 10%    | Collaboration preference, time overlap and location fit                                      |
+| Opportunity exposure | 10%    | `1 / (1 + recentRequesterInterestCount / 3)`                                                 |
 
-Hard gates: available and discoverable, explicit requester-designated essential
-technologies, minimum weekly availability, city for non-remote projects, and
-consent to volunteering. AI-extracted required technologies influence readiness
-but do not automatically become hard gates. No arbitrary years-of-experience or
-seniority exclusion applies. Higher experience never reduces challenge fit.
+Discovery respects availability, visibility and paid/volunteer preferences.
+Skills, requested hours and city guide ranking and produce discussion points,
+not hard exclusions. A developer can deliberately express interest outside their
+usual availability or paid-work preference; sharing interest still requires a
+visible profile. Requesters can respond to that interest without reapplying
+discovery preferences. Direct acceptance of an open community request does not
+require a search pin or radius. Nearby discovery still uses the saved search area.
+Ownership, exclusive assignment and mutual-interest checks remain enforced.
 
 Mentorship permits a one-level supported stretch; larger gaps lower challenge
 fit. Learning alignment counts requested learning targets present among project
@@ -83,6 +86,20 @@ level 5. Required-technology proficiency is capped at full readiness, not reward
 without bound. Empty technical requirements are neutral rather than a free 100%.
 Project difficulty and experience levels are self-reported/model estimates, not
 verified certifications; matches assist human decisions, not automatic hiring.
+
+Developers can submit actual contributions and used skills after a mutual
+opportunity connection or community-request assignment. Only the project owner
+can confirm a subset of those skills. Pending submissions and self-reported
+portfolio projects do not earn confirmed backing. The unique source/project/
+developer record counts once per skill; retries cannot inflate it. Confirmation
+does not establish completion or a verified proficiency level. Closed requests
+retain their assigned developer so real work can be recorded afterward.
+
+Profiles show confirmed-project counts and provenance separately from self-rated
+levels. Readiness receives at most 15 percentage points of skill-specific evidence
+credit, with diminishing returns (`log2(1 + projectCount) / 3`, capped at one).
+Evidence never silently changes self-rated levels. New confirmed skills are usable
+in matching even before the developer adds a self-rating.
 
 Exposure counts distinct opportunity/requester-interest records first created in
 the last 30 days. Listing matches never changes it; retrying, withdrawing, and

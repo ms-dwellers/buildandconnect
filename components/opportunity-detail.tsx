@@ -31,6 +31,7 @@ import { ProjectScope } from "@/components/project-scope";
 import { ConfirmButton } from "@/components/dashboards/parts";
 import { withNext } from "@/lib/navigation";
 import { DeveloperReviewForm } from "@/components/developer-review-form";
+import { ProjectSkillEvidence } from "@/components/project-skill-evidence";
 import type {
   DeveloperMatch,
   Interest,
@@ -127,6 +128,9 @@ function Loaded({
         </div>
       </div>
       {owner && <Candidates opportunity={job} />}
+      {owner && (
+        <ProjectSkillEvidence source="opportunity" projectId={job.id} owner />
+      )}
     </div>
   );
 }
@@ -215,7 +219,7 @@ function Summary({ opportunity }: { opportunity: OpportunityRecord }) {
           )}
         </dl>
         <p className="text-sm">
-          At least {formatWeeklyHours(opportunity.minimumWeeklyHours)} ·{" "}
+          Requested: {formatWeeklyHours(opportunity.minimumWeeklyHours)} ·{" "}
           {opportunity.collaboration === "async"
             ? "Mostly asynchronous"
             : opportunity.collaboration === "sync"
@@ -224,7 +228,7 @@ function Summary({ opportunity }: { opportunity: OpportunityRecord }) {
         </p>
         {opportunity.essentialTechnologies.length > 0 && (
           <p className="text-sm">
-            Required by the requester:{" "}
+            Requested technologies:{" "}
             {opportunity.essentialTechnologies.join(", ")}
           </p>
         )}
@@ -332,7 +336,7 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
             <EmptyState
               icon={UsersRoundIcon}
               title="No eligible developers yet"
-              description="Developers appear here when they're available, discoverable, and meet your essential requirements."
+              description="Developers appear here when they're available, visible, and open to this kind of work. Skills and time commitments guide ranking rather than excluding people."
             />
           }
         >
@@ -368,6 +372,13 @@ function Candidates({ opportunity }: { opportunity: OpportunityRecord }) {
                     <p className="text-sm text-muted-foreground">
                       {match.explanation}
                     </p>
+                    {!!match.considerations?.length && (
+                      <ul className="list-disc space-y-1 ps-5 text-sm text-muted-foreground">
+                        {match.considerations.map((reason) => (
+                          <li key={reason}>{reason}</li>
+                        ))}
+                      </ul>
+                    )}
                     <Scores scores={match.scores} />
                     <div className="flex flex-wrap items-center gap-3">
                       <Button
@@ -515,6 +526,16 @@ function YourFit({
                 )}
               </div>
               <p className="text-sm">{fit.data.explanation}</p>
+              {!!fit.data.considerations?.length && (
+                <div className="space-y-2 text-sm">
+                  <p className="font-medium">Discuss before starting</p>
+                  <ul className="list-disc space-y-1 ps-5 text-muted-foreground">
+                    {fit.data.considerations.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <details className="border-t pt-3 text-sm">
                 <summary className="cursor-pointer font-medium">
                   Match details · {Math.round(fit.data.score)}%
@@ -534,6 +555,19 @@ function YourFit({
                   <li key={reason}>{reason}</li>
                 ))}
               </ul>
+              <Button
+                variant="outline"
+                render={
+                  <a
+                    href={withNext(
+                      "/profile",
+                      `/opportunities/${opportunity.id}`,
+                    )}
+                  />
+                }
+              >
+                Review profile visibility
+              </Button>
             </div>
           )}
           <FieldMessage>{error}</FieldMessage>
@@ -592,6 +626,13 @@ function YourFit({
           )}
         </CardPanel>
       </Card>
+      {mine?.connected && (
+        <ProjectSkillEvidence
+          source="opportunity"
+          projectId={opportunity.id}
+          canSubmit
+        />
+      )}
     </Section>
   );
 }

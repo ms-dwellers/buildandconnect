@@ -3,6 +3,7 @@
 import { ClockIcon, MapPinIcon, StarIcon, FolderCodeIcon } from "lucide-react";
 import { Card, CardPanel } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   ErrorAlert,
   LoadingBlock,
@@ -10,6 +11,7 @@ import {
 } from "@/components/app/require-role";
 import { useApi } from "@/lib/use-api";
 import type { PublicDeveloper, DeveloperReputation } from "@/lib/types";
+import type { SkillBacking } from "@/backend/skill-evidence";
 
 const levels = ["", "Beginner", "Comfortable", "Capable", "Strong", "Expert"];
 
@@ -39,12 +41,29 @@ function LoadedProfile({ id }: { id: string }) {
 
 export function DeveloperProfileView({
   profile,
+  onEditSkills,
 }: {
   profile: PublicDeveloper;
+  onEditSkills?: () => void;
 }) {
   const reputation = useApi<DeveloperReputation>(
     `/developers/${encodeURIComponent(profile.id)}/reputation`,
   );
+  const skills = [...profile.skills];
+  const confirmedWork = new Map<
+    string,
+    SkillBacking["projects"][number] & { skills: string[] }
+  >();
+  for (const backing of profile.skillEvidence ?? []) {
+    if (!skills.some((skill) => skill.name === backing.name))
+      skills.push({ name: backing.name, level: 1 });
+    for (const project of backing.projects) {
+      const key = `${project.source}:${project.projectId}`;
+      const work = confirmedWork.get(key) ?? { ...project, skills: [] };
+      work.skills.push(backing.name);
+      confirmedWork.set(key, work);
+    }
+  }
   return (
     <div className="space-y-6 [overflow-wrap:anywhere]">
       <Card className="overflow-hidden">
@@ -111,10 +130,28 @@ export function DeveloperProfileView({
               <div>
                 <h3 className="text-xl font-semibold">Selected work</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Projects described by the developer. Ask about their
-                  contribution and a demo before starting.
+                  Contributions described by the developer, with
+                  requester-confirmed skills labeled separately. Ask about a
+                  demo before starting.
                 </p>
               </div>
+              {[...confirmedWork.values()].map((project) => (
+                <article
+                  key={`${project.source}:${project.projectId}`}
+                  className="space-y-2 border-t pt-5"
+                >
+                  <h4 className="font-semibold">{project.title}</h4>
+                  {project.contribution && (
+                    <p className="whitespace-pre-line text-sm leading-6">
+                      {project.contribution}
+                    </p>
+                  )}
+                  <p className="text-sm text-primary">
+                    Skills confirmed by {project.requesterName}:{" "}
+                    {project.skills.join(" · ")}
+                  </p>
+                </article>
+              ))}
               {profile.projects.length ? (
                 profile.projects.map((project, index) => (
                   <article key={index} className="space-y-2 border-t pt-5">
@@ -125,6 +162,9 @@ export function DeveloperProfileView({
                       />
                       {project.title}
                     </h4>
+                    <p className="text-xs text-muted-foreground">
+                      Developer-reported project
+                    </p>
                     <p className="whitespace-pre-line text-sm leading-6">
                       {project.description}
                     </p>
@@ -133,12 +173,12 @@ export function DeveloperProfileView({
                     </p>
                   </article>
                 ))
-              ) : (
+              ) : confirmedWork.size === 0 ? (
                 <p className="rounded-xl bg-muted p-4 text-sm leading-6 text-muted-foreground">
                   No projects shared yet. Personal, school and volunteer work
                   are all useful evidence of what someone can build.
                 </p>
-              )}
+              ) : null}
             </CardPanel>
           </Card>
           <DeveloperReviews reputation={reputation} />
@@ -146,22 +186,65 @@ export function DeveloperProfileView({
         <div className="space-y-6">
           <Card>
             <CardPanel className="space-y-4 p-6">
-              <h3 className="text-xl font-semibold">Skills & experience</h3>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-xl font-semibold">Skills & experience</h3>
+                {onEditSkills && (
+                  <Button size="sm" variant="outline" onClick={onEditSkills}>
+                    Add skills
+                  </Button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Self-reported levels, not verified ratings.
+                Levels are self-reported. Requester-confirmed projects provide
+                separate backing and strengthen matching, not a verified
+                proficiency rating.
               </p>
               <dl className="space-y-3">
-                {profile.skills.map((skill) => (
-                  <div
-                    key={skill.name}
-                    className="flex items-baseline justify-between gap-3 border-b pb-3 last:border-0 last:pb-0"
-                  >
-                    <dt className="text-sm font-medium">{skill.name}</dt>
-                    <dd className="text-xs text-muted-foreground">
-                      {levels[skill.level] ?? "Not specified"}
-                    </dd>
-                  </div>
-                ))}
+                {skills.map((skill) => {
+                  const backing = profile.skillEvidence?.find(
+                    (item) => item.name === skill.name,
+                  );
+                  const selfReported = profile.skills.some(
+                    (item) => item.name === skill.name,
+                  );
+                  return (
+                    <div
+                      key={skill.name}
+                      className="space-y-2 border-b pb-3 last:border-0 last:pb-0"
+                    >
+                      <dt className="text-sm font-medium">{skill.name}</dt>
+                      <dd className="text-xs text-muted-foreground">
+                        {selfReported
+                          ? (levels[skill.level] ?? "Not specified")
+                          : "Practiced on a project"}
+                      </dd>
+                      {backing && (
+                        <dd>
+                          <details className="text-xs leading-6">
+                            <summary className="cursor-pointer text-primary">
+                              {backing.projects.length} requester-confirmed{" "}
+                              {backing.projects.length === 1
+                                ? "project"
+                                : "projects"}
+                            </summary>
+                            <ul className="mt-2 space-y-2 text-muted-foreground">
+                              {backing.projects.map((project) => (
+                                <li
+                                  key={`${project.source}:${project.projectId}`}
+                                >
+                                  <span className="block font-medium text-foreground">
+                                    {project.title}
+                                  </span>
+                                  Confirmed by {project.requesterName}
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        </dd>
+                      )}
+                    </div>
+                  );
+                })}
               </dl>
             </CardPanel>
           </Card>

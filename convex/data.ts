@@ -42,11 +42,17 @@ import {
   rankDevelopers,
   rankNearbyRequests,
   requestEligibility,
+  requestConsiderations,
+  scoreMatch,
   WEIGHTS,
   MATCH_VERSION,
   asMatchOpportunity,
   haversineKm,
 } from "../backend/matching";
+import {
+  practicedSkillsSchema,
+  skillEvidenceSubmissionSchema,
+} from "../backend/skill-evidence";
 import {
   careerSkillGaps,
   scoreCareerProject,
@@ -70,6 +76,151 @@ import {
 } from "../backend/project-drafts";
 
 const sessionId = v.optional(v.string());
+const evidenceSource = v.union(v.literal("opportunity"), v.literal("request"));
+
+export const projectSkillEvidence = query({
+  args: { sessionId, source: evidenceSource, projectId: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await access(ctx, args.sessionId, ["requester", "developer"]);
+    const project =
+      args.source === "request"
+        ? await findRequest(ctx, args.projectId)
+        : await findOpportunity(ctx, args.projectId);
+    if (!project) fail(404, "Project not found");
+    if (actor.role === "requester" && project.ownerId !== actor.user.id)
+      fail(403, "Only the project owner can review skill evidence");
+    const rows =
+      actor.role === "requester"
+        ? await ctx.db
+            .query("projectSkillEvidence")
+            .withIndex("by_project", (q) =>
+              q.eq("source", args.source).eq("projectId", args.projectId),
+            )
+            .collect()
+        : await ctx.db
+            .query("projectSkillEvidence")
+            .withIndex("by_project_developer", (q) =>
+              q
+                .eq("source", args.source)
+                .eq("projectId", args.projectId)
+                .eq("developerId", actor.user.id),
+            )
+            .collect();
+    return {
+      data: rows.map(({ _id, _creationTime: _created, ...row }) => ({
+        id: _id,
+        ...row,
+      })),
+    };
+  },
+});
+
+export const submitSkillEvidence = mutation({
+  args: {
+    sessionId,
+    source: evidenceSource,
+    projectId: v.string(),
+    skills: v.array(v.string()),
+    contribution: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.sessionId, ["developer"]);
+    const input = skillEvidenceSubmissionSchema.parse({
+      skills: args.skills,
+      contribution: args.contribution,
+    });
+    const developer = await findDeveloper(ctx, user.id);
+    if (!developer) fail(404, "Create your developer profile first");
+    const project =
+      args.source === "request"
+        ? await findRequest(ctx, args.projectId)
+        : await findOpportunity(ctx, args.projectId);
+    if (!project) fail(404, "Project not found");
+    if (project.ownerId === user.id)
+      fail(403, "You cannot confirm your own project work");
+    if (args.source === "request") {
+      const request = await findRequest(ctx, args.projectId);
+      if (request?.claimedBy !== user.id)
+        fail(
+          403,
+          "Only the assigned developer can record work on this request",
+        );
+    } else {
+      const connection = await ctx.db
+        .query("interests")
+        .withIndex("by_pair", (q) =>
+          q.eq("opportunityId", args.projectId).eq("developerId", user.id),
+        )
+        .unique();
+      if (!connection?.companyInterested || !connection.developerInterested)
+        fail(403, "Record work only after a mutual project connection");
+    }
+    const old = await ctx.db
+      .query("projectSkillEvidence")
+      .withIndex("by_project_developer", (q) =>
+        q
+          .eq("source", args.source)
+          .eq("projectId", args.projectId)
+          .eq("developerId", user.id),
+      )
+      .unique();
+    if (old) {
+      if (
+        old.contribution === input.contribution &&
+        JSON.stringify(old.skills) === JSON.stringify(input.skills)
+      )
+        return { id: old._id };
+      fail(409, "Work has already been submitted for this project");
+    }
+    const id = await ctx.db.insert("projectSkillEvidence", {
+      source: args.source,
+      projectId: args.projectId,
+      projectTitle: project.details.title,
+      developerId: user.id,
+      developerName: user.name,
+      requesterId: project.ownerId,
+      requesterName: project.ownerName,
+      ...input,
+      confirmedSkills: [],
+      confirmedAt: null,
+      createdAt: Date.now(),
+    });
+    return { id };
+  },
+});
+
+export const confirmSkillEvidence = mutation({
+  args: { sessionId, id: v.string(), skills: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const { user } = await access(ctx, args.sessionId, ["requester"]);
+    const id = ctx.db.normalizeId("projectSkillEvidence", args.id);
+    const evidence = id ? await ctx.db.get(id) : null;
+    if (!evidence || evidence.requesterId !== user.id)
+      fail(404, "Skill evidence not found");
+    const project =
+      evidence.source === "request"
+        ? await findRequest(ctx, evidence.projectId)
+        : await findOpportunity(ctx, evidence.projectId);
+    if (!project || project.ownerId !== user.id)
+      fail(403, "Only the project owner can confirm this work");
+    const skills = practicedSkillsSchema.parse(args.skills);
+    if (skills.some((skill) => !evidence.skills.includes(skill)))
+      fail(400, "Confirm only skills submitted by the developer");
+    if (evidence.confirmedAt !== null) {
+      if (
+        skills.length === evidence.confirmedSkills.length &&
+        skills.every((skill) => evidence.confirmedSkills.includes(skill))
+      )
+        return { confirmed: true };
+      fail(409, "This project's skill confirmation has already been saved");
+    }
+    await ctx.db.patch(evidence._id, {
+      confirmedSkills: skills,
+      confirmedAt: Date.now(),
+    });
+    return { confirmed: true };
+  },
+});
 
 const draftRecord = (row: {
   id: string;
@@ -757,30 +908,46 @@ export const matches = query({
     if (row.ownerId !== user.id)
       fail(403, "Only the opportunity owner can access this");
     const job = opportunityData(row);
+    const incoming = await ctx.db
+      .query("interests")
+      .withIndex("by_pair", (q) => q.eq("opportunityId", row.id))
+      .filter((q) => q.eq(q.field("developerInterested"), true))
+      .take(1001);
+    if (incoming.length > 1000)
+      fail(503, "Candidate pool exceeds the MVP limit");
+    const directDeveloperIds = new Set(
+      incoming.map((interest) => interest.developerId),
+    );
     const candidates = await ctx.db
       .query("developers")
       .filter((q) =>
         q.and(
           q.eq(q.field("profile.available"), true),
           q.eq(q.field("profile.discoverable"), true),
-          q.gte(q.field("profile.weeklyHours"), job.minimumWeeklyHours),
-          job.remote
-            ? true
-            : q.eq(q.field("cityKey"), job.city.trim().toLowerCase()),
           job.kind === "paid"
             ? true
             : q.eq(q.field("profile.acceptsVolunteer"), true),
         ),
       )
       .take(1001);
-    if (candidates.length > 1000)
+    const incomingProfiles = await Promise.all(
+      incoming.map((interest) => findDeveloper(ctx, interest.developerId)),
+    );
+    const pool = new Map(
+      candidates.map((candidate) => [candidate.userId, candidate]),
+    );
+    for (const profile of incomingProfiles) {
+      if (profile?.profile.discoverable) pool.set(profile.userId, profile);
+    }
+    if (pool.size > 1000)
       fail(
         503,
         "Candidate pool exceeds the MVP limit; narrow opportunity constraints",
       );
     const ranked = rankDevelopers(
       job,
-      await Promise.all(candidates.map((d) => developerData(ctx, d))),
+      await Promise.all([...pool.values()].map((d) => developerData(ctx, d))),
+      directDeveloperIds,
     );
     return {
       data: ranked.slice(0, args.limit),
@@ -801,8 +968,8 @@ export const ownMatch = query({
     const job = opportunityData(row);
     const dev = await developerData(ctx, profile);
     return {
-      data: rankDevelopers(job, [dev])[0] ?? null,
-      ineligibleReasons: eligibility(job, dev),
+      data: scoreMatch(job, dev, "direct"),
+      ineligibleReasons: eligibility(job, dev, "direct"),
       status: job.status,
       version: MATCH_VERSION,
       weights: WEIGHTS,
@@ -830,19 +997,22 @@ export const setInterest = mutation({
     if (!developerId) fail(400, "Choose a developer");
     const devRow = await findDeveloper(ctx, developerId);
     if (!devRow) fail(404, "Developer not found");
-    if (
-      args.interested &&
-      (row.status !== "open" ||
-        eligibility(opportunityData(row), await developerData(ctx, devRow))
-          .length)
-    )
-      fail(409, "An open opportunity and eligible developer are required");
     const old = await ctx.db
       .query("interests")
       .withIndex("by_pair", (q) =>
         q.eq("opportunityId", row.id).eq("developerId", developerId),
       )
       .unique();
+    if (
+      args.interested &&
+      (row.status !== "open" ||
+        eligibility(
+          opportunityData(row),
+          await developerData(ctx, devRow),
+          requester && !old?.developerInterested ? "discovery" : "direct",
+        ).length)
+    )
+      fail(409, "An open opportunity and eligible developer are required");
     const values = {
       opportunityId: row.id,
       developerId,
@@ -1071,6 +1241,12 @@ export const ownRequestMatch = query({
     return {
       eligible: reasons.length === 0,
       ineligibleReasons: reasons,
+      data: scoreMatch(
+        asMatchOpportunity(requestData(row)),
+        { ...developer, discoverable: true },
+        "direct",
+      ),
+      considerations: requestConsiderations(requestData(row), developer),
     };
   },
 });
@@ -1085,10 +1261,8 @@ export const closeRequest = mutation({
     await ctx.db.patch(row._id, {
       status: "closed",
       revision: (row.revision ?? 0) + 1,
-      claimedBy: null,
-      claimantName: null,
     });
-    return { id: row.id, status: "closed" as const, claimedBy: null };
+    return { id: row.id, status: "closed" as const, claimedBy: row.claimedBy };
   },
 });
 
@@ -1098,19 +1272,17 @@ export const acceptRequest = mutation({
     const { user } = await access(ctx, args.sessionId, ["developer"]);
     const profile = await findDeveloper(ctx, user.id);
     if (!profile) fail(404, "Create a developer profile first");
-    if (!profile.location)
-      fail(400, "Set a map pin and radius before accepting requests");
     const row = await findRequest(ctx, args.id);
     if (!row) fail(404, "Request not found");
     if (row.status === "claimed" && row.claimedBy === user.id)
       return publicRequest(requestData(row));
     if (row.status !== "open")
       fail(409, "Only an open request can be accepted");
-    if (
-      !rankNearbyRequests([requestData(row)], await developerData(ctx, profile))
-        .length
-    )
-      fail(409, "This request is outside your radius or eligibility");
+    const reasons = requestEligibility(
+      requestData(row),
+      await developerData(ctx, profile),
+    );
+    if (reasons.length) fail(409, reasons.join(". "));
     await ctx.db.patch(row._id, {
       status: "claimed",
       revision: (row.revision ?? 0) + 1,

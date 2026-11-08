@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { StarterProfile } from "@/components/developer-onboarding";
 import { PlusIcon, Trash2Icon } from "lucide-react";
@@ -64,6 +64,13 @@ export function ProfileEditor({ next = null }: { next?: string | null }) {
 
 function LoadProfile({ next }: { next: string | null }) {
   const profile = useApi<OwnProfile>("/developers/me");
+  const reload = profile.reload;
+  useEffect(() => {
+    const refresh = () => void reload();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [reload]);
+  const [tab, setTab] = useState(next ? "edit" : "preview");
   const router = useRouter();
   if (profile.error?.status === 404)
     return <StarterProfile next={next ?? "/career"} />;
@@ -99,7 +106,10 @@ function LoadProfile({ next }: { next: string | null }) {
           </p>
           <ul className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
             <li>
-              {profile.data.projects.length
+              {profile.data.projects.length ||
+              profile.data.skillEvidence?.some(
+                (skill) => skill.projects.length > 0,
+              )
                 ? "✓ Project evidence added"
                 : "Add your first project"}
             </li>
@@ -116,7 +126,11 @@ function LoadProfile({ next }: { next: string | null }) {
           </ul>
         </div>
       )}
-      <Tabs defaultValue={next ? "edit" : "preview"} className="gap-6">
+      <Tabs
+        value={tab}
+        onValueChange={(value) => setTab(String(value))}
+        className="gap-6"
+      >
         <TabsList
           variant="underline"
           aria-label="Profile workspace"
@@ -142,7 +156,19 @@ function LoadProfile({ next }: { next: string | null }) {
           </TabsTab>
         </TabsList>
         <TabsPanel value="preview" keepMounted>
-          {profile.data && <DeveloperProfileView profile={profile.data} />}
+          {profile.data && (
+            <DeveloperProfileView
+              profile={profile.data}
+              onEditSkills={() => {
+                setTab("edit");
+                requestAnimationFrame(() =>
+                  document
+                    .getElementById("profile-skills")
+                    ?.scrollIntoView({ block: "start", behavior: "instant" }),
+                );
+              }}
+            />
+          )}
         </TabsPanel>
         <TabsPanel value="edit" keepMounted>
           <ProfileForm
@@ -311,92 +337,99 @@ function ProfileForm({
             </div>
           </FormSection>
 
-          <FormSection title="Skills">
-            <ul className="grid w-full gap-x-8 gap-y-5 lg:grid-cols-2">
-              {skills.map((skill, index) => (
-                <li
-                  key={index}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto]"
-                >
-                  <div className="col-span-2 grid min-w-0 gap-2 sm:col-span-1">
-                    <Label htmlFor={`skill-${index}`}>Skill</Label>
-                    <Input
-                      id={`skill-${index}`}
-                      value={skill.name}
-                      maxLength={100}
-                      required={index === 0}
-                      placeholder="React"
-                      onChange={(event) =>
+          <div id="profile-skills" className="scroll-mt-6">
+            <FormSection title="Skills">
+              <p className="text-sm leading-6 text-muted-foreground">
+                Add skills as you learn them. Levels are your own assessment;
+                requester-confirmed work adds separate project backing
+                automatically.
+              </p>
+              <ul className="grid w-full gap-x-8 gap-y-5 lg:grid-cols-2">
+                {skills.map((skill, index) => (
+                  <li
+                    key={index}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto]"
+                  >
+                    <div className="col-span-2 grid min-w-0 gap-2 sm:col-span-1">
+                      <Label htmlFor={`skill-${index}`}>Skill</Label>
+                      <Input
+                        id={`skill-${index}`}
+                        value={skill.name}
+                        maxLength={100}
+                        required={index === 0}
+                        placeholder="React"
+                        onChange={(event) =>
+                          setSkills((current) =>
+                            current.map((item, i) =>
+                              i === index
+                                ? { ...item, name: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid min-w-0 gap-2">
+                      <Label htmlFor={`skill-level-${index}`}>Level</Label>
+                      <Select
+                        items={LEVELS}
+                        value={String(skill.level)}
+                        onValueChange={(value) =>
+                          value &&
+                          setSkills((current) =>
+                            current.map((item, i) =>
+                              i === index
+                                ? { ...item, level: Number(value) }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        <SelectTrigger
+                          id={`skill-level-${index}`}
+                          className="w-full"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectPopup>
+                          {LEVELS.map((level) => (
+                            <SelectItem key={level.value} value={level.value}>
+                              {level.label}
+                            </SelectItem>
+                          ))}
+                        </SelectPopup>
+                      </Select>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={skills.length === 1}
+                      aria-label={`Remove skill ${skill.name || index + 1}`}
+                      onClick={() =>
                         setSkills((current) =>
-                          current.map((item, i) =>
-                            i === index
-                              ? { ...item, name: event.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="grid min-w-0 gap-2">
-                    <Label htmlFor={`skill-level-${index}`}>Level</Label>
-                    <Select
-                      items={LEVELS}
-                      value={String(skill.level)}
-                      onValueChange={(value) =>
-                        value &&
-                        setSkills((current) =>
-                          current.map((item, i) =>
-                            i === index
-                              ? { ...item, level: Number(value) }
-                              : item,
-                          ),
+                          current.filter((_, i) => i !== index),
                         )
                       }
                     >
-                      <SelectTrigger
-                        id={`skill-level-${index}`}
-                        className="w-full"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectPopup>
-                        {LEVELS.map((level) => (
-                          <SelectItem key={level.value} value={level.value}>
-                            {level.label}
-                          </SelectItem>
-                        ))}
-                      </SelectPopup>
-                    </Select>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={skills.length === 1}
-                    aria-label={`Remove skill ${skill.name || index + 1}`}
-                    onClick={() =>
-                      setSkills((current) =>
-                        current.filter((_, i) => i !== index),
-                      )
-                    }
-                  >
-                    <Trash2Icon aria-hidden="true" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-            <FieldMessage>{errors.skills}</FieldMessage>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={skills.length >= 30}
-              onClick={() =>
-                setSkills((current) => [...current, { name: "", level: 2 }])
-              }
-            >
-              <PlusIcon aria-hidden="true" />
-              Add a skill
-            </Button>
-          </FormSection>
+                      <Trash2Icon aria-hidden="true" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              <FieldMessage>{errors.skills}</FieldMessage>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={skills.length >= 30}
+                onClick={() =>
+                  setSkills((current) => [...current, { name: "", level: 2 }])
+                }
+              >
+                <PlusIcon aria-hidden="true" />
+                Add a skill
+              </Button>
+            </FormSection>
+          </div>
 
           <FormSection title="Projects">
             <p className="text-sm text-muted-foreground">

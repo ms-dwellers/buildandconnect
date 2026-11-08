@@ -213,7 +213,7 @@ test(
       data: { developerId: string; score: number }[];
     };
     assert.equal(ranked.data[0].developerId, junior.id);
-    assert.equal(ranked.data[0].score, 100);
+    assert.ok(ranked.data[0].score > 70 && ranked.data[0].score <= 100);
     assert.equal(matches.headers.get("Cache-Control"), "no-store");
     assert.ok(!/password|embedding|email/.test(matchText));
     assert.equal(

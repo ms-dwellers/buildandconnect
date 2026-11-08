@@ -1,6 +1,7 @@
 import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Developer, Opportunity, LocalRequest } from "../backend/schemas";
+import { summarizeSkillEvidence } from "../backend/skill-evidence";
 
 type Context = QueryCtx | MutationCtx;
 
@@ -29,6 +30,10 @@ export async function developerData(
     .query("interests")
     .withIndex("by_developer", (q) => q.eq("developerId", row.userId))
     .collect();
+  const evidence = await ctx.db
+    .query("projectSkillEvidence")
+    .withIndex("by_developer", (q) => q.eq("developerId", row.userId))
+    .collect();
   return {
     ...row.profile,
     revision: row.updatedAt,
@@ -36,6 +41,7 @@ export async function developerData(
     name: row.name,
     embedding: row.embedding,
     location: row.location,
+    skillEvidence: summarizeSkillEvidence(evidence),
     recentExposure: interests.filter(
       (item) =>
         item.firstCompanyInterestAt !== null &&

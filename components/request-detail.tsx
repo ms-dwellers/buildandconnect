@@ -14,8 +14,9 @@ import {
   useMutation,
 } from "@/components/dashboards/parts";
 import { ProjectScope } from "@/components/project-scope";
+import { ProjectSkillEvidence } from "@/components/project-skill-evidence";
 import { useApi } from "@/lib/use-api";
-import type { RequestRecord, Role } from "@/lib/types";
+import type { DeveloperMatch, RequestRecord, Role } from "@/lib/types";
 import { withNext } from "@/lib/navigation";
 
 export function RequestDetail({ id }: { id: string }) {
@@ -92,8 +93,7 @@ function Detail({
             {item.status === "claimed" && (
               <p className="text-sm">
                 Review the expected work, time commitment, and support together
-                before work starts. Acceptance is not a completed delivery; this
-                app does not provide messaging yet.
+                before work starts. Acceptance is not a completed delivery.
               </p>
             )}
             <Button render={<a href="/dashboard" />} variant="outline">
@@ -109,6 +109,14 @@ function Detail({
             />
           )
         )}
+        {(owner || item.claimedBy === userId) && (
+          <ProjectSkillEvidence
+            source="request"
+            projectId={item.id}
+            owner={owner}
+            canSubmit={item.claimedBy === userId}
+          />
+        )}
       </CardPanel>
     </Card>
   );
@@ -123,9 +131,11 @@ function RequestCommitment({
   mine: boolean;
   reload: () => Promise<void>;
 }) {
-  const fit = useApi<{ ineligibleReasons: string[] }>(
-    `/requests/${encodeURIComponent(item.id)}/match`,
-  );
+  const fit = useApi<{
+    ineligibleReasons: string[];
+    data?: DeveloperMatch | null;
+    considerations?: string[];
+  }>(`/requests/${encodeURIComponent(item.id)}/match`);
   const { pending, run, error } = useMutation();
   async function act(action: "accept" | "release") {
     await run(
@@ -142,22 +152,40 @@ function RequestCommitment({
         {mine ? "You accepted this request" : "Take on this request"}
       </h3>
       <FieldMessage>{error}</FieldMessage>
+      {fit.data?.data && !mine && (
+        <p className="text-sm leading-6">{fit.data.data.explanation}</p>
+      )}
+      {!mine && !!fit.data?.considerations?.length && (
+        <div className="space-y-2 text-sm">
+          <p className="font-medium">Discuss before starting</p>
+          <ul className="list-disc space-y-1 ps-5 text-muted-foreground">
+            {fit.data.considerations.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+          <p className="text-muted-foreground">
+            These are things to agree on, not reasons you cannot contribute.
+          </p>
+        </div>
+      )}
       {mine ? (
         <>
           <p className="text-sm">
             The requester can see your name. Agree on scope, timing, and support
-            before starting. This is not a delivery confirmation, and messaging
-            is not available here yet.
+            before starting. Record skills below after you have contributed real
+            work.
           </p>
-          <ConfirmButton
-            label="Release request"
-            title="Release this request?"
-            description="It will reopen for other developers, and you will no longer be assigned."
-            confirmLabel="Release request"
-            variant="outline"
-            loading={pending !== null}
-            onConfirm={() => void act("release")}
-          />
+          {item.status === "claimed" && (
+            <ConfirmButton
+              label="Release request"
+              title="Release this request?"
+              description="It will reopen for other developers, and you will no longer be assigned."
+              confirmLabel="Release request"
+              variant="outline"
+              loading={pending !== null}
+              onConfirm={() => void act("release")}
+            />
+          )}
         </>
       ) : fit.error ? (
         <ErrorAlert

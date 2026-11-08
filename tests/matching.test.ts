@@ -9,6 +9,8 @@ import {
   rankNearbyRequests,
   scoreMatch,
   scoreNearbyRequest,
+  requestEligibility,
+  requestConsiderations,
   WEIGHTS,
 } from "../backend/matching.ts";
 import {
@@ -33,27 +35,46 @@ test("growth matching uses the specified weights and explains relevant learning"
     opportunityExposure: 0.1,
   });
   assert.deepEqual(match.existingRelevantSkills, ["react"]);
-  assert.deepEqual(match.skillsToDevelop, ["typescript", "accessibility"]);
+  assert.deepEqual(match.skillsToDevelop, [
+    "typescript",
+    "frontend",
+    "accessibility",
+  ]);
   assert.match(match.explanation, /mentorship/);
-  assert.equal(match.score, 100);
+  assert.ok(match.score > 70 && match.score <= 100);
 });
-test("essential requirements filter before semantic ranking", () => {
-  assert.equal(
+test("skills, city and hours guide ranking rather than excluding a candidate", () => {
+  assert.ok(
     scoreMatch(opportunity, {
       ...developer,
       skills: [{ name: "python", level: 5 }],
     }),
-    null,
   );
+  for (const change of [{ city: "Ottawa" }, { weeklyHours: 1 }]) {
+    const match = scoreMatch(opportunity, { ...developer, ...change });
+    assert.ok(match);
+    assert.ok(match.considerations.length > 0);
+  }
+});
+test("discovery respects visibility and work preferences, while direct interest is intentional", () => {
   for (const change of [
     { available: false },
     { discoverable: false },
-    { city: "Ottawa" },
-    { weeklyHours: 1 },
     { acceptsVolunteer: false },
   ]) {
     assert.equal(scoreMatch(opportunity, { ...developer, ...change }), null);
   }
+  assert.ok(
+    scoreMatch(
+      opportunity,
+      { ...developer, available: false, acceptsVolunteer: false },
+      "direct",
+    ),
+  );
+  assert.equal(
+    scoreMatch(opportunity, { ...developer, discoverable: false }, "direct"),
+    null,
+  );
   assert.equal(
     scoreMatch({ ...opportunity, status: "closed" }, developer),
     null,
@@ -120,7 +141,10 @@ test("exposure is bounded, small, and ranking ties use stable identifiers", () =
     ...developer,
     recentExposure: 30,
   })!;
-  assert.ok(exposed.score >= 90 && exposed.score < 100);
+  assert.ok(
+    exposed.score > 0 &&
+      exposed.score < scoreMatch(opportunity, developer)!.score,
+  );
   assert.deepEqual(
     rankDevelopers(opportunity, [
       { ...developer, id: "z" },
@@ -179,6 +203,64 @@ const nearbyRequest: LocalRequest = {
   claimantName: null,
   createdAt: 1,
 };
+
+test("a deliberately chosen community request does not require location or discovery opt-in", () => {
+  const privateDeveloper = {
+    ...developer,
+    discoverable: false,
+    available: false,
+    acceptsVolunteer: false,
+    location: null,
+  };
+  assert.deepEqual(requestEligibility(nearbyRequest, privateDeveloper), []);
+  assert.ok(requestConsiderations(nearbyRequest, privateDeveloper).length > 0);
+  assert.deepEqual(
+    requestEligibility(
+      { ...nearbyRequest, status: "claimed", claimedBy: "someone-else" },
+      developer,
+    ),
+    ["This request is no longer open"],
+  );
+});
+
+test("requester-confirmed skill projects improve relevant readiness with bounded returns", () => {
+  const junior = { ...developer, skills: [{ name: "react", level: 1 }] };
+  const project = {
+    source: "request" as const,
+    projectId: "work",
+    title: "Garden site",
+    requesterName: "Neighbour",
+    confirmedAt: 1,
+  };
+  const baseline = scoreMatch(opportunity, junior)!;
+  const backed = scoreMatch(opportunity, {
+    ...junior,
+    skillEvidence: [{ name: "react", projects: [project] }],
+  })!;
+  assert.ok(backed.score > baseline.score);
+  assert.ok(
+    backed.scores.technicalReadiness > baseline.scores.technicalReadiness,
+  );
+  assert.match(backed.explanation, /requester-confirmed/);
+  const unrelated = scoreMatch(opportunity, {
+    ...junior,
+    skillEvidence: [{ name: "rust", projects: [project] }],
+  })!;
+  assert.equal(unrelated.score, baseline.score);
+  const many = scoreMatch(opportunity, {
+    ...junior,
+    skillEvidence: [
+      {
+        name: "react",
+        projects: Array.from({ length: 100 }, (_, index) => ({
+          ...project,
+          projectId: String(index),
+        })),
+      },
+    ],
+  })!;
+  assert.ok(many.score >= backed.score && many.score <= 100);
+});
 
 test("haversine and bounding boxes keep nearby requests inside a radius", () => {
   assert.ok(

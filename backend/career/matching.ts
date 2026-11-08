@@ -6,7 +6,7 @@ import {
 } from "../schemas.ts";
 import type { CareerTarget } from "./schemas.ts";
 
-export const CAREER_MATCH_VERSION = "career-v1";
+export const CAREER_MATCH_VERSION = "career-v2-evidence";
 
 function reportedSkills(developer: Developer) {
   return new Set([
@@ -19,21 +19,30 @@ function reportedSkills(developer: Developer) {
 
 export function careerSkillGaps(target: CareerTarget, developer: Developer) {
   const reported = reportedSkills(developer);
+  const confirmed = new Set(
+    (developer.skillEvidence ?? []).map((skill) => skill.name),
+  );
   return target.requirements.map((requirement) => {
     const selfReportedSkills = requirement.skills.filter((skill) =>
       reported.has(skill),
     );
     const missingSkills = requirement.skills.filter(
-      (skill) => !reported.has(skill),
+      (skill) => !reported.has(skill) && !confirmed.has(skill),
     );
     return {
       ...requirement,
       selfReportedSkills,
+      confirmedSkills: requirement.skills.filter((skill) =>
+        confirmed.has(skill),
+      ),
       missingSkills,
       evidenceStatus:
-        requirement.skills.length > 0 && missingSkills.length === 0
-          ? ("self_reported" as const)
-          : ("needs_evidence" as const),
+        requirement.skills.length > 0 &&
+        requirement.skills.every((skill) => confirmed.has(skill))
+          ? ("project_backed" as const)
+          : requirement.skills.length > 0 && missingSkills.length === 0
+            ? ("self_reported" as const)
+            : ("needs_evidence" as const),
     };
   });
 }
@@ -44,7 +53,11 @@ export function scoreCareerProject(
   project: Opportunity,
 ) {
   // Personal exploration is private. Existing claim/interest consent gates stay unchanged.
-  const match = scoreMatch(project, { ...developer, discoverable: true });
+  const match = scoreMatch(
+    project,
+    { ...developer, discoverable: true },
+    "direct",
+  );
   if (!match) return null;
   const activities = project.analysis.activities ?? [];
   const offeredSkills = new Set([
@@ -87,7 +100,7 @@ export function scoreCareerProject(
     existingRelevantSkills: match.existingRelevantSkills,
     skillsToDevelop: match.skillsToDevelop,
     explanation: match.explanation,
-    actionIneligibleReasons: eligibility(project, developer),
+    actionIneligibleReasons: eligibility(project, developer, "direct"),
     careerRelevance: {
       requirementsWithPractice: requirementLinks.length,
       gapRequirementsWithPractice: requirementLinks.filter(

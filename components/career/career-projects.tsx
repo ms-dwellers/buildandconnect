@@ -87,8 +87,8 @@ function ProjectExplorer({
         </h2>
         <p className="text-sm text-muted-foreground">
           Choose a requirement to explore related projects. Profile skills are
-          self-reported; project practice does not award a qualification or
-          guarantee a job.
+          self-reported unless backed by requester-confirmed work; project
+          practice does not award a qualification or guarantee a job.
         </p>
         <Button
           variant={requirementId ? "outline" : "secondary"}
@@ -128,6 +128,12 @@ function ProjectExplorer({
                 {item.selfReportedSkills.length > 0 && (
                   <p className="text-sm">
                     In your profile: {item.selfReportedSkills.join(", ")}
+                  </p>
+                )}
+                {item.confirmedSkills.length > 0 && (
+                  <p className="text-sm text-primary">
+                    Requester-confirmed practice:{" "}
+                    {item.confirmedSkills.join(", ")}
                   </p>
                 )}
                 {item.missingSkills.length > 0 && (

@@ -223,6 +223,20 @@ export const reset = internalMutation({
         removed,
       );
 
+      const skillEvidence = [
+        // Skill backing is session-independent, but must not survive a demo reset.
+        // Remove both work by demo developers and endorsements by demo requesters.
+        ...(await ctx.db
+          .query("projectSkillEvidence")
+          .withIndex("by_developer", (q) => q.eq("developerId", user.id))
+          .collect()),
+        ...(await ctx.db
+          .query("projectSkillEvidence")
+          .withIndex("by_requester", (q) => q.eq("requesterId", user.id))
+          .collect()),
+      ];
+      await removeRows(ctx, skillEvidence, removed);
+
       const conversations = [
         ...(await ctx.db
           .query("conversations")
@@ -253,7 +267,7 @@ export const reset = internalMutation({
         .withIndex("by_claimant", (q) => q.eq("claimedBy", user.id))
         .collect()) {
         await ctx.db.patch(request._id, {
-          status: "open",
+          status: request.status === "claimed" ? "open" : request.status,
           claimedBy: null,
           claimantName: null,
           revision: (request.revision ?? 0) + 1,

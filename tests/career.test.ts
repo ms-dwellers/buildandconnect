@@ -168,7 +168,7 @@ test("legacy projects retain skill-level relevance without fabricated activities
   assert.ok(match.unaddressedRequirementIds.includes("authentication"));
 });
 
-test("private exploration preserves actionable consent and existing practical eligibility gates", () => {
+test("private exploration preserves consent while treating skills, hours and city as guidance", () => {
   const privateDeveloper = { ...developer, discoverable: false };
   const match = scoreCareerProject(
     careerTarget,
@@ -176,7 +176,9 @@ test("private exploration preserves actionable consent and existing practical el
     opportunity,
   )!;
   assert.ok(
-    match.actionIneligibleReasons.includes("Not available for discovery"),
+    match.actionIneligibleReasons.includes(
+      "Make your profile visible before sharing interest",
+    ),
   );
   for (const change of [
     { available: false },
@@ -184,20 +186,18 @@ test("private exploration preserves actionable consent and existing practical el
     { acceptsVolunteer: false },
     { city: "Calgary" },
   ])
-    assert.equal(
+    assert.ok(
       scoreCareerProject(
         careerTarget,
         { ...developer, ...change },
         opportunity,
       ),
-      null,
     );
-  assert.equal(
+  assert.ok(
     scoreCareerProject(careerTarget, developer, {
       ...opportunity,
       essentialTechnologies: ["rust"],
     }),
-    null,
   );
   assert.equal(
     scoreCareerProject(careerTarget, developer, {

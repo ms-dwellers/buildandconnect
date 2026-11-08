@@ -123,10 +123,11 @@ Legacy projects can have skill-level links with empty activity links. Credential
 and other requirements without skills remain unaddressed. Target/profile update
 timestamps identify the inputs used. Reads make no AI calls or database writes.
 
-Personal career exploration does not require public profile discoverability. Existing
-availability, location, volunteer, time and essential-technology gates still
-apply. `actionIneligibleReasons` retains existing claim/interest restrictions,
-including discovery consent: a private recommendation does not bypass them.
+Personal career exploration does not require public profile discoverability.
+Skills, hours and location are ranking signals rather than connection gates.
+`actionIneligibleReasons` retains profile visibility consent for opportunity
+interest; community-request acceptance requires an open, unassigned request, not
+a saved search area. Nearby discovery still respects the selected radius.
 
 ## Project messages
 
@@ -371,8 +372,9 @@ using the new mutation.
 
 ### Opportunity
 
-`essentialTechnologies` are the requester's explicit non-negotiable gates. Use an
-empty array when willing to consider transferable experience. `kind` distinguishes
+`essentialTechnologies` describe the requester's strongest technology needs. They
+influence readiness and appear as discussion points when missing, not automatic
+connection exclusions. `kind` distinguishes
 paid contracts from volunteer experience; no payment processing is implied.
 `collaboration` accepts `async`, `sync`, or `flexible` on both input types.
 
@@ -417,7 +419,9 @@ Requester posts are unpaid neighborhood problems. Analysis reuses the opportunit
 pipeline. Developer coordinates live on the `developer` row and never appear in
 requester browse responses. Default radius is 25 km (1-100). Nearby browse
 prefilters with a bounding box, applies haversine distance, then ranks with the
-growth matcher. Local requests skip opportunity essential-technology gates.
+growth matcher. Developers deliberately choosing a request can accept without a
+pin or outside their normal radius; the UI explains travel and volunteer-work
+considerations before confirmation. Claims remain atomic and exclusive.
 
 ```json
 {
@@ -428,6 +432,23 @@ growth matcher. Local requests skip opportunity essential-technology gates.
   "longitude": -79.3832
 }
 ```
+
+### Project-backed skills
+
+- `GET /api/{opportunities|requests}/:id/skill-evidence`: owners see submissions
+  for their project; developers see only their own submissions.
+- `POST` to the same path: developer submits `{skills, contribution}`. Opportunity
+  work needs mutual interest; community work needs an assignment. One immutable
+  contribution record per source, project and developer prevents repeat boosts.
+- `PUT /api/skill-evidence/:id/confirmation`: the current owner submits `{skills}`,
+  a nonempty subset of submitted skills. Only confirmed skills count. Identical
+  retries are idempotent; a changed confirmation conflicts.
+
+Profile responses include derived `skillEvidence`, with each skill's distinct
+confirmed projects, titles and confirming requester names. This is never accepted
+as developer profile input. Self-ratings and portfolio work remain self-reported.
+No AI call is needed for submission or confirmation. A closed community request
+retains the assigned developer for recording work; closing alone awards no backing.
 
 ## Verification
 

@@ -99,16 +99,16 @@ test("request review explains missing profile prerequisites and out-of-radius wo
     createdAt: 1,
   };
   assert.deepEqual(requestEligibility(request, developer), []);
-  assert.ok(
-    requestEligibility(request, { ...developer, location: null }).includes(
-      "Set your search area first",
-    ),
+  assert.deepEqual(
+    requestEligibility(request, { ...developer, location: null }),
+    [],
   );
-  assert.ok(
+  assert.deepEqual(
     requestEligibility(request, {
       ...developer,
       location: { latitude: 51, longitude: -114, radiusKm: 5 },
-    }).includes("This request is outside your search radius"),
+    }),
+    [],
   );
   assert.ok(
     requestEligibility(

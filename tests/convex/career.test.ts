@@ -289,11 +289,12 @@ test("career recommendations join open projects, prioritize gaps, and keep priva
     typeof api.data.careerRecommendations
   >;
   expect(result.data.map((item: { id: string }) => item.id).sort()).toEqual([
+    "blocked",
     "growth",
     "legacy",
     "nearby",
   ]);
-  expect(result.data[2].id).toBe("legacy");
+  expect(result.data.at(-1)!.id).toBe("legacy");
   expect(result.data[0].careerRelevance.gapRequirementsWithPractice).toBe(2);
   expect(
     result.data.every(
@@ -308,7 +309,7 @@ test("career recommendations join open projects, prioritize gaps, and keep priva
   expect(JSON.stringify(result)).not.toMatch(
     /embedding|sourceText|ownerName|claimantName/,
   );
-  expect(result.total).toBe(3);
+  expect(result.total).toBe(4);
   expect(result.nearbyRequestsAvailable).toBe(true);
   expect(
     (await app.request("/api/developers/me/career-projects?limit=101")).status,

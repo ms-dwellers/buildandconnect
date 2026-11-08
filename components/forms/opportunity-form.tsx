@@ -243,8 +243,8 @@ export function OpportunityForm({
             <FormSection title="Who it suits">
               <TextField
                 name="essentialTechnologies"
-                label="Essential technologies"
-                description="Only list true requirements, separated by commas. Developers without them won't be matched."
+                label="Key technologies"
+                description="Separate technologies with commas. These guide matching; developers can discuss transferable skills and learning support."
                 defaultValue={
                   draftContent?.essentialTechnologies ??
                   values?.essentialTechnologies?.join(", ")
@@ -262,7 +262,8 @@ export function OpportunityForm({
               />
               <TextField
                 name="minimumWeeklyHours"
-                label="Minimum hours per week"
+                label="Expected hours per week"
+                description="A guide for scope and timing, not an automatic exclusion."
                 type="number"
                 required
                 min={1}

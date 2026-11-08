@@ -4,8 +4,9 @@ import {
   type LocalRequest,
   type Opportunity,
 } from "./schemas.ts";
+import { skillEvidenceBoost } from "./skill-evidence.ts";
 
-export const MATCH_VERSION = "growth-v1";
+export const MATCH_VERSION = "growth-v2-evidence";
 export const WEIGHTS = {
   technicalReadiness: 0.3,
   growthPotential: 0.3,
@@ -22,6 +23,23 @@ const overlap = (wanted: string[], actual: Set<string>) =>
     ? wanted.filter((item) => actual.has(item)).length / wanted.length
     : 0;
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+// One-way, partial credit for broad capabilities. This never claims an exact
+// technology match or manufactures confirmed skill evidence.
+const RELATED_SKILLS: Record<string, string[]> = {
+  frontend: [
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "javascript",
+    "typescript",
+    "html",
+    "css",
+  ],
+  backend: ["nodejs", "django", "flask", "rails", "asp.net", "spring"],
+  databases: ["sql", "postgres", "mysql", "sqlite", "mongodb"],
+  "version control": ["git"],
+};
 
 export function haversineKm(
   a: { latitude: number; longitude: number },
@@ -91,79 +109,159 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 export function eligibility(
   opportunity: Opportunity,
   developer: Developer,
+  mode: "discovery" | "direct" = "discovery",
 ): string[] {
   const reasons: string[] = [];
+  if (!developer.discoverable)
+    reasons.push("Make your profile visible before sharing interest");
+  if (mode === "discovery" && !developer.available)
+    reasons.push("Not available for discovery");
+  if (
+    mode === "discovery" &&
+    opportunity.kind === "volunteer" &&
+    !developer.acceptsVolunteer
+  )
+    reasons.push("Paid opportunities only");
+  return reasons;
+}
+
+export function matchConsiderations(
+  opportunity: Opportunity,
+  developer: Developer,
+): string[] {
+  const considerations: string[] = [];
   const skills = new Set(
     developer.skills.map((skill) => normalizeSkill(skill.name)),
   );
-  if (!developer.available || !developer.discoverable)
-    reasons.push("Not available for discovery");
+  for (const project of developer.projects)
+    for (const skill of project.technologies) skills.add(normalizeSkill(skill));
+  for (const backing of developer.skillEvidence ?? []) skills.add(backing.name);
   if (
     !opportunity.remote &&
     developer.city.trim().toLowerCase() !==
       opportunity.city.trim().toLowerCase()
   )
-    reasons.push("Different city");
+    considerations.push(
+      `This project is in ${opportunity.city}; discuss travel or remote work.`,
+    );
   if (developer.weeklyHours < opportunity.minimumWeeklyHours)
-    reasons.push("Insufficient availability");
+    considerations.push(
+      `You offer ${developer.weeklyHours} hours/week; the requester asks for ${opportunity.minimumWeeklyHours}. Agree on a smaller scope or timing.`,
+    );
   if (opportunity.kind === "volunteer" && !developer.acceptsVolunteer)
-    reasons.push("Paid opportunities only");
+    considerations.push(
+      "This is unpaid volunteer work, outside your usual paid-work preference.",
+    );
   for (const skill of opportunity.essentialTechnologies) {
     if (!skills.has(normalizeSkill(skill)))
-      reasons.push(`Missing essential technology: ${skill}`);
+      considerations.push(
+        `The requester asks for ${skill}; discuss your transferable skills and support needs.`,
+      );
   }
-  return reasons;
+  return considerations;
 }
 
-export function scoreMatch(opportunity: Opportunity, developer: Developer) {
+export function scoreMatch(
+  opportunity: Opportunity,
+  developer: Developer,
+  mode: "discovery" | "direct" = "discovery",
+) {
   if (
     opportunity.status !== "open" ||
-    eligibility(opportunity, developer).length
+    eligibility(opportunity, developer, mode).length
   )
     return null;
   const analysis = opportunity.analysis;
   const technologies = [
-    ...new Set([
-      ...analysis.requiredTechnologies,
-      ...analysis.preferredTechnologies,
-      ...opportunity.essentialTechnologies,
-    ]),
+    ...new Set(
+      [
+        ...analysis.requiredTechnologies,
+        ...analysis.preferredTechnologies,
+        ...opportunity.essentialTechnologies,
+        ...analysis.requiredSkills,
+        ...(analysis.activities ?? []).flatMap((activity) => activity.skills),
+      ].map(normalizeSkill),
+    ),
   ];
   const skills = new Map(
-    developer.skills.map((skill) => [skill.name, skill.level]),
+    developer.skills.map((skill) => [normalizeSkill(skill.name), skill.level]),
   );
+  for (const project of developer.projects) {
+    for (const skill of project.technologies.map(normalizeSkill)) {
+      if (!skills.has(skill)) skills.set(skill, 1);
+    }
+  }
+  for (const backing of developer.skillEvidence ?? []) {
+    const name = normalizeSkill(backing.name);
+    if (!skills.has(name)) skills.set(name, 1);
+  }
   const existingRelevantSkills = technologies.filter((skill) =>
     skills.has(skill),
   );
   const required = [
-    ...new Set([
-      ...analysis.requiredTechnologies,
-      ...opportunity.essentialTechnologies,
-    ]),
+    ...new Set(
+      [
+        ...analysis.requiredTechnologies,
+        ...opportunity.essentialTechnologies,
+        ...analysis.requiredSkills,
+      ].map(normalizeSkill),
+    ),
   ];
-  const proficiency = required.length
-    ? required.reduce(
+  const readinessSkills = required.length ? required : technologies;
+  const proficiencyFor = (skill: string) =>
+    skills.get(skill) ??
+    Math.max(
+      0,
+      ...(RELATED_SKILLS[skill] ?? []).map(
+        (related) => (skills.get(related) ?? 0) * 0.6,
+      ),
+    );
+  const transferableSkills = readinessSkills.filter(
+    (skill) => !skills.has(skill) && proficiencyFor(skill) > 0,
+  );
+  const proficiency = readinessSkills.length
+    ? readinessSkills.reduce(
         (sum, skill) =>
           sum +
           Math.min(
             1,
-            (skills.get(skill) ?? 0) / Math.min(5, analysis.difficulty + 1),
+            proficiencyFor(skill) / Math.min(5, analysis.difficulty + 1),
           ),
         0,
-      ) / required.length
+      ) / readinessSkills.length
     : 0.5;
   const semantic = cosineSimilarity(opportunity.embedding, developer.embedding);
-  const technicalReadiness = 0.75 * proficiency + 0.25 * semantic;
+  const reportedReadiness =
+    opportunity.embedding.length && developer.embedding.length
+      ? 0.75 * proficiency + 0.25 * semantic
+      : proficiency;
+  const evidenceReadiness = readinessSkills.length
+    ? (developer.skillEvidence ?? [])
+        .filter((backing) => readinessSkills.includes(backing.name))
+        .reduce(
+          (sum, backing) => sum + skillEvidenceBoost(backing.projects.length),
+          0,
+        ) / readinessSkills.length
+    : 0;
+  const technicalReadiness = clamp(
+    reportedReadiness + 0.15 * evidenceReadiness,
+  );
 
-  const learningTargets = new Set(developer.wantsToLearn);
+  const learningTargets = new Set(developer.wantsToLearn.map(normalizeSkill));
   const skillsToDevelop = [
-    ...new Set([...technologies, ...analysis.learningOpportunities]),
+    ...new Set([
+      ...technologies,
+      ...analysis.learningOpportunities.map(normalizeSkill),
+    ]),
   ].filter(
-    (skill) => learningTargets.has(skill) && (skills.get(skill) ?? 0) < 5,
+    (skill) =>
+      !skills.has(skill) ||
+      (learningTargets.has(skill) && (skills.get(skill) ?? 0) < 5),
   );
   const learningAlignment = learningTargets.size
-    ? skillsToDevelop.length / learningTargets.size
-    : 0;
+    ? skillsToDevelop.filter((skill) => learningTargets.has(skill)).length /
+      Math.min(learningTargets.size, Math.max(1, skillsToDevelop.length))
+    : 0.5;
   // Greater experience never reduces challenge fit. Mentorship supports a safe stretch.
   const gap = analysis.difficulty - developer.experienceLevel;
   const challengeFit = clamp(
@@ -175,12 +273,24 @@ export function scoreMatch(opportunity: Opportunity, developer: Developer) {
   const developerInterest = opportunity.interests.length
     ? overlap(opportunity.interests, new Set(developer.interests))
     : 0.5;
-  const collaborationCompatibility =
+  const collaborationFit =
     opportunity.collaboration === "flexible" ||
     developer.collaboration === "flexible" ||
     opportunity.collaboration === developer.collaboration
       ? 1
       : 0.3;
+  const timeFit = Math.min(
+    1,
+    developer.weeklyHours / opportunity.minimumWeeklyHours,
+  );
+  const locationFit =
+    opportunity.remote ||
+    developer.city.trim().toLowerCase() ===
+      opportunity.city.trim().toLowerCase()
+      ? 1
+      : 0.4;
+  const collaborationCompatibility =
+    0.5 * collaborationFit + 0.3 * timeFit + 0.2 * locationFit;
   const opportunityExposure =
     1 / (1 + Math.max(0, developer.recentExposure) / 3);
   const raw = {
@@ -202,7 +312,17 @@ export function scoreMatch(opportunity: Opportunity, developer: Developer) {
   const explanation = [
     existingRelevantSkills.length
       ? `Relevant skills: ${existingRelevantSkills.join(", ")}.`
-      : "No listed technologies overlap; review transferable experience.",
+      : "No direct skill overlap yet; discuss a small first contribution and support.",
+    ...(transferableSkills.length
+      ? [
+          `Related experience supports ${transferableSkills.join(", ")}; confirm the specific work together.`,
+        ]
+      : []),
+    (developer.skillEvidence ?? []).some((backing) =>
+      existingRelevantSkills.includes(backing.name),
+    )
+      ? "Relevant skills are backed by requester-confirmed project work."
+      : "Skill levels and portfolio projects are self-reported.",
     skillsToDevelop.length
       ? `Can develop ${skillsToDevelop.join(", ")}${analysis.mentorshipAvailable ? " with mentorship" : ""}.`
       : "The project offers practical delivery and collaboration experience.",
@@ -218,15 +338,23 @@ export function scoreMatch(opportunity: Opportunity, developer: Developer) {
     existingRelevantSkills,
     skillsToDevelop,
     explanation,
+    considerations: matchConsiderations(opportunity, developer),
   };
 }
 
 export function rankDevelopers(
   opportunity: Opportunity,
   developers: Developer[],
+  directDeveloperIds: ReadonlySet<string> = new Set(),
 ) {
   return developers
-    .map((developer) => scoreMatch(opportunity, developer))
+    .map((developer) =>
+      scoreMatch(
+        opportunity,
+        developer,
+        directDeveloperIds.has(developer.id) ? "direct" : "discovery",
+      ),
+    )
     .filter((match) => match !== null)
     .sort(
       (a, b) => b.score - a.score || a.developerId.localeCompare(b.developerId),
@@ -263,15 +391,31 @@ export function requestEligibility(
   request: LocalRequest,
   developer: Developer,
 ) {
-  const reasons = eligibility(asMatchOpportunity(request), developer);
+  const reasons: string[] = [];
   if (request.status !== "open" && request.claimedBy !== developer.id)
     reasons.push("This request is no longer open");
-  if (!developer.location) reasons.push("Set your search area first");
+  return reasons;
+}
+
+export function requestConsiderations(
+  request: LocalRequest,
+  developer: Developer,
+) {
+  const considerations = matchConsiderations(
+    asMatchOpportunity(request),
+    developer,
+  );
+  if (!developer.location)
+    considerations.push(
+      "Your search area is not set; confirm the location with the requester.",
+    );
   else if (
     haversineKm(developer.location, request) > developer.location.radiusKm
   )
-    reasons.push("This request is outside your search radius");
-  return reasons;
+    considerations.push(
+      "This request is outside your usual search radius; confirm travel before accepting.",
+    );
+  return considerations;
 }
 
 export function rankNearbyRequests(

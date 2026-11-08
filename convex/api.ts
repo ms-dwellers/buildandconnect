@@ -1,5 +1,9 @@
 import { ConvexError } from "convex/values";
 import { z, ZodError } from "zod";
+import {
+  skillEvidenceSubmissionSchema,
+  practicedSkillsSchema,
+} from "../backend/skill-evidence";
 import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
 import { createAuth } from "./auth";
@@ -259,6 +263,48 @@ export async function handleApi(
         : crypto.randomUUID();
     };
     const id = decodeURIComponent(path.split("/")[2] ?? "");
+
+    if (/^\/(opportunities|requests)\/[^/]+\/skill-evidence$/.test(path)) {
+      const source = path.startsWith("/requests/")
+        ? ("request" as const)
+        : ("opportunity" as const);
+      if (method === "GET")
+        return json(
+          await ctx.runQuery(internal.data.projectSkillEvidence, {
+            sessionId,
+            source,
+            projectId: id,
+          }),
+        );
+      if (method === "POST") {
+        const input = skillEvidenceSubmissionSchema.parse(await body(request));
+        return json(
+          await ctx.runMutation(internal.data.submitSkillEvidence, {
+            sessionId,
+            source,
+            projectId: id,
+            ...input,
+          }),
+          201,
+        );
+      }
+    }
+    if (
+      /^\/skill-evidence\/[^/]+\/confirmation$/.test(path) &&
+      method === "PUT"
+    ) {
+      const input = z
+        .object({ skills: practicedSkillsSchema })
+        .strict()
+        .parse(await body(request));
+      return json(
+        await ctx.runMutation(internal.data.confirmSkillEvidence, {
+          sessionId,
+          id,
+          ...input,
+        }),
+      );
+    }
 
     if (/^\/developers\/[^/]+\/reputation$/.test(path) && method === "GET") {
       return json(

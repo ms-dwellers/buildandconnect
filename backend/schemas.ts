@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { SkillBacking } from "./skill-evidence.ts";
 
 const text = z.string().trim().min(1).max(100);
 const tags = z
@@ -94,6 +95,11 @@ export function normalizeSkill(value: string): string {
     node: "nodejs",
     "next.js": "nextjs",
     postgresql: "postgres",
+    "front-end": "frontend",
+    "front end": "frontend",
+    "back-end": "backend",
+    "back end": "backend",
+    a11y: "accessibility",
   };
   return aliases[normalized] ?? normalized;
 }
@@ -222,6 +228,7 @@ export type Role = (typeof ROLES)[number];
 export type RequestStatus = "open" | "claimed" | "closed";
 
 export type Developer = DeveloperProfile & {
+  skillEvidence?: SkillBacking[];
   revision?: number;
   id: string;
   name: string;

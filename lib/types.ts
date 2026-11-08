@@ -10,6 +10,7 @@ import type {
   Role,
 } from "../backend/schemas.ts";
 import type { CityJob } from "./calgary-area.ts";
+import type { SkillBacking } from "../backend/skill-evidence.ts";
 
 export type { DeveloperProfile, OpportunityInput, RequestInput, Role };
 
@@ -18,13 +19,32 @@ export type Page<T> = { data: T[]; nextCursor: string | null };
 export type Me = { user: { id: string; name: string }; role: Role | null };
 
 export type OwnProfile = DeveloperProfile & {
+  skillEvidence?: SkillBacking[];
   revision?: number;
   id: string;
   name: string;
   location: DeveloperLocation | null;
 };
 
-export type PublicDeveloper = DeveloperProfile & { id: string; name: string };
+export type PublicDeveloper = DeveloperProfile & {
+  id: string;
+  name: string;
+  skillEvidence?: SkillBacking[];
+};
+
+export type ProjectSkillEvidence = {
+  id: string;
+  source: "opportunity" | "request";
+  projectId: string;
+  projectTitle: string;
+  developerId: string;
+  developerName: string;
+  requesterName: string;
+  skills: string[];
+  contribution: string;
+  confirmedSkills: string[];
+  confirmedAt: number | null;
+};
 
 export type DeveloperReputation = {
   count: number;
@@ -68,6 +88,7 @@ export type MatchScores = {
 };
 
 export type DeveloperMatch = {
+  considerations?: string[];
   developerId: string;
   name: string;
   score: number;
