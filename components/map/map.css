@@ -44,73 +44,41 @@
   isolation: isolate;
 }
 
-.map-loading-clouds {
+.map-loading {
   position: absolute;
   inset: 0;
   z-index: 5;
-  overflow: hidden;
-  background: var(--cloud);
+  display: grid;
+  place-items: center;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
 }
 
-.cloud-veil {
+.map-reveal,
+.map-reveal-fallback,
+.map-reveal-canvas {
   position: absolute;
   inset: 0;
-  background: var(--cloud);
-  animation: cloud-cover var(--map-cover-duration) ease-in both;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-.map-cloud-field {
-  position: absolute;
-  inset: -4%;
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  grid-template-rows: repeat(16, 1fr);
-  --cloud-width: clamp(100px, 19vw, 280px);
+.map-reveal-fallback {
+  background: var(--secondary);
+  animation: map-cover var(--map-cover-duration) ease-in-out both;
 }
 
-.map-cloud-cell {
-  position: relative;
-  --cloud-travel-x: -110vw;
-  --cloud-speed: 0.9;
-  --cloud-delay: 0.1;
-  z-index: 1;
-  animation: map-clouds-gather var(--map-cover-duration)
-    cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform;
+.map-reveal[data-renderer="webgl"] .map-reveal-fallback {
+  display: none;
 }
 
-.map-cloud-cell:nth-child(16n + 9),
-.map-cloud-cell:nth-child(16n + 10),
-.map-cloud-cell:nth-child(16n + 11),
-.map-cloud-cell:nth-child(16n + 12),
-.map-cloud-cell:nth-child(16n + 13),
-.map-cloud-cell:nth-child(16n + 14),
-.map-cloud-cell:nth-child(16n + 15),
-.map-cloud-cell:nth-child(16n + 16) {
-  --cloud-travel-x: 110vw;
+.map-reveal-canvas {
+  visibility: hidden;
 }
 
-.map-cloud-cell[data-depth="middle"] {
-  --cloud-speed: 0.78;
-  --cloud-delay: 0.05;
-  z-index: 2;
-}
-
-.map-cloud-cell[data-depth="near"] {
-  --cloud-speed: 0.6;
-  --cloud-delay: 0;
-  z-index: 3;
-}
-
-.map-cloud-sprite {
-  position: absolute;
-  left: var(--cloud-x);
-  top: var(--cloud-y);
-  width: calc(var(--cloud-width) * var(--cloud-scale));
-  height: auto;
-  max-width: none;
-  image-rendering: pixelated;
-  transform: translate(-50%, -50%) scaleX(var(--cloud-reflection));
+.map-reveal[data-renderer="webgl"] .map-reveal-canvas {
+  visibility: visible;
 }
 
 .journey-caption {
@@ -122,48 +90,15 @@
   align-items: center;
   justify-content: center;
   color: var(--primary);
-  text-shadow: 0 2px 0 var(--cloud);
-  animation: cloud-cover 350ms 450ms ease-out both;
+  animation: map-cover 200ms 350ms ease-out both;
 }
 
-.map-journey[data-phase="revealing"] .cloud-veil {
-  animation: clouds-unveil var(--map-reveal-duration) ease-out both;
-}
-
-.map-journey[data-phase="revealing"] .map-cloud-cell {
-  animation: map-clouds-part
-    calc(var(--map-reveal-duration) * var(--cloud-speed))
-    calc(var(--map-reveal-duration) * var(--cloud-delay))
-    cubic-bezier(0.45, 0, 0.7, 1) both;
+.map-journey[data-phase="revealing"] .map-reveal-fallback {
+  animation: map-uncover var(--map-reveal-duration) ease-out both;
 }
 
 .map-journey[data-phase="revealing"] .journey-caption {
-  animation: clouds-unveil 450ms ease-out both;
-}
-
-.map-loading-clouds .cloud-veil,
-.map-loading-clouds .map-cloud-cell {
-  animation: none;
-  will-change: auto;
-}
-
-@media (aspect-ratio < 3/4) {
-  .map-cloud-field {
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(32, 1fr);
-    --cloud-width: clamp(85px, 32vw, 160px);
-  }
-
-  .map-cloud-cell:nth-child(n) {
-    --cloud-travel-x: -110vw;
-  }
-
-  .map-cloud-cell:nth-child(8n + 5),
-  .map-cloud-cell:nth-child(8n + 6),
-  .map-cloud-cell:nth-child(8n + 7),
-  .map-cloud-cell:nth-child(8n + 8) {
-    --cloud-travel-x: 110vw;
-  }
+  animation: map-uncover 180ms ease-out both;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -172,7 +107,7 @@
   }
 }
 
-@keyframes cloud-cover {
+@keyframes map-cover {
   from {
     opacity: 0;
   }
@@ -180,7 +115,7 @@
     opacity: 1;
   }
 }
-@keyframes clouds-unveil {
+@keyframes map-uncover {
   from {
     opacity: 1;
   }
@@ -189,26 +124,6 @@
   }
 }
 
-@keyframes map-clouds-gather {
-  from {
-    transform: translate3d(var(--cloud-travel-x), var(--cloud-travel-y), 0);
-    opacity: 0;
-  }
-  to {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-}
-
-@keyframes map-clouds-part {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(var(--cloud-travel-x), var(--cloud-travel-y), 0)
-      scale(1.08);
-  }
-}
 @keyframes city-arrival {
   from {
     transform: scale(0.78);

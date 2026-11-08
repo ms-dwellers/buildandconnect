@@ -14,11 +14,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRightIcon } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { mapClouds } from "@/lib/map-clouds";
+import { revealTiming } from "@/lib/map-reveal";
+import { MapReveal } from "./map-reveal";
 
 type Phase = "idle" | "covering" | "revealing";
-const COVER_MS = 900;
-const REVEAL_MS = 1400;
+const COVER_MS = revealTiming.covering;
+const REVEAL_MS = revealTiming.revealing;
 const JourneyContext = createContext({
   phase: "idle" as Phase,
   begin: () => {},
@@ -26,45 +27,12 @@ const JourneyContext = createContext({
 });
 export const useMapJourney = () => useContext(JourneyContext);
 
-export function MapClouds() {
-  return (
-    <>
-      <div className="cloud-veil" aria-hidden="true" />
-      <div className="map-cloud-field" aria-hidden="true">
-        {mapClouds.map((cloud) => (
-          <div
-            key={cloud.id}
-            className="map-cloud-cell"
-            data-depth={cloud.depth}
-            style={
-              {
-                "--cloud-x": `${cloud.offsetX}%`,
-                "--cloud-y": `${cloud.offsetY}%`,
-                "--cloud-scale": cloud.scale,
-                "--cloud-travel-y": `${cloud.travelY}vh`,
-                "--cloud-reflection": cloud.reflected ? -1 : 1,
-              } as CSSProperties
-            }
-          >
-            <img
-              src={`/sprites/${cloud.sprite.name}.svg`}
-              width={cloud.sprite.width}
-              height={cloud.sprite.height}
-              alt=""
-              className="map-cloud-sprite"
-            />
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
 export function MapJourneyProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [phase, setPhase] = useState<Phase>("idle");
   const navigating = useRef(false);
+  const requested = useRef(false);
   const restoreFocus = useRef(false);
   const sourcePath = useRef(pathname);
   const navigationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -87,7 +55,10 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
   }, [complete, pathname, router]);
   const navigateToMap = useCallback(() => {
     if (navigationTimer.current) clearTimeout(navigationTimer.current);
-    if (navigating.current) router.push("/map");
+    if (navigating.current && !requested.current) {
+      requested.current = true;
+      router.push("/map");
+    }
   }, [router]);
   function begin() {
     if (navigating.current || pathname === "/map") return;
@@ -96,10 +67,11 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
       return;
     }
     navigating.current = true;
+    requested.current = false;
     sourcePath.current = pathname;
     router.prefetch("/map");
     setPhase("covering");
-    // Animation completion normally navigates; this covers a missing event.
+    // Rendering normally advances navigation; retain a deadline for lost contexts/tabs.
     navigationTimer.current = setTimeout(navigateToMap, COVER_MS + 500);
   }
 
@@ -177,24 +149,11 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
           onKeyDown={(event) => {
             if (event.key === "Escape") finish();
           }}
-          onAnimationEnd={(event) => {
-            if (
-              event.target instanceof HTMLElement &&
-              event.target.classList.contains("cloud-veil") &&
-              event.animationName === "cloud-cover" &&
-              phase === "covering"
-            )
-              navigateToMap();
-            if (
-              event.target instanceof HTMLElement &&
-              event.target.classList.contains("cloud-veil") &&
-              event.animationName === "clouds-unveil" &&
-              phase === "revealing"
-            )
-              complete();
-          }}
         >
-          <MapClouds />
+          <MapReveal
+            phase={phase}
+            onComplete={phase === "covering" ? navigateToMap : complete}
+          />
           <div className="journey-caption" aria-hidden="true">
             <p className="mt-3 font-display text-6xl sm:text-8xl">Calgary.</p>
           </div>

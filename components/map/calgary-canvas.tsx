@@ -16,7 +16,7 @@ import { CityIllustration } from "./city-illustration";
 import { JobMarker } from "./job-marker";
 import { LiveJobMarker } from "./live-job-marker";
 import { useCalgaryMap } from "./use-calgary-map";
-import { MapClouds, useMapJourney } from "./map-journey";
+import { useMapJourney } from "./map-journey";
 import { cityMapMode } from "@/lib/calgary-map";
 
 export function CalgaryCanvas({
@@ -150,13 +150,8 @@ export function CalgaryCanvas({
         <span className="text-sm font-semibold">Calgary, AB</span>
       </div>
       {loading && phase === "idle" && (
-        <div
-          className="map-loading-clouds"
-          data-testid="map-loading-clouds"
-          role="status"
-        >
-          <MapClouds />
-          <span className="sr-only">Loading Calgary&apos;s city map.</span>
+        <div className="map-loading" data-testid="map-loading" role="status">
+          <span>Loading Calgary&apos;s map…</span>
         </div>
       )}
       {live && (
