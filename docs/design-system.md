@@ -118,16 +118,42 @@ map.
 - No decorative pills. Ordinary labels are plain text. Badges are
   softly rectangular with a small radius, explicit line height, and enough padding
   for their text. They do not shrink to squashed capsules on desktop.
-- Filled and outlined buttons have a solid lower edge and depress by 2–4px while
-  held. Their shadow collapses by the same amount without moving surrounding
-  layout. Ghost and link variants stay flat. Disabled and loading buttons do not
-  press; reduced motion makes the feedback immediate rather than animated.
-- Toggles use the same raised edge. Selected toggles stay depressed and emerald;
-  unselected toggles rise back up. Group items move independently, including when
-  selected by keyboard. Their ARIA pressed state remains the source of truth.
-- Keep skeuomorphism minimal: tactile controls, a slight paper-like lift on cards,
-  and calm mint/teal surfaces with warm accents. Avoid large glows, glossy
-  gradients, or textures.
+- Filled and outlined buttons use a raised lower edge and depress while held.
+  Ghost and link variants stay flat. Disabled and loading buttons do not press;
+  reduced motion makes the feedback immediate rather than animated.
+- Community raised chrome is soft: rounded corners (`--button-radius`), a solid
+  outer edge shadow, and a light top inset highlight. Travel depth is 2–4px by
+  size. The shadow collapses by the same amount on press without shifting
+  surrounding layout.
+- Developer raised chrome is pixel-slab only: `--button-radius: 0`, a real
+  `--button-pixel` hard outline border (skirt clipped to padding-box so it
+  cannot halo outside the edge), a 1px top bevel via inset `box-shadow`, and a
+  darker internal skirt whose height is `--button-depth` (4px / 6px / 8px by
+  size). On press the face translates by that depth and the skirt collapses
+  flush; the outline stays. Apricot/coral fire bloom is a single soft
+  drop-shadow on hover/focus only. Toggles inherit the same `.button-raised`
+  chrome.
+- Developer surfaces site-wide (cards, inputs, dialogs, menus, toasts, map
+  panels, badges) remapped via theme tokens: all `--radius*` and
+  `--badge-radius` are `0`, `--border` is the hard pixel outline, and
+  `--shadow-card` / `--fieldbook-shadow` are hard offset drops with no blur.
+  Soft coss inset sheens on `.bg-card` / `.bg-popover` are disabled. Switches,
+  radios, checkboxes, and badges go square with hard pixel outlines (and a
+  short hard drop on badges). Avatars stay round as stepped voxel circles
+  (`clip-path` + a few hard drop-shadows for outline). Alerts, progress/meter
+  tracks, skeletons, and sliders use square slabs / chunky bars; slider thumbs
+  are square with a hard outline.   Lucide icons in buttons and alerts use square
+  caps / miter joins. The Spinner swaps to an 8-cell pixel ring (stepped
+  opacity comet) under Developer. No mass clip-path or filter stacks on
+  panels.
+  Fonts stay League Spartan / DM Mono.
+- Toggles use the same raised edge as buttons in the active theme. Selected
+  toggles stay depressed; unselected toggles rise back up. Group items move
+  independently, including when selected by keyboard. Their ARIA pressed state
+  remains the source of truth.
+- Keep skeuomorphism minimal: tactile controls, a slight paper-like lift on
+  Community cards, and calm mint/teal surfaces with warm accents there. Developer
+  prefers hard pixel edges over soft glows on resting surfaces.
 
 - Buttons, cards, badges, separators, and loading indicators come from coss.
 - Use `render` for element composition, not Radix's `asChild`.

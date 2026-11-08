@@ -334,6 +334,19 @@
    data-theme-preview is for /design-system only so previews do not fight session theme. */
 [data-theme="developer"],
 [data-theme-preview="developer"] {
+  /* Square pixel chrome — set each rung; do not derive from --radius alone. */
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --badge-radius: 0;
+  --button-radius: 0;
+  --button-depth: 6px;
+  --button-pixel: 2px;
+  --button-bevel: --alpha(#ffe8cc / 34%);
+  --button-pixel-outline: #1a0e08;
   --button-primary-edge: var(--palette-ember);
   --button-primary-hover: var(--palette-flame);
   --button-highlight-edge: #b84141;
@@ -367,7 +380,7 @@
   --success-foreground: #e8b888;
   --warning: var(--palette-apricot);
   --warning-foreground: #ffe8cc;
-  --border: --alpha(var(--palette-flame) / 40%);
+  --border: var(--button-pixel-outline);
   --input: var(--palette-flame);
   --ring: var(--palette-flame);
   --sidebar: #3a1e10;
@@ -394,10 +407,8 @@
   --dashboard-paper: #5e3218;
   --map-base: #4a2816;
   --map-community: #e8a070;
-  --shadow-card:
-    0 2px 0 --alpha(var(--palette-apricot) / 24%),
-    0 0 26px --alpha(var(--palette-apricot) / 22%),
-    0 10px 30px --alpha(#ee962f / 16%);
+  /* Hard pixel drop — no blur (blurred card shadows read soft, not itch). */
+  --shadow-card: 3px 3px 0 0 var(--button-pixel-outline);
   --fire-glow:
     0 0 12px --alpha(var(--palette-apricot) / 65%),
     0 0 28px --alpha(#ee962f / 42%),
@@ -405,9 +416,17 @@
   --fire-glow-soft:
     0 0 10px --alpha(var(--palette-coral) / 45%),
     0 0 22px --alpha(var(--palette-coral) / 25%);
-  --fieldbook-shadow:
-    3px 4px 0 --alpha(#c26e0b / 22%),
-    0 0 20px --alpha(var(--palette-apricot) / 16%);
+  --fieldbook-shadow: 3px 3px 0 0 var(--button-pixel-outline);
+  /* Fieldbook chrome was still pine from :root — remap so header/board match fire. */
+  --fieldbook-dot: --alpha(var(--palette-apricot) / 22%);
+  --fieldbook-line: --alpha(#1a0e08 / 72%);
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .fieldbook-header {
+  border-bottom-width: var(--button-pixel);
+  border-color: var(--fieldbook-line);
+  box-shadow: 0 3px 0 0 var(--button-pixel-outline);
 }
 
 .voice-studio {
@@ -565,20 +584,43 @@
     --button-shadow-depth: 0px;
   }
 
-  /* Developer fire: apricot bloom on primary fills; coral spark on highlight. */
+  /*
+   * Developer pixel slab: hard outline + internal skirt + top bevel.
+   * Real 2px border (not transparent + inset ring): a 1px transparent border
+   * let the skirt paint outside the black edge and read as orange “halo”.
+   * background-clip: padding-box keeps face/skirt inside the outline.
+   * No clip-path stairs — they fought the rectangular border and looked off.
+   * Fire bloom is one soft drop-shadow, hover-only on primary.
+   */
   :is([data-theme="developer"], [data-theme-preview="developer"])
-    .button-raised.bg-primary,
-  :is([data-theme="developer"], [data-theme-preview="developer"])
-    .button-raised[data-pressed][class*="data-pressed:bg-primary"] {
-    --button-raised-shadow:
-      0 var(--button-shadow-depth) 0 0 var(--button-edge), var(--fire-glow);
+    .button-raised {
+    --button-radius: 0;
+    border-radius: 0;
+    border-style: solid;
+    border-width: var(--button-pixel);
+    border-color: var(--button-pixel-outline) !important;
+    clip-path: none;
+    background-clip: padding-box;
+    /*
+     * Face stays on background-color (bg-primary etc.). Skirt is a bottom
+     * band via background-image so --button-shadow-depth: 0 collapses it.
+     */
+    background-image: linear-gradient(
+      to bottom,
+      transparent calc(100% - var(--button-shadow-depth)),
+      var(--button-edge) calc(100% - var(--button-shadow-depth))
+    );
+    box-shadow: inset 0 1px 0 0 var(--button-bevel);
+    filter: none;
+    transition:
+      transform 100ms ease-out,
+      background-color 120ms ease-out;
   }
 
   :is([data-theme="developer"], [data-theme-preview="developer"])
-    .button-raised.bg-highlight {
-    --button-raised-shadow:
-      0 var(--button-shadow-depth) 0 0 var(--button-edge),
-      var(--fire-glow-soft);
+    .button-raised::before {
+    border-radius: 0;
+    box-shadow: none;
   }
 
   :is([data-theme="developer"], [data-theme-preview="developer"])
@@ -591,11 +633,15 @@
       :disabled,
       [aria-disabled="true"]
     ):is(:hover, :focus-visible) {
-    --button-raised-shadow:
-      0 var(--button-shadow-depth) 0 0 var(--button-edge),
-      0 0 16px --alpha(var(--palette-apricot) / 80%),
-      0 0 36px --alpha(#ee962f / 55%),
-      0 0 56px --alpha(#c26e0b / 35%);
+    filter: drop-shadow(0 0 12px --alpha(var(--palette-apricot) / 55%));
+  }
+
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    .button-raised.bg-highlight:not(:disabled, [aria-disabled="true"]):is(
+      :hover,
+      :focus-visible
+    ) {
+    filter: drop-shadow(0 0 10px --alpha(var(--palette-coral) / 40%));
   }
 
   /* Figma gallery: outline labels and edges use apricot, not muted cream. */
@@ -612,9 +658,296 @@
     box-shadow: var(--fire-glow);
   }
 
-  :is([data-theme="developer"], [data-theme-preview="developer"]) .bg-card {
-    border-color: --alpha(var(--ring) / 55%);
+  /*
+   * Pixel surfaces: hard edges via tokens above. Kill soft coss inset sheens on
+   * cards/popovers.
+   */
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    :where(.bg-card, .bg-popover)::before {
+    box-shadow: none;
   }
+
+  :is([data-theme="developer"], [data-theme-preview="developer"])
+    :where(.bg-card, .bg-popover) {
+    border-color: var(--border);
+    border-radius: 0;
+  }
+}
+
+/*
+ * Unlayered so these beat Tailwind size utilities ([--button-depth:*],
+ * [--button-radius:6px], rounded-(--button-radius), border, rounded-full)
+ * in @layer utilities.
+ */
+:is([data-theme="developer"], [data-theme-preview="developer"]) .button-raised {
+  --button-radius: 0;
+  border-radius: 0;
+  border-style: solid;
+  border-width: var(--button-pixel);
+  border-color: var(--button-pixel-outline);
+  background-clip: padding-box;
+  clip-path: none;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .button-raised[class*="[--button-depth:2px]"] {
+  --button-depth: 4px;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  .button-raised[class*="[--button-depth:4px]"] {
+  --button-depth: 8px;
+}
+
+/* Square pixel switch track + thumb (no pill). */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="switch"] {
+  border-radius: 0;
+  border: var(--button-pixel) solid var(--button-pixel-outline);
+  box-shadow: none;
+  padding: 2px;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="switch"][data-checked] {
+  box-shadow: none;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="switch-thumb"] {
+  border-radius: 0;
+  box-shadow: none;
+  border: 1px solid var(--button-pixel-outline);
+}
+
+/*
+ * Voxel-circle avatars: stepped circle silhouette (not a smooth disc, not a
+ * square). Four hard drop-shadows outline the clip (few avatars → cheap).
+ */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="avatar"] {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  clip-path: polygon(
+    25% 0%,
+    75% 0%,
+    75% 6.25%,
+    87.5% 6.25%,
+    87.5% 12.5%,
+    93.75% 12.5%,
+    93.75% 25%,
+    100% 25%,
+    100% 75%,
+    93.75% 75%,
+    93.75% 87.5%,
+    87.5% 87.5%,
+    87.5% 93.75%,
+    75% 93.75%,
+    75% 100%,
+    25% 100%,
+    25% 93.75%,
+    12.5% 93.75%,
+    12.5% 87.5%,
+    6.25% 87.5%,
+    6.25% 75%,
+    0% 75%,
+    0% 25%,
+    6.25% 25%,
+    6.25% 12.5%,
+    12.5% 12.5%,
+    12.5% 6.25%,
+    25% 6.25%
+  );
+  filter:
+    drop-shadow(1px 0 0 var(--button-pixel-outline))
+    drop-shadow(-1px 0 0 var(--button-pixel-outline))
+    drop-shadow(0 1px 0 var(--button-pixel-outline))
+    drop-shadow(0 -1px 0 var(--button-pixel-outline))
+    drop-shadow(2px 2px 0 var(--button-pixel-outline));
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="avatar-fallback"],
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="avatar-image"] {
+  border-radius: 0;
+}
+
+/* Square radios / checkboxes. */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="radio"],
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="checkbox"] {
+  border-radius: 0;
+  border-width: var(--button-pixel);
+  border-color: var(--button-pixel-outline);
+  box-shadow: none;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="radio"]::before,
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="checkbox"]::before {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="radio-indicator"],
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="checkbox-indicator"] {
+  border-radius: 0;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="radio-indicator"]::before {
+  border-radius: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+/* Badges: hard outline + short pixel drop. */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="badge"] {
+  border-radius: 0;
+  border-style: solid;
+  border-width: var(--button-pixel);
+  border-color: var(--button-pixel-outline);
+  box-shadow: 2px 2px 0 0 var(--button-pixel-outline);
+}
+
+/* Lucide strokes read more pixel / blocky in developer chrome. */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  :is([data-slot="button"], .button-control)
+  svg:not([data-slot]),
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="alert"]
+  > svg {
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 2.25;
+  shape-rendering: geometricPrecision;
+}
+
+/* Community keeps Lucide; Developer uses the stepped pixel ring. */
+[data-slot="spinner-pixel"] {
+  display: none;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="spinner-lucide"] {
+  display: none;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="spinner-pixel"] {
+  display: block;
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="spinner-pixel"]
+  rect {
+  opacity: 0.18;
+  animation: pixel-buffer 0.8s steps(1, end) infinite;
+}
+
+@keyframes pixel-buffer {
+  0%,
+  12.4% {
+    opacity: 1;
+  }
+  12.5%,
+  24.9% {
+    opacity: 0.62;
+  }
+  25%,
+  37.4% {
+    opacity: 0.34;
+  }
+  37.5%,
+  100% {
+    opacity: 0.18;
+  }
+}
+
+/* Alerts: square slab + hard outline + short pixel drop. */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="alert"] {
+  border-radius: 0;
+  border-width: var(--button-pixel);
+  border-style: solid;
+  border-color: var(--button-pixel-outline);
+  box-shadow: 2px 2px 0 0 var(--button-pixel-outline);
+}
+
+/* Progress / meter: chunky square bars. */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  :is([data-slot="progress-track"], [data-slot="meter-track"]) {
+  border-radius: 0;
+  height: 0.625rem;
+  border: var(--button-pixel) solid var(--button-pixel-outline);
+  background-clip: padding-box;
+  box-shadow: none;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  :is([data-slot="progress-indicator"], [data-slot="meter-indicator"]) {
+  border-radius: 0;
+}
+
+/* Slider: square track + voxel-ish square thumb. */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="slider-track"] {
+  border-radius: 0;
+  height: 0.5rem;
+  border: var(--button-pixel) solid var(--button-pixel-outline);
+  background-color: var(--input);
+  background-clip: padding-box;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="slider-track"]::before {
+  border-radius: 0;
+  inset: 0;
+  background: transparent;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="slider-indicator"] {
+  border-radius: 0;
+  margin: 0;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="slider-thumb"] {
+  border-radius: 0;
+  border: var(--button-pixel) solid var(--button-pixel-outline);
+  box-shadow: 2px 2px 0 0 var(--button-pixel-outline);
+  background-color: var(--primary);
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  scale: 1;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="slider-thumb"][data-dragging] {
+  scale: 1;
+}
+
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="slider-thumb"]::before {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Skeleton: square blocks, no soft radius. */
+:is([data-theme="developer"], [data-theme-preview="developer"])
+  [data-slot="skeleton"] {
+  border-radius: 0;
+  border: 1px solid var(--button-pixel-outline);
 }
 
 @media (prefers-reduced-motion: reduce) {
