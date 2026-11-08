@@ -26,13 +26,14 @@ the only account roles; do not reintroduce Company or Recruiter account types.
 - Prefer restrained tactile styling: raised solid buttons with a visible lower
   edge and real press travel, subtle card shadows, no heavy gloss. Keep navigation
   links flat and preserve keyboard, disabled, and reduced-motion behavior.
-- Backend and data: Hono mounted in Vinext route handlers, Convex, and Workers AI.
-  `backend/` owns the HTTP facade and AI calls; `convex/` owns auth, schema,
-  persistence, and atomic transitions. D1 has been replaced; `migrations/` is
+- Backend and data: Convex owns HTTP actions, authentication, AI execution,
+  schema, persistence, and atomic transitions. `backend/` contains shared pure
+  validation and matching helpers, not a separately hosted API. D1 has been replaced; `migrations/` is
   legacy reference only. Do not reintroduce a second application database.
 - Authentication: Better Auth's official Convex component. Keep browser requests
-  same-origin through `/api`. Convex functions enforce ownership and roles and
-  require the server-only bridge secret; never expose it to clients.
+  same-origin through a thin `/api` forwarding route. Native clients call the
+  Convex HTTP site directly. Persistence functions are internal and revalidate
+  live sessions, ownership, and roles; clients never submit trusted AI output.
 - Maps: Mapbox.
 - Other infrastructure: prefer Cloudflare products (Workers, R2, Queues,
   Durable Objects, etc.), except the explicitly selected Convex backend.
@@ -56,8 +57,8 @@ configuration. This permission does not make the chat itself a secret vault.
   before writing a local secret. Prefer stdin over command-line arguments.
 - Keep `.env.example` value-free. Never put secrets in Nix expressions, derivation
   arguments, or store paths; the Nix store is not private storage.
-- `BETTER_AUTH_SECRET` belongs in Convex's environment. `CONVEX_BRIDGE_SECRET`
-  must match between Convex and the Worker. Keep Convex CLI account/deploy keys
+- `BETTER_AUTH_SECRET` and Workers AI credentials belong only in Convex's
+  environment. No application bridge secret is needed. Keep Convex CLI account/deploy keys
   outside tracked source; never publish production changes during local setup.
 - `NEXT_PUBLIC_*` and `VITE_*` values are public. Never place a private key or
   Better Auth secret there. A restricted Mapbox public token is intentionally

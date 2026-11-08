@@ -67,15 +67,6 @@ export async function configure(siteUrl = process.argv[2]) {
       ["env", "set", "BETTER_AUTH_SECRET"],
       randomBytes(48).toString("base64url"),
     );
-  const bridge = names.has("CONVEX_BRIDGE_SECRET")
-    ? convex(["env", "get", "CONVEX_BRIDGE_SECRET"])
-    : randomBytes(48).toString("base64url");
-  if (bridge.length < 32 || /\s/.test(bridge))
-    throw new Error(
-      "The development bridge secret must be at least 32 characters without whitespace.",
-    );
-  if (!names.has("CONVEX_BRIDGE_SECRET"))
-    convex(["env", "set", "CONVEX_BRIDGE_SECRET"], bridge);
   convex(["env", "set", "SITE_URL"], site.origin);
   const temporary = new URL(
     `../.env.local.${randomBytes(8).toString("hex")}.tmp`,
@@ -84,7 +75,6 @@ export async function configure(siteUrl = process.argv[2]) {
   await writeFile(
     temporary,
     mergeEnvironment(text, {
-      CONVEX_BRIDGE_SECRET: bridge,
       SITE_URL: site.origin,
     }),
     { mode: 0o600, flag: "wx" },
@@ -92,7 +82,7 @@ export async function configure(siteUrl = process.argv[2]) {
   await rename(temporary, environmentFile);
   if (process.platform !== "win32") await chmod(environmentFile, 0o600);
   console.log(
-    "Development auth and Worker bridge configured. Existing credentials and local settings were preserved.",
+    "Development Convex authentication origin configured. Existing credentials and local settings were preserved.",
   );
 }
 

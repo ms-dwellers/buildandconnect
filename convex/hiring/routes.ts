@@ -1,10 +1,11 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
-import type { ConvexHttpClient } from "convex/browser";
-import { api as convex } from "../../convex/_generated/api.js";
+import type { ActionCtx } from "../_generated/server";
+import { internal } from "../_generated/api";
 import type { PublicDeveloper } from "../../lib/types";
-import type { ApiEnv } from "../api";
+import type { Role } from "../../backend/schemas";
+import type { HiringEnv } from "./env";
 import {
   AUDIO_TYPES,
   MAX_AUDIO_BYTES,
@@ -16,19 +17,24 @@ import {
   confirmedBriefSchema,
   conversationSchema,
   extractionRequestSchema,
-} from "./schemas.ts";
+} from "../../backend/hiring/schemas.ts";
 import { draftBrief, extractBrief, recommendDevelopers } from "./service.ts";
-import { hiringEligibility } from "./eligibility.ts";
+import { hiringEligibility } from "../../backend/hiring/eligibility.ts";
+
+export type ApiEnv = {
+  Bindings: HiringEnv;
+  Variables: { client: ActionCtx; role: Role | null; sessionId?: string };
+};
 
 export async function listHiringDevelopers(
-  client: ConvexHttpClient,
-  secret: string,
-) {
+  client: ActionCtx,
+  sessionId?: string,
+): Promise<PublicDeveloper[]> {
   const developers: PublicDeveloper[] = [];
   let after = "";
   for (;;) {
-    const result = await client.query(convex.data.developers, {
-      secret,
+    const result = await client.runQuery(internal.data.developers, {
+      sessionId,
       after,
       limit: 100,
     });
@@ -78,8 +84,17 @@ export function createHiringRoutes(
       throw new HTTPException(403, {
         message: "Project voice intake requires a requester account",
       });
+    c.header("Cache-Control", "no-store");
+    c.header("X-Content-Type-Options", "nosniff");
     await next();
   });
+  const jsonBodyLimit = bodyLimit({
+    maxSize: 32 * 1024,
+    onError: (c) => c.json({ error: "Request body exceeds 32 KB" }, 413),
+  });
+  routes.use("*", (c, next) =>
+    c.req.path.endsWith("/transcribe") ? next() : jsonBodyLimit(c, next),
+  );
   routes.get("/status", (c) =>
     c.json({
       transcription: Boolean(c.env.ELEVENLABS_API_KEY),
@@ -138,7 +153,7 @@ export function createHiringRoutes(
     const { brief } = confirmedBriefSchema.parse(await c.req.json());
     const pool = await services.listDevelopers(
       c.get("client"),
-      c.env.CONVEX_BRIDGE_SECRET,
+      c.get("sessionId"),
     );
     const candidates = pool.filter(
       (developer) => hiringEligibility(brief, developer).length === 0,
@@ -146,12 +161,9 @@ export function createHiringRoutes(
     const result = await services.recommendDevelopers(c.env, brief, candidates);
     // Discovery consent can change while the model request is in flight.
     const current = new Map(
-      (
-        await services.listDevelopers(
-          c.get("client"),
-          c.env.CONVEX_BRIDGE_SECRET,
-        )
-      ).map((developer) => [developer.id, developer]),
+      (await services.listDevelopers(c.get("client"), c.get("sessionId"))).map(
+        (developer) => [developer.id, developer],
+      ),
     );
     return c.json({
       ...result,

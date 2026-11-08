@@ -14,27 +14,45 @@ bun run dev:backend
 
 Select the existing team/project instead of creating a duplicate. Convex writes
 `CONVEX_DEPLOYMENT`, `VITE_CONVEX_URL`, and `VITE_CONVEX_SITE_URL` into ignored
-`.env.local`. Setup adds `SITE_URL` and the server-only `CONVEX_BRIDGE_SECRET`,
-preserving Mapbox and other settings. It reuses existing development secrets rather
+`.env.local`. Setup adds `SITE_URL`, preserving Mapbox and other settings.
+It reuses existing development secrets rather
 than rotating them. The script refuses production selections and deploy keys.
 An optional argument changes the local origin: `bun run setup:backend http://localhost:5173`.
 
-`BETTER_AUTH_SECRET` exists only in Convex's environment. The bridge secret must
-match in Convex and the Worker; never prefix it with `VITE_` or `NEXT_PUBLIC_`.
-The public Convex URLs may be browser-visible. In production, configure the same
-URL/bridge/origin settings in the Worker and set Convex's `SITE_URL` to the deployed
-app's exact origin. No production deployment is part of local setup.
+`BETTER_AUTH_SECRET` exists only in Convex's environment. No bridge secret or
+Convex JWT exchange is needed by the application. The public Convex URLs may be
+browser-visible. Set Convex's `SITE_URL` to the website's exact origin. The web
+host needs only that origin and `VITE_CONVEX_SITE_URL` for forwarding. No
+production deployment is part of local setup.
 
-Run `bun run dev` in a second terminal. All browser requests stay on `/api`;
-Hono proxies auth and calls Convex with the session's JWT and the bridge credential.
-The Convex mutations enforce ownership and atomically change interests/claims.
-Do not call protected data functions directly from the browser or expose the bridge key.
+Run `bun run dev` in a second terminal for the website. Browser requests stay on
+`/api`, forwarded without application logic to Convex HTTP actions. Native apps
+call `https://<deployment>.convex.site/api/...` directly and do not need the website
+or Vite running. Use the HTTP `.convex.site` URL, not the `.convex.cloud` RPC URL.
+Internal Convex functions enforce live sessions, ownership, roles, and atomic
+transitions. Clients cannot call them or submit trusted analysis/embeddings.
 
-Workers AI has no local inference engine. To exercise real model calls locally,
-authenticate the Cloudflare CLI, set `WORKERS_AI_REMOTE=true` in the environment
-that launches Vite, and restart `bun run dev`. Calls may incur Workers AI charges.
+Convex calls Workers AI through REST; there is no Worker AI binding. Set
+`WORKERS_AI_ACCOUNT_ID` and a minimally scoped `WORKERS_AI_API_TOKEN` only in the
+Convex environment, plus `WORKERS_AI_ENABLED=true` to opt into billable inference.
+Neither provider credential belongs in web settings, `.xcconfig`, or client code.
 Without opt-in, analysis returns 503 rather than fabricated data. Only authorized
-requester/profile requests can invoke models.
+profile/posting requests can invoke models.
+
+## Deployment
+
+Deploy the Convex schema, functions, and HTTP actions to the chosen environment.
+Configure `BETTER_AUTH_SECRET`, `SITE_URL` (the website origin, or the Convex HTTP
+origin for native-only use), and optional AI credentials
+there. Native apps can then use the deployment's HTTPS HTTP site without any
+application Worker deployment. Deploy the website separately only if needed; its
+same-origin forwarding route requires `VITE_CONVEX_SITE_URL` and `SITE_URL`, no
+application secrets. Retire old bridge-secret configuration after migrating all
+clients. Do not point new clients at an old deployment that lacks these actions.
+For an existing website, deploy its new forwarding route in the same rollout, or
+use a fresh staging Convex deployment first. The old application API cannot call
+the newly internal persistence functions. Native-only deployments do not need a
+website, but an old deployed website is not automatically migrated by a Convex push.
 
 The old SQL files in `migrations/` are retained only as migration references.
 They no longer run and D1 is not bound to the app. Existing local D1 files are
@@ -80,8 +98,8 @@ Browser requests use a Better Auth session cookie from the same origin with
 `credentials: "include"`. Native requests use a signed bearer session from the
 `set-auth-token` authentication response header, stored in Keychain, and send the
 configured site origin in `Origin`. Both use the same facade and authorization.
-The public map accepts either session type optionally. Convex JWTs and the bridge
-credential remain server-side. JSON bodies use `Content-Type: application/json`.
+The public map accepts either session type optionally. Session credentials remain
+private. JSON bodies use `Content-Type: application/json`.
 Errors return `{ "error": "..." }`; validation errors also
 include field paths under `issues`. Better Auth routes use its native error shape.
 
@@ -274,12 +292,12 @@ bun run smoke
 
 Normal tests run offline with `convex-test`, the real Better Auth component schema,
 and seeded test sessions. They cover access control, privacy, matching, interest,
-and atomic claims. The live suite separately bundles Hono into workerd and uses
-real cloud Convex auth and storage, substituting only the model-service boundary.
+and atomic claims. HTTP tests run the actual Convex action handlers and Better Auth
+with scripted model services, covering both browser cookies and native tokens.
 
-To run it against a disposable development deployment, set Convex `DEV_SITE_URL`
-to `http://127.0.0.1:5180`, enable `ALLOW_TEST_CLEANUP=true` there, then run
-`bun run test:live`. It creates reserved `@example.test` accounts and removes
+For a direct-HTTP smoke test against a disposable development deployment, enable
+`ALLOW_TEST_CLEANUP=true` there, then run `bun run test:live`. It creates reserved
+`@example.test` accounts and removes
 their records through an operator-only internal function. Do not enable cleanup
 in production. Normal `check`, `build`, and `smoke` never push Convex functions.
 The public health endpoint stays a minimal liveness check, not a connectivity test.

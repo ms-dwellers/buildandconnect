@@ -1,4 +1,4 @@
-// Shared by the browser, the Hono facade, and Convex functions. Keep this module
+// Shared by the browser and Convex functions. Keep this module
 // dependency-free so server bundles do not pull in map or UI code.
 
 export type CityPoint = { longitude: number; latitude: number };

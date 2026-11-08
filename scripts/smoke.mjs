@@ -24,7 +24,6 @@ const server = spawn(
     env: {
       ...process.env,
       BROWSER: "none",
-      WORKERS_AI_REMOTE: "false",
       SITE_URL: origin,
     },
   },

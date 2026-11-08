@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { secret, setup } from "./harness";
+import { setup } from "./harness";
 
 beforeEach(() => {
-  vi.stubEnv("CONVEX_BRIDGE_SECRET", secret);
   vi.stubEnv(
     "BETTER_AUTH_SECRET",
     "native-auth-test-only-secret-at-least-32-characters",
@@ -12,11 +11,11 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 
-test("native sign-in issues a signed bearer session and sign-out revokes it", async () => {
+test("direct Convex native sign-in issues signed sessions and sign-out revokes data access", async () => {
   const t = setup();
   const headers = {
     "Content-Type": "application/json",
-    "x-buildandconnect-bridge": secret,
+    Origin: "https://test.convex.site",
   };
   const result = await t.fetch("/api/auth/sign-up/email", {
     method: "POST",
@@ -31,19 +30,16 @@ test("native sign-in issues a signed bearer session and sign-out revokes it", as
   const token = result.headers.get("set-auth-token");
   expect(token).toBeTruthy();
   const authenticated = { ...headers, Authorization: `Bearer ${token}` };
+  expect((await t.fetch("/api/me", { headers: authenticated })).status).toBe(
+    200,
+  );
   expect(
-    await (
-      await t.fetch("/api/auth/get-session", {
+    (
+      await t.fetch("/api/me", {
         headers: { ...headers, Authorization: "Bearer unsigned-invalid-token" },
       })
-    ).json(),
-  ).toBeNull();
-  const session = await t.fetch("/api/auth/get-session", {
-    headers: authenticated,
-  });
-  expect(await session.json()).toMatchObject({
-    user: { name: "Native developer" },
-  });
+    ).status,
+  ).toBe(401);
   expect(
     (
       await t.fetch("/api/auth/sign-out", {
@@ -53,22 +49,37 @@ test("native sign-in issues a signed bearer session and sign-out revokes it", as
       })
     ).status,
   ).toBe(200);
-  expect(
-    await (
-      await t.fetch("/api/auth/get-session", { headers: authenticated })
-    ).json(),
-  ).toBeNull();
+  expect((await t.fetch("/api/me", { headers: authenticated })).status).toBe(
+    401,
+  );
 });
 
-test("native authentication cannot bypass the server bridge", async () => {
+test("direct authentication and application writes reject untrusted origins without a bridge", async () => {
   const t = setup();
-  const response = await t.fetch("/api/auth/sign-in/email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: "native@example.test",
-      password: "invalid-password",
-    }),
-  });
-  expect(response.status).toBe(403);
+  const headers = {
+    "Content-Type": "application/json",
+    Origin: "https://attacker.test",
+  };
+  expect(
+    (
+      await t.fetch("/api/auth/sign-up/email", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name: "Attacker",
+          email: "attacker@example.test",
+          password: "native-test-password-1234",
+        }),
+      })
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await t.fetch("/api/me/role", {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ role: "company" }),
+      })
+    ).status,
+  ).toBe(403);
 });

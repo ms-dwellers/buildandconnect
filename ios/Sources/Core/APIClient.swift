@@ -126,6 +126,12 @@ enum SessionKeychain {
     query: [String: String] = [:], idempotencyKey: String? = nil,
     expectedRevision: Int? = nil
   ) async throws -> T {
+    guard baseURL.host != "configuration-required.invalid" else {
+      throw APIError(
+        status: 0,
+        message:
+          "Set API_BASE_URL to your Convex HTTP site in ios/Local.xcconfig, then rebuild the app.")
+    }
     guard path.hasPrefix("/"), !path.contains(".."), !path.contains("?") else {
       throw APIError(status: 0, message: "Invalid API route.")
     }

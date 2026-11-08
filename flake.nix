@@ -75,7 +75,7 @@
               done < <(find "$out" -type l -lname "$out/*" -print0)
             '';
             dontInstall = true;
-            outputHash = "sha256-/9RAGUDWwjVBorFlT49fwgtCFnO+T6NSZgnLfukOrV4=";
+            outputHash = "sha256-xnscCCm9ytT5aMmZ7IATLdVGI4koP0LyhaLFQn9XkfM=";
             outputHashAlgo = "sha256";
             outputHashMode = "recursive";
           };

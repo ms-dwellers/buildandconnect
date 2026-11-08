@@ -1,9 +1,9 @@
-import { createApi } from "../../backend/api.ts";
+import { createHttpRouter } from "../../convex/router";
 import { AnalysisUnavailable } from "../../backend/ai.ts";
 import { analysis, embedding } from "./matching.ts";
 
-// Only model inference is substituted. Auth and persistence use real Convex.
-export default createApi({
+// Only model inference is substituted. HTTP/auth/data use production Convex functions.
+export default createHttpRouter({
   async analyzeDeveloper(_ai, profile) {
     if (profile.bio.includes("AI_UNAVAILABLE"))
       throw new AnalysisUnavailable("Model unavailable");

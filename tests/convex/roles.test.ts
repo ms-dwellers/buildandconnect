@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, expect, test, vi } from "vitest";
+import { expect, test } from "vitest";
 import {
   actor,
   analysis,
@@ -6,7 +6,6 @@ import {
   embedding,
   job,
   profile,
-  secret,
   setup,
 } from "./harness";
 
@@ -27,18 +26,13 @@ const neighbourRequest = {
   longitude: -114.071234,
 };
 
-beforeEach(() => vi.stubEnv("CONVEX_BRIDGE_SECRET", secret));
-afterEach(() => vi.unstubAllEnvs());
-
 async function developerNear(t: ReturnType<typeof setup>) {
   const dev = await actor(t, "developer");
   await dev.client.mutation(api.data.putDeveloper, {
-    secret,
     profile: { ...profile, city: "Calgary" },
     embedding,
   });
   await dev.client.mutation(api.data.setLocation, {
-    secret,
     location: { ...kensington, radiusKm: 10 },
   });
   return dev;
@@ -50,7 +44,6 @@ test("the public map lists only open, pinned Calgary postings and hides requeste
   const requester = await actor(t, "requester");
   const post = (details: typeof pinnedJob | typeof job) =>
     company.client.mutation(api.data.createOpportunity, {
-      secret,
       id: crypto.randomUUID(),
       details,
       analysis,
@@ -61,22 +54,17 @@ test("the public map lists only open, pinned Calgary postings and hides requeste
   await post({ ...pinnedJob, latitude: 43.65, longitude: -79.38 }); // Toronto
   const closed = await post(pinnedJob);
   await company.client.mutation(api.data.updateOpportunity, {
-    secret,
     id: closed.id,
     status: "closed",
   });
   const open = await requester.client.mutation(api.data.createRequest, {
-    secret,
     id: crypto.randomUUID(),
     details: neighbourRequest,
     analysis,
     embedding,
   });
 
-  await expect(
-    t.query(api.data.mapListings, { secret: "wrong" }),
-  ).rejects.toThrow(/application API/);
-  const guest = await t.query(api.data.mapListings, { secret });
+  const guest = await t.query(api.data.mapListings, {});
   expect(guest.viewer).toBeNull();
   expect(guest.listings.map((listing) => listing.id).sort()).toEqual(
     [shown.id, open.id].sort(),
@@ -102,16 +90,14 @@ test("the public map lists only open, pinned Calgary postings and hides requeste
   expect(JSON.stringify(guest)).not.toContain("Garden Lane");
   expect(JSON.stringify(guest)).not.toContain("Garden Lane");
 
-  const owner = await requester.client.query(api.data.mapListings, { secret });
+  const owner = await requester.client.query(api.data.mapListings, {});
   expect(owner.viewer).toEqual({ name: "requester", role: "requester" });
   expect(owner.listings.find((l) => l.id === open.id)).toMatchObject({
     precise: true,
     viewerIsOwner: true,
     neighbourhood: neighbourRequest.place,
   });
-  const companyView = await company.client.query(api.data.mapListings, {
-    secret,
-  });
+  const companyView = await company.client.query(api.data.mapListings, {});
   expect(
     companyView.listings.find((l) => l.id === shown.id)?.viewerIsOwner,
   ).toBe(true);
@@ -126,23 +112,23 @@ test("claimed requests stay on the map only for the requester and claimant", asy
   const claimant = await developerNear(t);
   const other = await developerNear(t);
   const posted = await requester.client.mutation(api.data.createRequest, {
-    secret,
     id: crypto.randomUUID(),
     details: neighbourRequest,
     analysis,
     embedding,
   });
   expect(
-    (await other.client.query(api.data.mapListings, { secret })).listings[0],
+    (await other.client.query(api.data.mapListings, {})).listings[0],
   ).toMatchObject({ precise: true, organization: "requester" });
   await claimant.client.mutation(api.data.acceptRequest, {
-    secret,
     id: posted.id,
   });
   const ids = async (client: typeof requester.client | null) =>
-    (await (client ?? t).query(api.data.mapListings, { secret })).listings.map(
-      (listing) => [listing.id, listing.status],
-    );
+    (
+      await (client
+        ? client.query(api.data.mapListings, {})
+        : t.query(api.data.mapListings, {}))
+    ).listings.map((listing) => [listing.id, listing.status]);
   expect(await ids(null)).toEqual([]);
   expect(await ids(other.client)).toEqual([]);
   expect(await ids(claimant.client)).toEqual([[posted.id, "claimed"]]);
@@ -150,20 +136,17 @@ test("claimed requests stay on the map only for the requester and claimant", asy
   expect(
     (
       await claimant.client.query(api.data.claimedRequests, {
-        secret,
         after: "",
         limit: 20,
       })
     ).data.map((request) => request.id),
   ).toEqual([posted.id]);
   await claimant.client.mutation(api.data.releaseRequest, {
-    secret,
     id: posted.id,
   });
   expect(
     (
       await claimant.client.query(api.data.claimedRequests, {
-        secret,
         after: "",
         limit: 20,
       })
@@ -180,21 +163,18 @@ test("only owners edit postings, and claimed or closed requests are locked", asy
   const claimant = await developerNear(t);
 
   const posted = await company.client.mutation(api.data.createOpportunity, {
-    secret,
     id: crypto.randomUUID(),
     details: pinnedJob,
     analysis,
     embedding,
   });
   await company.client.mutation(api.data.updateOpportunity, {
-    secret,
     id: posted.id,
     status: "closed",
   });
   const revised = { ...pinnedJob, title: "A refreshed café website" };
   await expect(
     rival.client.mutation(api.data.reviseOpportunity, {
-      secret,
       id: posted.id,
       details: revised,
       analysis,
@@ -203,7 +183,6 @@ test("only owners edit postings, and claimed or closed requests are locked", asy
   ).rejects.toThrow(/owner/);
   await expect(
     company.client.mutation(api.data.reviseOpportunity, {
-      secret,
       id: posted.id,
       details: revised,
       analysis,
@@ -211,7 +190,6 @@ test("only owners edit postings, and claimed or closed requests are locked", asy
     }),
   ).resolves.toMatchObject({ title: revised.title, status: "closed" });
   const mine = await company.client.query(api.data.ownedOpportunities, {
-    secret,
     after: "",
     limit: 20,
   });
@@ -221,7 +199,6 @@ test("only owners edit postings, and claimed or closed requests are locked", asy
   expect(
     (
       await rival.client.query(api.data.ownedOpportunities, {
-        secret,
         after: "",
         limit: 20,
       })
@@ -229,7 +206,6 @@ test("only owners edit postings, and claimed or closed requests are locked", asy
   ).toEqual([]);
 
   const request = await requester.client.mutation(api.data.createRequest, {
-    secret,
     id: crypto.randomUUID(),
     details: neighbourRequest,
     analysis,
@@ -237,7 +213,6 @@ test("only owners edit postings, and claimed or closed requests are locked", asy
   });
   const edit = (client: typeof requester.client, title: string) =>
     client.mutation(api.data.reviseRequest, {
-      secret,
       id: request.id,
       details: { ...neighbourRequest, title },
       analysis,
@@ -250,12 +225,10 @@ test("only owners edit postings, and claimed or closed requests are locked", asy
     edit(requester.client, "Garden club site"),
   ).resolves.toMatchObject({ title: "Garden club site", status: "open" });
   await claimant.client.mutation(api.data.acceptRequest, {
-    secret,
     id: request.id,
   });
   await expect(edit(requester.client, "Moved")).rejects.toThrow(/Release/);
   await requester.client.mutation(api.data.closeRequest, {
-    secret,
     id: request.id,
   });
   await expect(edit(requester.client, "Reopened")).rejects.toThrow(/Closed/);

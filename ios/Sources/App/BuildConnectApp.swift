@@ -57,8 +57,12 @@ enum AuthMode: String, Identifiable {
         address = override
       }
     #endif
+    let configuredURL = URL(string: address)
+    let validURL = configuredURL.flatMap { url in
+      url.host != nil && ["http", "https"].contains(url.scheme ?? "") ? url : nil
+    }
     self.api =
-      api ?? APIClient(baseURL: URL(string: address) ?? URL(string: "http://127.0.0.1:5173")!)
+      api ?? APIClient(baseURL: validURL ?? URL(string: "https://configuration-required.invalid")!)
     #if DEBUG
       if ProcessInfo.processInfo.environment["BUILD_CONNECT_TEST_RESET_SESSION"] == "1" {
         self.api.clearSession()

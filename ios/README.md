@@ -1,6 +1,6 @@
 # iPhone app
 
-Native SwiftUI client for the shared Hono API, Better Auth, Convex, Workers AI,
+Native SwiftUI client for the Convex HTTP API, Better Auth, Workers AI,
 and Mapbox. Minimum iOS 18; native Liquid Glass controls are used on iOS 26 and
 later. No application database or server credential is bundled with the app.
 
@@ -27,18 +27,20 @@ Create an ignored `ios/Local.xcconfig` for this machine, with private file
 permissions. `Configuration.xcconfig` includes it optionally:
 
 ```xcconfig
-API_BASE_URL = https:/$()/your-deployed-app.example
+API_BASE_URL = https:/$()/your-deployment.convex.site
 MAPBOX_PUBLIC_TOKEN =
 ```
 
 Set the public Mapbox token locally. Never place a Better Auth secret, Convex
-bridge secret, account key, or Mapbox secret token in this file or an Xcode build
+account key, or Mapbox secret token in this file or an Xcode build
 setting. Public runtime tokens are extractable from mobile apps; browser
 URL-restricted tokens may not work on iOS. With no usable token, Explore retains
 its project list and the pin picker supports manual coordinates.
 
-Debug defaults to `http://127.0.0.1:5173`, which reaches the Mac from the simulator.
-A physical iPhone needs a reachable HTTPS server, signing team, and provisioning.
+Set the Convex HTTP site explicitly; there is no localhost web-server default.
+The `.convex.site` endpoint is different from the `.convex.cloud` RPC endpoint.
+A deployed Convex HTTP site works directly from an iPhone without Vite, a web API
+Worker, or a Mac-side terminal. A physical iPhone needs signing and provisioning.
 Release requests reject HTTP. Simulator builds use local ad-hoc signing so
 Keychain is exercised normally. No server is published by the build scripts.
 
@@ -85,22 +87,21 @@ The client never automatically queues offline claims or replays publication.
 
 ## Local end-to-end verification
 
-`tests/native/server.mjs` is a loopback-only, opt-in test harness. It refuses cloud
-deployments and requires anonymous local Convex on ports 3230/3231. It runs the
-real Hono/auth/persistence pipeline; only Workers AI inference is substituted
-using the existing test fixture. It creates fresh reserved-domain accounts and
-keeps their randomly generated credentials in process memory.
+`tests/native/server.mjs` is a loopback-only, opt-in test harness. It executes the
+production Convex HTTP/auth/data functions in an ephemeral `convex-test` runtime
+with scripted AI results and fictional profiles/postings. It never connects to a
+cloud database or paid model, and requires neither Convex login nor `.env.local`.
+This is test-runtime verification, not evidence that a cloud deployment is live.
 
-1. In an isolated workspace, select an anonymous local Convex deployment with
-   `CONVEX_AGENT_MODE=anonymous bunx convex dev --local-cloud-port 3230 --local-site-port 3231`.
-2. Configure local Convex `BETTER_AUTH_SECRET`, `CONVEX_BRIDGE_SECRET`, and
-   `SITE_URL=http://127.0.0.1:5199`. Keep the matching bridge secret in ignored
-   `.env.local`; never print or commit it. Restart the local function push after
-   initial configuration. Do not copy a cloud deployment's credentials.
-3. Run `bun run ios:test:server`. It exposes the test-only context endpoint only
-   on loopback and never belongs in a deployed Worker.
-4. Run `bun run ios:test`. Native integration tests exercise signed sessions,
-   map privacy, discovery, mutual interest, and claims; UI tests drive each role.
+1. Run `bun run ios:test:server`. It creates fresh reserved-domain accounts with
+   randomly generated credentials kept only in memory. Its context endpoint is
+   loopback-only and must never be published.
+2. For manual simulator browsing, set `API_BASE_URL = http:/$()/127.0.0.1:5199` in
+   ignored `Local.xcconfig`, then rebuild. The physical iPhone cannot reach this
+   loopback server. Use a deployed development Convex HTTP site for device testing.
+3. Run `bun run ios:test`. Integration tests exercise sessions, map privacy,
+   discovery, mutual interest, retry safety, stale edits and claims; UI tests drive
+   each role. The UI tests select the fixture URL automatically.
 
 Without that server, integration and role tests explicitly skip; model and launch
 tests still run. A skipped integration test is not evidence of backend parity.
@@ -108,9 +109,10 @@ Restart the harness with fresh accounts before repeating mutating walkthroughs.
 
 ## Deployment and product gates
 
-The local backend changes must be deployed separately, with approval, before an
-existing cloud deployment can issue native bearer sessions. Browser cookies and
-origin checks remain enabled; native requests send the configured server origin.
+The Convex changes must be deployed separately, with approval, before an existing
+cloud deployment serves this API. No application Worker is required. Browser
+cookies and origin checks remain enabled; native requests send the Convex HTTP
+site origin and signed bearer sessions.
 
 The native router validates incoming hosts and handles opportunity and map-focus
 URLs, but universal-link delivery still requires the team's real domain,

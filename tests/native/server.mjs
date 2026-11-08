@@ -1,61 +1,35 @@
 import { createServer } from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
-import { build } from "esbuild";
-import { Miniflare, convertV4MiniflareOptions } from "miniflare";
+import { createServer as createViteServer } from "vite";
 import { developer, opportunity } from "../fixtures/matching.ts";
 
-// Opt-in simulator harness. Never point test accounts or substituted inference at cloud data.
-if (
-  !process.env.CONVEX_DEPLOYMENT?.startsWith("anonymous:") ||
-  process.env.VITE_CONVEX_URL !== "http://127.0.0.1:3230" ||
-  process.env.VITE_CONVEX_SITE_URL !== "http://127.0.0.1:3231"
-)
-  throw new Error(
-    "Native verification requires the isolated local deployment on 3230/3231.",
-  );
-
-const bundle = await build({
-  entryPoints: ["tests/fixtures/api-worker.ts"],
-  bundle: true,
-  write: false,
-  format: "esm",
-  platform: "neutral",
-  mainFields: ["module", "main"],
-  conditions: ["workerd", "worker", "browser"],
-  external: ["node:*", "cloudflare:*"],
-  target: "esnext",
+// Ephemeral, loopback-only Convex test runtime. Never connects to any cloud database.
+process.env.SITE_URL = "http://127.0.0.1:5199";
+process.env.CONVEX_SITE_URL = "http://127.0.0.1:5199";
+process.env.BETTER_AUTH_SECRET = randomBytes(48).toString("base64url");
+process.env.WORKERS_AI_ENABLED = "false";
+const vite = await createViteServer({
+  configFile: false,
+  server: { middlewareMode: true },
+  ssr: { noExternal: ["@convex-dev/better-auth"] },
 });
-const runtime = new Miniflare(
-  convertV4MiniflareOptions({
-    modules: true,
-    script: bundle.outputFiles[0].text,
-    compatibilityDate: "2026-11-07",
-    compatibilityFlags: ["nodejs_compat"],
-    bindings: {
-      VITE_CONVEX_URL: process.env.VITE_CONVEX_URL,
-      VITE_CONVEX_SITE_URL: process.env.VITE_CONVEX_SITE_URL,
-      CONVEX_BRIDGE_SECRET: process.env.CONVEX_BRIDGE_SECRET,
-      SITE_URL: "http://127.0.0.1:5199",
-    },
-  }),
+const { default: runtime } = await vite.ssrLoadModule(
+  "/tests/native/runtime.ts",
 );
 
 let nextIP = 10;
 async function call(path, { method = "GET", body, token, cookie } = {}) {
-  const response = await runtime.dispatchFetch(
-    `http://127.0.0.1:5199/api${path}`,
-    {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        Origin: "http://127.0.0.1:5199",
-        "CF-Connecting-IP": `192.0.2.${nextIP++}`,
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(cookie ? { Cookie: cookie } : {}),
-      },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  const response = await runtime.fetch(`/api${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "http://127.0.0.1:5199",
+      "x-forwarded-for": `192.0.2.${nextIP++}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(cookie ? { Cookie: cookie } : {}),
     },
-  );
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
   const data = await response.clone().json();
   if (!response.ok)
     throw new Error(
@@ -172,19 +146,16 @@ const server = createServer(async (request, response) => {
     }
     const chunks = [];
     for await (const chunk of request) chunks.push(chunk);
-    const result = await runtime.dispatchFetch(
-      `http://127.0.0.1:5199${request.url}`,
-      {
-        method: request.method,
-        headers: {
-          ...request.headers,
-          "CF-Connecting-IP": `198.51.100.${nextIP++ % 250}`,
-        },
-        ...(["GET", "HEAD"].includes(request.method)
-          ? {}
-          : { body: Buffer.concat(chunks) }),
+    const result = await runtime.fetch(request.url, {
+      method: request.method,
+      headers: {
+        ...request.headers,
+        "x-forwarded-for": `198.51.100.${nextIP++ % 250}`,
       },
-    );
+      ...(["GET", "HEAD"].includes(request.method)
+        ? {}
+        : { body: Buffer.concat(chunks) }),
+    });
     const headers = Object.fromEntries(result.headers);
     const cookies = result.headers.getSetCookie();
     if (cookies.length) headers["set-cookie"] = cookies;
@@ -199,12 +170,12 @@ const server = createServer(async (request, response) => {
 });
 server.listen(5199, "127.0.0.1", () =>
   console.log(
-    "Native verification API ready at http://127.0.0.1:5199. Real local Convex; only AI inference is substituted.",
+    "Native verification API ready at http://127.0.0.1:5199. Ephemeral Convex test runtime; synthetic data and substituted AI, no cloud services.",
   ),
 );
 for (const signal of ["SIGINT", "SIGTERM"])
   process.once(signal, async () => {
     server.close();
-    await runtime.dispose();
+    await vite.close();
     process.exit(0);
   });

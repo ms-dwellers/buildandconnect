@@ -1,8 +1,7 @@
 import { env } from "cloudflare:workers";
-import { createApi } from "../../../backend/api.ts";
+import { forwardToConvex } from "../../../lib/convex-proxy.ts";
 
-const api = createApi();
-const handle = (request: Request) => api.fetch(request, env);
+const handle = (request: Request) => forwardToConvex(request, env);
 
 export {
   handle as GET,

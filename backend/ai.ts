@@ -6,14 +6,21 @@ import {
   type OpportunityInput,
   type RequestInput,
 } from "./schemas.ts";
-import type { BackendEnv } from "./env.ts";
 import { ANALYSIS_MODEL, EMBEDDING_MODEL } from "./models.ts";
 export { ANALYSIS_MODEL, ANALYSIS_VERSION, EMBEDDING_MODEL } from "./models.ts";
 
 export class AnalysisUnavailable extends Error {}
 
+export interface AIService {
+  run(
+    model: string,
+    input: Record<string, unknown>,
+    options?: { signal?: AbortSignal },
+  ): Promise<Record<string, unknown>>;
+}
+
 export async function embed(
-  ai: BackendEnv["AI"],
+  ai: AIService | undefined,
   text: string,
 ): Promise<number[]> {
   if (!ai) throw new AnalysisUnavailable("Workers AI is not configured");
@@ -23,11 +30,13 @@ export async function embed(
     { signal: AbortSignal.timeout(20_000) },
   );
   if (!("data" in output)) throw new Error("Missing embedding");
-  return vectorSchema.parse(output.data?.[0]);
+  return vectorSchema.parse(
+    Array.isArray(output.data) ? output.data[0] : undefined,
+  );
 }
 
 export async function analyzeOpportunity(
-  ai: BackendEnv["AI"],
+  ai: AIService | undefined,
   input: OpportunityInput,
 ) {
   try {
@@ -81,7 +90,7 @@ export async function analyzeOpportunity(
 }
 
 export async function analyzeDeveloper(
-  ai: BackendEnv["AI"],
+  ai: AIService | undefined,
   input: DeveloperProfile,
 ) {
   try {
@@ -105,7 +114,7 @@ export async function analyzeDeveloper(
 }
 
 export async function analyzeRequest(
-  ai: BackendEnv["AI"],
+  ai: AIService | undefined,
   input: RequestInput,
 ) {
   // Reuse job analysis: local requests are unpaid neighborhood problems.

@@ -8,7 +8,7 @@ import {
   DEFAULT_GEMINI_MODEL,
   DEFAULT_SCRIBE_MODEL,
   signVoiceConversation,
-} from "../backend/hiring/providers.ts";
+} from "../convex/hiring/providers.ts";
 import {
   confirmedBriefSchema,
   emptyHiringBrief,
@@ -18,8 +18,8 @@ import {
   draftBrief,
   extractBrief,
   recommendDevelopers,
-} from "../backend/hiring/service.ts";
-import type { BackendEnv } from "../backend/env.ts";
+} from "../convex/hiring/service.ts";
+import type { HiringEnv as BackendEnv } from "../convex/hiring/env.ts";
 import type { PublicDeveloper } from "../lib/types.ts";
 
 const env = {

@@ -20,6 +20,18 @@ final class ModelTests: XCTestCase {
     XCTAssertEqual(parseTags(" React, Swift, react, , SWIFT "), ["react", "swift"])
   }
 
+  @MainActor func testMissingConvexConfigurationFailsBeforeNetworking() async throws {
+    let api = APIClient(
+      baseURL: URL(string: "https://configuration-required.invalid")!, restoreSession: false)
+    do {
+      let _: Member = try await api.get("/me")
+      XCTFail("An unconfigured API address was accepted")
+    } catch let error as APIError {
+      XCTAssertEqual(error.status, 0)
+      XCTAssertTrue(error.message.contains("Convex HTTP site"))
+    }
+  }
+
   func testProfileConsentIsOffByDefault() {
     XCTAssertFalse(ProfileInput().discoverable)
   }

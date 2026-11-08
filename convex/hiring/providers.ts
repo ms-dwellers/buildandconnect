@@ -1,8 +1,14 @@
 import { z } from "zod";
-import type { BackendEnv } from "../env";
+import type { HiringEnv } from "./env";
 
-import { DEFAULT_GEMINI_MODEL, DEFAULT_SCRIBE_MODEL } from "./models.ts";
-export { DEFAULT_GEMINI_MODEL, DEFAULT_SCRIBE_MODEL } from "./models.ts";
+import {
+  DEFAULT_GEMINI_MODEL,
+  DEFAULT_SCRIBE_MODEL,
+} from "../../backend/hiring/models.ts";
+export {
+  DEFAULT_GEMINI_MODEL,
+  DEFAULT_SCRIBE_MODEL,
+} from "../../backend/hiring/models.ts";
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const AUDIO_TYPES = [
   "audio/webm",
@@ -21,7 +27,7 @@ export class HiringProviderError extends Error {
 }
 
 export async function geminiJson<T>(
-  env: BackendEnv,
+  env: HiringEnv,
   options: {
     name: string;
     schema: z.ZodType<T>;
@@ -107,7 +113,7 @@ export async function geminiJson<T>(
 }
 
 export async function transcribeAudio(
-  env: BackendEnv,
+  env: HiringEnv,
   audio: Blob,
   request: typeof fetch = fetch,
 ) {
@@ -152,7 +158,7 @@ export async function transcribeAudio(
 }
 
 export async function signVoiceConversation(
-  env: BackendEnv,
+  env: HiringEnv,
   request: typeof fetch = fetch,
   signal?: AbortSignal,
 ) {

@@ -2,7 +2,12 @@
 import { convexTest } from "convex-test";
 import { register } from "@convex-dev/better-auth/test";
 import schema from "../../convex/schema";
-import { api, components } from "../../convex/_generated/api";
+import { internal as api, components } from "../../convex/_generated/api";
+import type {
+  FunctionReference,
+  FunctionArgs,
+  FunctionReturnType,
+} from "convex/server";
 import {
   developer,
   opportunity,
@@ -13,7 +18,6 @@ import type { Role } from "../../backend/schemas";
 
 export { api, components, analysis, embedding };
 
-export const secret = "local-test-bridge-not-a-real-credential";
 const modules = import.meta.glob("../../convex/**/*.ts");
 
 function profileOf({
@@ -40,7 +44,10 @@ export const profile = profileOf(developer);
 export const job = jobOf(opportunity);
 
 export function setup() {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, {
+    ...modules,
+    "../../convex/http.ts": () => import("../fixtures/convex-http"),
+  });
   register(t);
   return t;
 }
@@ -73,7 +80,30 @@ export async function actor(t: ReturnType<typeof setup>, role: Role) {
       },
     }),
   );
-  const client = t.withIdentity({ subject: user._id, sessionId: session._id });
-  await client.mutation(api.data.setRole, { secret, role });
+  const client = {
+    query<F extends FunctionReference<"query", "internal">>(
+      fn: F,
+      args: Omit<FunctionArgs<F>, "sessionId">,
+    ): Promise<FunctionReturnType<F>> {
+      return t.run((ctx) =>
+        ctx.runQuery(fn, {
+          ...args,
+          sessionId: session._id,
+        } as FunctionArgs<F>),
+      );
+    },
+    mutation<F extends FunctionReference<"mutation", "internal">>(
+      fn: F,
+      args: Omit<FunctionArgs<F>, "sessionId">,
+    ): Promise<FunctionReturnType<F>> {
+      return t.run((ctx) =>
+        ctx.runMutation(fn, {
+          ...args,
+          sessionId: session._id,
+        } as FunctionArgs<F>),
+      );
+    },
+  };
+  await client.mutation(api.data.setRole, { role });
   return { client, id: user._id, sessionId: session._id };
 }

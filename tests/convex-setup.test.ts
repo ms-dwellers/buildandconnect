@@ -4,12 +4,11 @@ import { mergeEnvironment } from "../scripts/configure-convex.mjs";
 
 test("Convex setup preserves unrelated settings and replaces only owned keys", () => {
   const result = mergeEnvironment(
-    "# local settings\nNEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=example\nSITE_URL=old\nCONVEX_BRIDGE_SECRET=old\n",
-    { SITE_URL: "http://127.0.0.1:5173", CONVEX_BRIDGE_SECRET: "fixture" },
+    "# local settings\nNEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=example\nSITE_URL=old\n",
+    { SITE_URL: "http://127.0.0.1:5173" },
   );
   assert.match(result, /NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=example/);
   assert.match(result, /# local settings/);
   assert.equal(result.match(/SITE_URL=/g)?.length, 1);
-  assert.equal(result.match(/CONVEX_BRIDGE_SECRET=/g)?.length, 1);
   assert.match(result, /SITE_URL=http:\/\/127\.0\.0\.1:5173/);
 });

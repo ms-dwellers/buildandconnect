@@ -727,9 +727,9 @@ export function DebugConsole() {
                   after selecting a Convex development deployment, then keep{" "}
                   <code className="font-mono text-xs">bun run dev:backend</code>{" "}
                   running. Set SITE_URL to this page&apos;s origin. Set{" "}
-                  WORKERS_AI_REMOTE=true when launching Vite for real AI calls.
-                  See <code className="font-mono text-xs">docs/backend.md</code>
-                  .
+                  WORKERS_AI_ENABLED=true and the provider credentials in Convex
+                  for real AI calls. See{" "}
+                  <code className="font-mono text-xs">docs/backend.md</code>.
                 </p>
               </div>
             </CardPanel>

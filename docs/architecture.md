@@ -2,32 +2,33 @@
 
 ## Ownership
 
-| Concern                       | Owner                              | State                           |
-| ----------------------------- | ---------------------------------- | ------------------------------- |
-| Web routes and landing page   | React, Vinext App Router, Tailwind | Implemented                     |
-| API routing and authorization | Hono in `backend/api.ts`           | Implemented                     |
-| Accounts and sessions         | Better Auth's Convex component     | Email/password                  |
-| Application and auth data     | Convex, `convex/schema.ts`         | Implemented                     |
-| Job analysis and embeddings   | Workers AI, `backend/ai.ts`        | Requires Cloudflare access      |
-| Growth matching               | `backend/matching.ts`              | Deterministic, versioned        |
-| Mutual interest               | Convex interest records            | Opportunity-specific, revocable |
-| Role views                    | `app/dashboard`, `components/`     | One dashboard per account type  |
-| Maps                          | Mapbox, `GET /api/map`             | Public Calgary feed, role-aware |
-| Native iOS                    | SwiftUI and native Mapbox SDK      | Optional client in `ios/`       |
+| Concern                       | Owner                                | State                           |
+| ----------------------------- | ------------------------------------ | ------------------------------- |
+| Web routes and landing page   | React, Vinext App Router, Tailwind   | Implemented                     |
+| API routing and authorization | Convex HTTP actions, `convex/api.ts` | Implemented                     |
+| Accounts and sessions         | Better Auth's Convex component       | Email/password                  |
+| Application and auth data     | Convex, `convex/schema.ts`           | Implemented                     |
+| Job analysis and embeddings   | Convex actions and Workers AI REST   | Requires Cloudflare access      |
+| Growth matching               | `backend/matching.ts`                | Deterministic, versioned        |
+| Mutual interest               | Convex interest records              | Opportunity-specific, revocable |
+| Role views                    | `app/dashboard`, `components/`       | One dashboard per account type  |
+| Maps                          | Mapbox, `GET /api/map`               | Public Calgary feed, role-aware |
+| Native iOS                    | SwiftUI and native Mapbox SDK        | Optional client in `ios/`       |
 
-The backend follows the explicit switch from D1 to Convex. There is one Worker
-HTTP facade and one Convex application database; D1 is no longer bound.
-`app/api/[...path]/route.ts` forwards standard Requests to Hono.
+Convex is the application backend. Native clients call its HTTP site directly.
+The web host serves the website and forwards browser `/api` requests to Convex;
+it owns no application logic or AI credentials. D1 is no longer bound.
 The web app's role routing (`components/app/require-role.tsx`) only sends people to
 the right page; Convex functions enforce every role and ownership rule. `/api/health`
 remains a minimal public liveness route, not a provider-readiness check.
 
 ## Data and request flow
 
-1. Better Auth signs up or signs in an account and issues an HTTP-only session
-   cookie through the same-origin Hono proxy. Hono obtains a Convex JWT and calls
-   protected functions with it and the server-only bridge credential. Convex checks
-   the live session and role on every operation, including cached JWTs.
+1. Better Auth issues browser HTTP-only cookies or signed native bearer sessions.
+   Convex HTTP actions resolve the authenticated session and call internal data
+   functions. These functions recheck session expiry/revocation, roles, and
+   ownership on every operation. There is no bridge secret or public mutation
+   accepting client-supplied AI output.
 2. The account chooses one immutable role: developer or requester. Legacy
    company/recruiter records are read as requesters, preserving ownership and
    existing data; the old roles cannot be selected or submitted anymore.
@@ -99,12 +100,10 @@ colluding-account abuse prevention is outside this MVP.
 - Use same-origin cookie requests. Mutation origins are checked; Better Auth
   retains its own CSRF/cookie protections. API responses are never shared-cached.
   Request bodies are capped at 32 KB and input fields/collections are bounded.
-- Better Auth stores rate limits in Convex. Hono forwards Cloudflare's verified
-  client IP in a custom header; Convex accepts auth requests only with the bridge
-  credential. Public JWT key discovery is excluded from rate limiting so valid
-  authenticated operations cannot exhaust a shared key-discovery bucket.
-  Do not put an untrusted proxy in front that preserves attacker-supplied client
-  IP values. The rest of the API has no per-account AI quota yet;
+- Better Auth stores rate limits in Convex. Public JWT key discovery is excluded
+  from rate limiting. The web forwarder strips untrusted forwarding headers;
+  never treat a caller-supplied IP header as an authorization credential.
+  The rest of the API has no per-account AI quota yet;
   add quotas and email verification before opening public registration at scale.
 - Synchronous inference is deliberately simple for the MVP. There is no queue,
   automatic retry, or fabricated-analysis fallback. Repeated successful posts are
@@ -112,7 +111,7 @@ colluding-account abuse prevention is outside this MVP.
 - Exact ranking supports up to 1,000 prefiltered profiles per opportunity;
   larger pools fail explicitly rather than return a silently incomplete ranking.
   Browse and connection endpoints use bounded cursor pagination.
-- Only status is editable on opportunities in this MVP. Profile updates regenerate
+- Owners can revise opportunity details and open request details. Profile updates regenerate
   embeddings; matching always uses the latest profile. Embeddings use mean pooling,
   384 dimensions, and a bounded 1,800-character summary. Long profiles lose detail.
 - No payment, messaging, verified project outcomes, identity verification, or
@@ -122,8 +121,9 @@ colluding-account abuse prevention is outside this MVP.
 ## Configuration
 
 See [backend.md](backend.md) for Convex setup and the HTTP contract.
-`cloudflare.config.ts` owns the AI and API bridge bindings. `vite.config.ts` controls
-local persistence and makes remote model calls opt-in. Production always uses the
-real AI binding; local preview disables remote connections by default. Use Worker
-secret storage for production credentials. Nothing is provisioned or deployed by
-the checks.
+`convex/http.ts` registers authentication and application HTTP actions.
+`convex/ai.ts` calls Workers AI REST using credentials stored only in Convex and an
+explicit `WORKERS_AI_ENABLED=true` opt-in. `cloudflare.config.ts` contains only
+website hosting and forwarding configuration. Nothing is provisioned or deployed
+by the checks. The isolated native test server uses an ephemeral Convex test runtime
+and scripted inference, never a cloud database or paid model.

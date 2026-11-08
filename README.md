@@ -7,7 +7,7 @@ A hackathon app connecting early-career developers with non-technical requesters
 through shared interests and social-impact projects.
 
 **Current state:** landing page, Mapbox nearby-request UI, `/api/health`, and a
-Hono backend with Better Auth, Convex persistence, Workers AI analysis, growth-oriented
+Convex backend with Better Auth, Convex HTTP actions, Workers AI analysis, growth-oriented
 matching, consent-based developer discovery, opportunity-specific mutual interest, and exclusive
 local-request claims. See [the backend guide](docs/backend.md) for setup and API
 examples. For browser-based backend QA, run the frontend and open `/debug`.
@@ -69,10 +69,11 @@ bun run setup:backend
 bun run dev:backend
 ```
 
-Keep `dev:backend` running in another terminal alongside the frontend. It syncs
-Convex functions to your cloud development deployment; it does not deploy the
-frontend or touch production. Keep the generated `convex/_generated/` files in
-source control. The existing `/api` routes remain the frontend contract.
+Keep `dev:backend` running to sync Convex functions to your cloud development
+deployment; it does not deploy the website or touch production. Once synced, the
+iPhone calls the deployment's HTTPS `.convex.site` URL directly without a local
+web server. Browsers keep same-origin `/api` calls through a forwarding route.
+Keep the generated `convex/_generated/` files in source control.
 
 ### Remote development with Rex
 
@@ -157,8 +158,8 @@ emerald, cream, wheat, apricot, and coral palette. See
 [docs/design-system.md](docs/design-system.md) before adding UI components.
 
 See [docs/architecture.md](docs/architecture.md) for ownership and integration
-steps. React/Vinext App Router, Tailwind, and Hono run in one Cloudflare Worker.
-Convex owns application data and Better Auth's official Convex component. Workers AI supplies Llama analysis and
+steps. React/Vinext App Router and Tailwind run on the web host. Convex owns the
+HTTP API, application data, authentication, and AI execution. Workers AI supplies Llama analysis and
 BGE Small embeddings; TypeScript owns deterministic matching. Mapbox powers
 location search and nearby maps. Convex is the only application database; the
 Worker remains the browser-facing API.

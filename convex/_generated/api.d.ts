@@ -9,11 +9,14 @@
  */
 
 import type * as access from "../access.js";
+import type * as ai from "../ai.js";
+import type * as api_ from "../api.js";
 import type * as auth from "../auth.js";
 import type * as data from "../data.js";
 import type * as domain from "../domain.js";
 import type * as http from "../http.js";
 import type * as maintenance from "../maintenance.js";
+import type * as router from "../router.js";
 
 import type {
   ApiFromModules,
@@ -23,11 +26,14 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
+  ai: typeof ai;
+  api: typeof api_;
   auth: typeof auth;
   data: typeof data;
   domain: typeof domain;
   http: typeof http;
   maintenance: typeof maintenance;
+  router: typeof router;
 }>;
 
 /**
