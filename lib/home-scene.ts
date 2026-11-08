@@ -23,10 +23,10 @@ export const SCENE = {
   chairYaw: Math.PI / 4,
   tableDepth: -0.25,
   screen: { center: [0, 1.15, -0.21] as const, width: 1, height: 0.625 },
-  /** Where each chair's action button hangs: clear above the chair backs. */
+  /** Where each chair's action button hangs: one shared height above both chairs. */
   labelAnchors: {
     developer: [-1.15, 1.24, 0.35] as const,
-    partner: [1.15, 1.12, 0.35] as const,
+    partner: [1.15, 1.24, 0.35] as const,
   },
 } as const;
 

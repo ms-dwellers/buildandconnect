@@ -21,14 +21,18 @@ import type {
 import "./home-scene.css";
 
 type Renderer = "pending" | "webgl" | "fallback";
+/** How long a chair stays "hovered" after the pointer leaves it, so the
+ * pointer can travel from the chair onto the button that just popped out. */
+const HOVER_GRACE_MS = 180;
 
 /**
  * The landing hero scene: two chairs around a monitor showing a campfire. The
  * canvas covers the whole hero, so the furniture shares the page with the
  * heading instead of sitting in a box; an in-flow spacer marks the band the
  * camera frames the furniture into. Each chair carries its call to action as a
- * real button, so the chairs and the buttons are one choice. three.js loads
- * lazily on the client; the server renders the buttons in a plain row.
+ * real button that pops out on hover or focus, so the chairs and the buttons
+ * are one choice. three.js loads lazily on the client; the server renders the
+ * buttons in a plain row.
  */
 export function HomeScene() {
   const router = useRouter();
@@ -73,6 +77,7 @@ export function HomeScene() {
     let intersecting = 0;
     let registered = false;
     let hover: PickTarget | null = null;
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
     let press: { x: number; y: number; time: number } | null = null;
 
     /** The band the furniture is framed into, relative to the canvas. */
@@ -162,17 +167,32 @@ export function HomeScene() {
         y: -(((event.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1),
       };
     };
-    const setHover = (target: PickTarget | null) => {
+    const applyHover = (target: PickTarget | null) => {
       if (target === hover || !api) return;
       hover = target;
       api.setHover(target);
       host.dataset.hover = target ?? "";
       element.style.cursor = target ? "pointer" : "";
-    };
-    hoverRef.current = (target) => {
-      setHover(target);
       kick();
     };
+    const cancelHide = () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = null;
+    };
+    const scheduleHide = () => {
+      cancelHide();
+      hideTimer = setTimeout(() => {
+        hideTimer = null;
+        applyHover(null);
+      }, HOVER_GRACE_MS);
+    };
+    const setHover = (target: PickTarget | null) => {
+      if (target) {
+        cancelHide();
+        applyHover(target);
+      } else scheduleHide();
+    };
+    hoverRef.current = setHover;
     const pointerMove = (event: PointerEvent) => {
       if (!api || coarse.matches) return;
       const point = toNdc(event);
@@ -209,6 +229,7 @@ export function HomeScene() {
       if (disposed) return;
       disposed = true;
       cancelAnimationFrame(frame);
+      cancelHide();
       resize.disconnect();
       intersection.disconnect();
       preference.removeEventListener("change", motionChanged);
@@ -313,7 +334,7 @@ export function HomeScene() {
     schedule.current();
   }, [journey.phase]);
 
-  // Hovering or focusing a button lifts its chair, exactly like hovering the chair.
+  // Pointer or focus on a button counts as hovering its chair, and vice versa.
   const chairProps = (id: LabelTarget) => ({
     ref: (node: HTMLDivElement | null) => {
       labels.current[id] = node;
