@@ -26,6 +26,7 @@ export function CalgaryCanvas({
   placing,
   onPick,
   renderActions,
+  filters,
 }: {
   jobs: CityJob[];
   selectedId: string | null;
@@ -33,6 +34,7 @@ export function CalgaryCanvas({
   placing: boolean;
   onPick: (point: CityPoint) => void;
   renderActions?: (job: CityJob) => ReactNode;
+  filters?: ReactNode;
 }) {
   const { phase, ready } = useMapJourney();
   const frame = useRef<HTMLDivElement>(null);
@@ -185,21 +187,32 @@ export function CalgaryCanvas({
           <span>Loading Calgary&apos;s map…</span>
         </div>
       )}
-      {live && (
-        <div className="pointer-events-none absolute start-3 bottom-12 flex max-w-[calc(100%-5rem)] flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border bg-card/95 px-3 py-2.5 text-xs shadow-card backdrop-blur-sm sm:start-5">
-          <span className="flex items-center gap-1.5">
-            <span className="map-key map-key-paid">P</span>Paid
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="map-key map-key-volunteer">V</span>Volunteer
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="map-key map-key-community">R</span>Community
-          </span>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <LayersIcon aria-hidden="true" className="size-3.5" />
-            {camera.pitch >= 30 ? "3D view" : "City overview"}
-          </span>
+      {(live || filters) && (
+        <div className="absolute start-3 bottom-36 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2 rounded-xl border bg-card/95 p-2 text-xs shadow-card backdrop-blur-sm sm:start-5 sm:bottom-12 sm:max-w-[calc(100%-5rem)]">
+          {filters ?? (
+            <div className="flex flex-wrap items-center gap-3 px-1">
+              <span className="flex items-center gap-1.5">
+                <span className="map-key map-key-paid">P</span>Paid
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="map-key map-key-volunteer">V</span>Volunteer
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="map-key map-key-community">R</span>Community
+              </span>
+            </div>
+          )}
+          {live && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="min-h-11 bg-card"
+              onClick={showCity}
+            >
+              <LayersIcon aria-hidden="true" />
+              City overview
+            </Button>
+          )}
         </div>
       )}
       <p role="status" className="sr-only">

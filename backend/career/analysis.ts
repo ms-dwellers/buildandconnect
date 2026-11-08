@@ -12,7 +12,7 @@ export async function analyzeCareerTarget(
   input: CareerTargetInput,
 ) {
   try {
-    if (!ai) throw new Error("Workers AI is not configured");
+    if (!ai) throw new Error("Fireworks is not configured");
     const output = await ai.run(
       ANALYSIS_MODEL,
       {

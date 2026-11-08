@@ -5,7 +5,7 @@ import type { ActionCtx } from "./_generated/server";
 import { createAuth } from "./auth";
 import { configuredProviders } from "./socialProviders";
 import { fail } from "./access";
-import { workersAI } from "./ai";
+import { fireworksAI } from "./ai";
 import { createHiringRoutes } from "./hiring/routes";
 import { HiringProviderError } from "./hiring/providers";
 import { HTTPException } from "hono/http-exception";
@@ -26,6 +26,11 @@ import {
   type Role,
 } from "../backend/schemas";
 import { readRequestBody, RequestBodyTooLarge } from "../backend/http";
+import {
+  chatStartSchema,
+  chatMessageSchema,
+  chatReadSchema,
+} from "../backend/chat";
 import { analyzeCareerTarget } from "../backend/career/analysis";
 import { careerTargetInputSchema } from "../backend/career/schemas";
 import {
@@ -124,6 +129,62 @@ export async function handleApi(
     if (path === "/map" && method === "GET")
       return json(await ctx.runQuery(internal.data.mapListings, { sessionId }));
     const actor = await ctx.runQuery(internal.data.me, { sessionId });
+    if (path === "/chat/stream-session" && method === "GET") {
+      if (!actor.role) fail(403, "Choose an account type to use messages");
+      const { token } = await createAuth(ctx).api.getConvexToken({
+        headers: request.headers,
+      });
+      return json({
+        token,
+        url: process.env.CONVEX_CLOUD_URL,
+        expiresAt: new Date(session!.session.expiresAt).getTime(),
+      });
+    }
+    if (path === "/chat/conversations" && method === "POST") {
+      return json(
+        await ctx.runMutation(internal.chat.start, {
+          sessionId,
+          ...chatStartSchema.parse(await body(request)),
+        }),
+        201,
+      );
+    }
+    const chatRoute =
+      /^\/chat\/conversations\/([a-z0-9]+)\/(messages|read)$/.exec(path);
+    if (chatRoute) {
+      const conversationId = chatRoute[1];
+      if (chatRoute[2] === "messages" && method === "GET") {
+        const before = z.coerce
+          .number()
+          .int()
+          .positive()
+          .parse(url.searchParams.get("before"));
+        return json(
+          await ctx.runQuery(internal.chat.older, {
+            sessionId,
+            conversationId,
+            before,
+          }),
+        );
+      }
+      if (chatRoute[2] === "messages" && method === "POST")
+        return json(
+          await ctx.runMutation(internal.chat.send, {
+            sessionId,
+            conversationId,
+            ...chatMessageSchema.parse(await body(request)),
+          }),
+          201,
+        );
+      if (chatRoute[2] === "read" && method === "PUT")
+        return json(
+          await ctx.runMutation(internal.chat.markRead, {
+            sessionId,
+            conversationId,
+            ...chatReadSchema.parse(await body(request)),
+          }),
+        );
+    }
     if (path.startsWith("/hiring/")) {
       const app = new Hono<HiringApiEnv>();
       app.use("*", async (c, next) => {
@@ -137,8 +198,8 @@ export async function handleApi(
         throw error;
       });
       return await app.fetch(request, {
-        OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-        OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
+        FIREWORKS_API_KEY: process.env.FIREWORKS_API_KEY,
+        FIREWORKS_MODEL: process.env.FIREWORKS_MODEL,
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
         ELEVENLABS_STT_MODEL: process.env.ELEVENLABS_STT_MODEL,
         ELEVENLABS_AGENT_ID: process.env.ELEVENLABS_AGENT_ID,
@@ -185,7 +246,7 @@ export async function handleApi(
           );
         const target = await (
           services.analyzeCareerTarget ?? analyzeCareerTarget
-        )(workersAI(), input);
+        )(fireworksAI(), input);
         return json(
           await ctx.runMutation(internal.data.putCareerTarget, {
             sessionId,
@@ -288,7 +349,7 @@ export async function handleApi(
           "The saved draft changed. Reload and review it before publishing.",
         );
       const details = opportunityFromDraft(draft.content);
-      const result = await services.analyzeOpportunity(workersAI(), details);
+      const result = await services.analyzeOpportunity(fireworksAI(), details);
       return json(
         await ctx.runMutation(internal.data.createOpportunity, {
           sessionId,
@@ -324,7 +385,10 @@ export async function handleApi(
         requireRole("developer");
         const expectedRevision = revision(request);
         const profile = developerSchema.parse(await body(request));
-        const embedding = await services.analyzeDeveloper(workersAI(), profile);
+        const embedding = await services.analyzeDeveloper(
+          fireworksAI(),
+          profile,
+        );
         return json(
           await ctx.runMutation(internal.data.putDeveloper, {
             sessionId,
@@ -399,7 +463,10 @@ export async function handleApi(
         requireRole("requester");
         const id = postingId();
         const details = opportunitySchema.parse(await body(request));
-        const result = await services.analyzeOpportunity(workersAI(), details);
+        const result = await services.analyzeOpportunity(
+          fireworksAI(),
+          details,
+        );
         return json(
           await ctx.runMutation(internal.data.createOpportunity, {
             sessionId,
@@ -445,7 +512,7 @@ export async function handleApi(
         requireRole("requester");
         const id = postingId();
         const details = requestSchema.parse(await body(request));
-        const result = await services.analyzeRequest(workersAI(), details);
+        const result = await services.analyzeRequest(fireworksAI(), details);
         return json(
           await ctx.runMutation(internal.data.createRequest, {
             sessionId,
@@ -476,7 +543,10 @@ export async function handleApi(
           fail(403, "Only the opportunity owner can edit it");
         const expectedRevision = revision(request);
         const details = opportunitySchema.parse(await body(request));
-        const result = await services.analyzeOpportunity(workersAI(), details);
+        const result = await services.analyzeOpportunity(
+          fireworksAI(),
+          details,
+        );
         return json(
           await ctx.runMutation(internal.data.reviseOpportunity, {
             sessionId,
@@ -559,7 +629,7 @@ export async function handleApi(
           fail(409, "Only open requests can be edited");
         const expectedRevision = revision(request);
         const details = requestSchema.parse(await body(request));
-        const result = await services.analyzeRequest(workersAI(), details);
+        const result = await services.analyzeRequest(fireworksAI(), details);
         return json(
           await ctx.runMutation(internal.data.reviseRequest, {
             sessionId,

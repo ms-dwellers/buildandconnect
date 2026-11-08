@@ -12,8 +12,8 @@ The former `/wip-voice-ai` URL redirects permanently to `/voice`.
   agent’s current words. It does not fill fields or invoke application tools.
   Replies roll in word by word with a short upward fade; reduced-motion users
   receive the text immediately. The full sentence is one screen-reader update.
-- **Gemini extracts.** Final transcript events go to `/api/hiring/extract` through
-  the existing authenticated API. Gemini reads recent conversation and the prior
+- **Fireworks extracts.** Final transcript events go to `/api/hiring/extract` through
+  the existing authenticated API. Fireworks reads recent conversation and the prior
   brief, then returns only structured fields. It never supplies the spoken reply.
   Only user statements establish requirements; agent questions are not evidence.
 
@@ -58,7 +58,7 @@ in the description; preferences never become mandatory technology filters.
 You can edit everything before explicitly posting. Drafts are scoped to the
 signed-in requester, use only a random ID in the URL, and survive reloads.
 The dashboard lists unfinished drafts. The legacy `/hire` matching flow keeps
-its explicit Gemini consent and now hands its results into the same saved form.
+its explicit Fireworks consent and now hands its results into the same saved form.
 
 Navigation remains above the full-screen voice panel. There is no preview label,
 timer, atmosphere control, waveform, voice-style bar, or separate microphone row.
@@ -68,7 +68,7 @@ preferences stop the aurora; WebGL has a CSS fallback.
 Before review, conversation and extracted fields stay in page memory; reload
 or clear discards them. Reviewing saves only project fields to Convex. Recordings
 and transcripts are never saved with the project draft. ElevenLabs
-receives live audio and conversation; OpenRouter/Gemini receives transcript and
+receives live audio and conversation; Fireworks receives transcript and
 brief data. Provider retention policies apply. The supplied agent configuration
 disables audio recording and limits transcript retention to one day.
 

@@ -71,7 +71,7 @@ problems; developers build experience and working relationships.
 
 The shorter community-request form and its exclusive pickup remain available.
 Unifying these two posting journeys is a later product change, not part of the
-release. The existing `/hire` Gemini suggestion flow is retained and also hands
+release. The existing `/hire` Fireworks suggestion flow is retained and also hands
 its reviewed brief into a saved project draft. `/opportunities/new` redirects to
 the shared starting point. Drafts contain project fields, not recordings or
 transcripts; see [project drafts](project-drafts.md) for the persistence contract.
