@@ -49,6 +49,17 @@ The app does not automatically post opportunities, send invitations or make
 hiring decisions. Posting and opportunity-specific interest still use the
 existing dashboard flows. A reload discards this intake's state.
 
+The company-only `POST /api/hiring/posting-draft` accepts `{brief}` after review
+and prepares a partial opportunity draft without provider calls or persistence.
+It copies fields only when they satisfy the existing posting schema, reports
+missing fields, and returns the original `reviewedBrief` plus `unmappedFields`.
+Technology preferences never become essential-technology gates. Free-text
+location needs city/pin selection; hybrid/flexible arrangements and structured
+budget details are not silently flattened into the older posting format.
+Overlong fields are flagged rather than truncated. The response always requires
+confirmation and identifies the missing map pin. The frontend still needs to
+carry this draft into the posting form; this endpoint does not publish anything.
+
 The app holds audio only in memory while transcribing and does not store it in
 Convex, R2 or logs. ElevenLabs receives the audio, while OpenRouter and its model
 provider receive conversation text and relevant profile data. Provider retention
