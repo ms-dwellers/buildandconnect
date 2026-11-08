@@ -9,6 +9,8 @@ struct OpportunityDetailView: View {
   @State private var matches = Resource<Ranked<DeveloperMatch>>()
   @State private var interests = PageStore<Interest>()
   @State private var action = ActionState()
+  @State private var changingInterest = false
+  @State private var changingDeveloperId: String?
   var body: some View {
     Group {
       if !app.signedIn {
@@ -150,11 +152,17 @@ struct OpportunityDetailView: View {
       }
     } else if canExpress && interests.loaded && interests.error == nil {
       Button("I'm interested") { Task { await toggleInterest(developerId, true) } }
-        .buttonStyle(AppButtonStyle.primary).disabled(action.busy)
+        .buttonStyle(AppButtonStyle.primary)
+        .buttonLoading(changingInterest && changingDeveloperId == developerId)
+        .disabled(action.busy)
     }
   }
 
   private func toggleInterest(_ developerId: String?, _ interested: Bool) async {
+    guard !action.busy else { return }
+    changingInterest = true
+    changingDeveloperId = developerId
+    defer { changingInterest = false }
     await action.run {
       do {
         try await setInterest(

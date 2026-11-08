@@ -386,6 +386,6 @@ struct AppNavigation<Content: View>: View {
           }
           .environment(\.appPalette, route == .voice ? .voice : .standard)
         }
-    }
+    }.presentationBackground(Theme.canvas)
   }
 }

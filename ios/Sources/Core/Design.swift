@@ -241,6 +241,7 @@ struct ConfirmAction: View {
   var disabled = false
   let action: () async -> Void
   @State private var confirming = false
+  @State private var running = false
   var body: some View {
     Button(role: destructive ? .destructive : nil) {
       confirming = true
@@ -248,12 +249,17 @@ struct ConfirmAction: View {
       Text(label).frame(minHeight: 44)
     }
     .buttonStyle(AppButtonStyle(variant: destructive ? .destructive : .outline))
+    .buttonLoading(running)
     .disabled(disabled)
     .sheet(isPresented: $confirming) {
       AppDialog(title: label + "?", message: consequence) {
         Button(label, role: destructive ? .destructive : nil) {
           confirming = false
-          Task { await action() }
+          running = true
+          Task {
+            await action()
+            running = false
+          }
         }.buttonStyle(
           AppButtonStyle(variant: destructive ? .destructive : .primary, fullWidth: true))
         Button("Cancel", role: .cancel) { confirming = false }

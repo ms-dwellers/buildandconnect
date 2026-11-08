@@ -140,9 +140,11 @@ struct OpportunityEditorView: View {
       if let draftWarning { Section { Text(draftWarning).foregroundStyle(Theme.error) } }
       Section {
         Button(
-          action.busy ? "Analyzing and saving…" : id == nil ? "Post opportunity" : "Save changes"
+          id == nil ? "Post opportunity" : "Save changes"
         ) { Task { await save() } }
-        .buttonStyle(AppButtonStyle.primary).listRowBackground(Color.clear)
+        .buttonStyle(AppButtonStyle.primary).buttonLoading(action.busy).listRowBackground(
+          Color.clear
+        )
         .disabled(action.busy || !consent || draft.title.isEmpty || draft.description.count < 30)
         .accessibilityIdentifier("opportunity.save")
         Button("Discard changes", role: .destructive) { confirmDiscard = true }

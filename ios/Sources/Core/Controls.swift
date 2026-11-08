@@ -1,6 +1,24 @@
 import SwiftUI
 import UIKit
 
+private struct AppButtonLoadingKey: EnvironmentKey {
+  static let defaultValue = false
+}
+
+extension EnvironmentValues {
+  fileprivate var appButtonLoading: Bool {
+    get { self[AppButtonLoadingKey.self] }
+    set { self[AppButtonLoadingKey.self] = newValue }
+  }
+}
+
+extension View {
+  /// Preserve the action label's layout and accessibility while preventing repeat activation.
+  func buttonLoading(_ loading: Bool) -> some View {
+    environment(\.appButtonLoading, loading).disabled(loading)
+  }
+}
+
 /// Native equivalents of components/ui/button.tsx and app/globals.css.
 struct AppButtonStyle: ButtonStyle {
   @Environment(\.appPalette) private var palette
@@ -17,6 +35,7 @@ struct AppButtonStyle: ButtonStyle {
   static var primary: Self { .init(variant: .primary, size: .large, fullWidth: true) }
   static var highlight: Self { .init(variant: .highlight, size: .large, fullWidth: true) }
   @Environment(\.isEnabled) private var enabled
+  @Environment(\.appButtonLoading) private var loading
   @Environment(\.isFocused) private var focused
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -61,6 +80,7 @@ struct AppButtonStyle: ButtonStyle {
       .font(Theme.body(size == .large ? 16 : 14).weight(.semibold))
       .lineLimit(dynamicTypeSize.isAccessibilitySize && fullWidth ? nil : 1)
       .underline(variant == .link && (hovering || pressed))
+      .opacity(loading ? 0 : 1)
       .padding(.horizontal, size == .icon ? 0 : size == .large ? 20 : size == .small ? 10 : 16)
       .frame(
         minWidth: size == .icon ? 44 : nil, maxWidth: fullWidth ? .infinity : nil,
@@ -68,6 +88,12 @@ struct AppButtonStyle: ButtonStyle {
       )
       .fixedSize(horizontal: !fullWidth, vertical: false)
       .foregroundStyle(configuration.role == .destructive ? Color.white : foreground)
+      .overlay {
+        if loading {
+          ProgressView().tint(configuration.role == .destructive ? Color.white : foreground)
+            .accessibilityHidden(true)
+        }
+      }
       .background {
         shape.fill(
           configuration.role == .destructive
@@ -92,6 +118,7 @@ struct AppButtonStyle: ButtonStyle {
       }
       .offset(y: raised && pressed ? size.depth : 0)
       .opacity(enabled ? 1 : 0.64)
+      .accessibilityValue(loading ? "Loading" : "")
       .contentShape(shape)
       .onHover { hovering = $0 }
       .animation(reduceMotion ? nil : .easeOut(duration: 0.1), value: pressed)
@@ -492,14 +519,23 @@ struct AppDialog<Actions: View>: View {
   let title: String
   let message: String
   @ViewBuilder let actions: () -> Actions
+  @State private var contentHeight: CGFloat = 300
   var body: some View {
-    VStack(alignment: .leading, spacing: 20) {
-      Text(title).font(Theme.title(26)).accessibilityAddTraits(.isHeader)
-      Text(message).font(Theme.body(17)).foregroundStyle(palette.muted)
-      actions()
-    }.padding(24).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-      .foregroundStyle(palette.ink).presentationBackground(palette.canvas)
-      .presentationDetents([.medium]).presentationCornerRadius(20)
+    ScrollView {
+      VStack(alignment: .leading, spacing: 20) {
+        Text(title).font(Theme.title(26)).accessibilityAddTraits(.isHeader)
+        Text(message).font(Theme.body(17)).foregroundStyle(palette.muted)
+        actions()
+      }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) {
+          $0.size.height
+        } action: {
+          contentHeight = $0
+        }
+    }
+    .foregroundStyle(palette.ink).presentationBackground(palette.canvas)
+    .presentationDetents([.height(contentHeight)]).presentationCornerRadius(20)
+    .presentationDragIndicator(.hidden)
   }
 }
 

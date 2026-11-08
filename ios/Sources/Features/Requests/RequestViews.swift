@@ -222,14 +222,15 @@ struct RequestEditorView: View {
       }
       if let draftWarning { Section { Text(draftWarning).foregroundStyle(Theme.error) } }
       Section {
-        Button(action.busy ? "Analyzing and saving…" : id == nil ? "Post request" : "Save changes")
-        { Task { await save() } }
-        .buttonStyle(AppButtonStyle.primary).listRowBackground(Color.clear)
-        .disabled(
-          action.busy || !consent || !selectedPin || draft.title.isEmpty || draft.place.isEmpty
-            || draft.description.count < 30
-        )
-        .accessibilityIdentifier("request.save")
+        Button(id == nil ? "Post request" : "Save changes") { Task { await save() } }
+          .buttonStyle(AppButtonStyle.primary).buttonLoading(action.busy).listRowBackground(
+            Color.clear
+          )
+          .disabled(
+            action.busy || !consent || !selectedPin || draft.title.isEmpty || draft.place.isEmpty
+              || draft.description.count < 30
+          )
+          .accessibilityIdentifier("request.save")
         Button("Discard changes", role: .destructive) { confirmDiscard = true }
       }
     }.pageBackground().disabled(action.busy)

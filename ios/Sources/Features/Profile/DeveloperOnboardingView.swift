@@ -74,11 +74,10 @@ struct DeveloperOnboardingView: View {
       if let error = action.error { FailureView(error: error) }
       if let draftWarning { Text(draftWarning).font(Theme.caption).foregroundStyle(Theme.error) }
       Button(
-        action.busy
-          ? "Saving…" : step == 2 ? "Save my profile" : step == 3 ? "Save my area" : "Continue"
+        step == 2 ? "Save my profile" : step == 3 ? "Save my area" : "Continue"
       ) {
         Task { await advance() }
-      }.buttonStyle(AppButtonStyle.primary).disabled(!canContinue || action.busy)
+      }.buttonStyle(AppButtonStyle.primary).buttonLoading(action.busy).disabled(!canContinue)
         .accessibilityIdentifier("onboarding.continue")
       let layout =
         dynamicTypeSize.isAccessibilitySize

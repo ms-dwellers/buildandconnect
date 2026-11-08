@@ -86,6 +86,10 @@ strong-password generation. Production password-manager support stays enabled.
 
 ## Manual design previews
 
+The control-state preview exposes enabled, disabled, loading, pressed, and destructive
+buttons plus confirmation sheets. Authentication uses the real form with fictional
+credentials; preview mutations wait five seconds, then fail without contacting a backend.
+
 After building and installing the Debug app on a simulator, open the real dashboards,
 connections, profile, onboarding, discovery, Explore sheets, request, opportunity,
 account, and voice screens with fictional data:

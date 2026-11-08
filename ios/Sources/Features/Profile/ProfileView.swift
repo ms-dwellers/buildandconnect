@@ -187,8 +187,10 @@ struct ProfileView: View {
       }
       if let draftWarning { Section { Text(draftWarning).foregroundStyle(Theme.error) } }
       Section {
-        Button(action.busy ? "Saving…" : "Save profile") { Task { await save() } }
-          .buttonStyle(AppButtonStyle.primary).listRowBackground(Color.clear)
+        Button("Save profile") { Task { await save() } }
+          .buttonStyle(AppButtonStyle.primary).buttonLoading(action.busy).listRowBackground(
+            Color.clear
+          )
           .disabled(action.busy || !consent || draft.bio.count < 10 || draft.skills.isEmpty)
           .accessibilityIdentifier("profile.save")
         if saved {
@@ -304,7 +306,7 @@ struct AreaEditorView: View {
       }
       if let error = action.error { Section { FailureView(error: error) } }
       Section {
-        Button(action.busy ? "Saving…" : "Save area") {
+        Button("Save area") {
           Task {
             await action.run {
               try await api.mutate("/developers/me/location", method: "PATCH", body: area)
@@ -312,8 +314,10 @@ struct AreaEditorView: View {
               dismiss()
             }
           }
-        }.buttonStyle(AppButtonStyle.primary).listRowBackground(Color.clear)
-          .disabled(!selected || profile.value == nil || action.busy)
+        }.buttonStyle(AppButtonStyle.primary).buttonLoading(action.busy).listRowBackground(
+          Color.clear
+        )
+        .disabled(!selected || profile.value == nil || action.busy)
       }
     }.pageBackground().appNavigationTitle("Private area").task { await load() }
       .sheet(isPresented: $picker) {

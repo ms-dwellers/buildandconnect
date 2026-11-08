@@ -133,6 +133,7 @@ struct PinPicker: View {
           }
         }.pageBackground()
       }.pageBackground().appNavigationTitle("Choose a location")
+        .presentationBackground(Theme.canvas)
         .toolbar {
           AppToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
         }

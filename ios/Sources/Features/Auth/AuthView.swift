@@ -80,11 +80,10 @@ struct AuthView: View {
       if let error = action.error { FailureView(error: error) }
       Button(action: submit) {
         HStack(spacing: 12) {
-          if action.busy { ProgressView().tint(Theme.card) }
-          Text(action.busy ? "Connecting…" : mode == .signUp ? "Create account" : "Sign in")
-          if !action.busy { Image(systemName: "arrow.right") }
+          Text(mode == .signUp ? "Create account" : "Sign in")
+          Image(systemName: "arrow.right")
         }
-      }.buttonStyle(AppButtonStyle.primary).disabled(action.busy)
+      }.buttonStyle(AppButtonStyle.primary).buttonLoading(action.busy)
         .accessibilityIdentifier("auth.submit")
       VStack(spacing: 18) {
         Button(mode == .signIn ? "Create an account" : "Sign in instead") {
@@ -258,8 +257,8 @@ struct RoleSelectionView: View {
       VStack(spacing: 12) {
         Text("Your account type can't be changed later.").font(Theme.body(14)).foregroundStyle(
           Theme.muted)
-        Button(action.busy ? "Saving…" : "Continue") { Task { await choose() } }
-          .buttonStyle(AppButtonStyle.primary).disabled(selected == nil || action.busy)
+        Button("Continue") { Task { await choose() } }
+          .buttonStyle(AppButtonStyle.primary).buttonLoading(action.busy).disabled(selected == nil)
           .accessibilityIdentifier("role.continue")
         Button("Sign out") { Task { await app.signOut() } }.frame(minHeight: 44).disabled(
           action.busy)
@@ -348,13 +347,13 @@ struct AccountView: View {
         AppSection("Labs") { NavigationLink("Voice studio", value: Route.voice) }
       #endif
       Section {
-        Button(signingOut ? "Signing out…" : "Sign out", role: .destructive) {
+        Button("Sign out", role: .destructive) {
           signingOut = true
           Task {
             await app.signOut()
             signingOut = false
           }
-        }.disabled(signingOut).accessibilityIdentifier("account.signOut")
+        }.buttonLoading(signingOut).accessibilityIdentifier("account.signOut")
       }
     }.pageBackground().appNavigationTitle("Account")
   }

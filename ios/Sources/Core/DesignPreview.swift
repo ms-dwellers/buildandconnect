@@ -8,6 +8,8 @@
     @State private var app = makeModel()
     @State private var path: [Route] = []
     @State private var showRequesterShell = false
+    @State private var showAuth = false
+    @State private var showControls = false
 
     var body: some View {
       Group {
@@ -17,6 +19,14 @@
           menu
         }
       }.environment(app).environment(app.api)
+        .sheet(isPresented: $showAuth) {
+          AuthView(initialMode: .signIn).environment(app).environment(app.api)
+            .presentationBackground(Theme.canvas).presentationDetents([.large])
+        }
+        .sheet(isPresented: $showControls) {
+          DesignControlStatesPreview()
+            .presentationBackground(Theme.canvas).presentationDetents([.large])
+        }
     }
 
     private var menu: some View {
@@ -24,6 +34,8 @@
         List {
           Text("Fictional data. No live backend requests or account changes.")
             .font(Theme.caption)
+          Button("Control states") { showControls = true }
+          Button("Authentication states") { showAuth = true }
           Button("Requester tabs") {
             app = Self.makeModel(role: .requester)
             app.selectedTab = .home
@@ -81,7 +93,42 @@
     }
   }
 
+  private struct DesignControlStatesPreview: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var activations = 0
+    @State private var text = "Disabled field"
+    var body: some View {
+      ScrollView {
+        VStack(alignment: .leading, spacing: 20) {
+          HStack {
+            Text("Control states").font(Theme.title(28))
+            Spacer()
+            Button("Done") { dismiss() }.buttonStyle(AppButtonStyle(variant: .ghost))
+          }
+          Text("Fictional actions. Activations: \(activations)").font(Theme.caption)
+          Button("Primary action") { activations += 1 }
+            .buttonStyle(AppButtonStyle.primary).accessibilityIdentifier("preview.primary")
+          Button("Disabled action") { activations += 1 }
+            .buttonStyle(AppButtonStyle.primary).disabled(true)
+          Button("Loading action") { activations += 1 }
+            .buttonStyle(AppButtonStyle.primary).buttonLoading(true)
+          Button("Outline action") { activations += 1 }
+            .buttonStyle(AppButtonStyle(fullWidth: true))
+          Button("Destructive action", role: .destructive) { activations += 1 }
+            .buttonStyle(AppButtonStyle(variant: .destructive, fullWidth: true))
+          TextField("Disabled field", text: $text).textFieldStyle(AppTextFieldStyle()).disabled(
+            true)
+          ConfirmAction(
+            label: "Discard changes", consequence: "This removes the fictional draft.",
+            destructive: true
+          ) {}
+        }.padding(24)
+      }.pageBackground()
+    }
+  }
+
   private final class DesignPreviewProtocol: URLProtocol, @unchecked Sendable {
+    private var responseWork: DispatchWorkItem?
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
@@ -98,11 +145,16 @@
       let response = HTTPURLResponse(
         url: request.url!, statusCode: status,
         httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
-      client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-      client?.urlProtocol(self, didLoad: Data(body.utf8))
-      client?.urlProtocolDidFinishLoading(self)
+      let work = DispatchWorkItem { [weak self] in
+        guard let self else { return }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(body.utf8))
+        client?.urlProtocolDidFinishLoading(self)
+      }
+      responseWork = work
+      DispatchQueue.main.asyncAfter(deadline: .now() + (readOnly ? 0 : 5), execute: work)
     }
-    override func stopLoading() {}
+    override func stopLoading() { responseWork?.cancel() }
 
     private static func payload(path: String, requester: Bool) -> String? {
       switch path {
