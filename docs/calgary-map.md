@@ -1,13 +1,17 @@
 # Calgary map frontend
 
-Open `/`, select **Find a project**, or visit `/map` directly. The landing-page
-link draws in softly lit mist over 650 ms, navigates underneath it, then waits
-for Mapbox's first loaded render before the cloud banks drift apart over 1000 ms.
-Three translucent layers move at different speeds, with rounded puffs and wisps
-trailing the opening. App-header map links use the same transition. Direct map visits
-show a static loading surface without starting the shader. Reduced-motion
-preferences skip it; Escape also finishes it immediately. The visible
-**Skip animation** button is temporarily hidden.
+Open `/`, select **Find a project**, or visit `/map` directly. A page may register
+an approach beat with `useMapJourney().registerApproach({ durationMs })`; it plays
+first, as the `approaching` phase, before anything is drawn over the page. The
+landing hero uses it to move its camera into the on-screen monitor. The mist then
+draws in softly lit over 650 ms, navigates underneath, and waits for Mapbox's first
+loaded render before the cloud banks drift apart over 1000 ms. Three translucent
+layers move at different speeds, with rounded puffs and wisps trailing the opening.
+App-header map links, and any page with no registered approach, start with the
+mist directly. Direct map visits show a static loading surface without starting
+the shader. Reduced-motion preferences skip everything; Escape finishes
+immediately, including mid-approach. The visible **Skip animation** button is
+temporarily hidden.
 
 The transition uses one WebGL canvas, one triangle, and one 128 × 128 procedural
 density-and-lighting texture (64 KiB, generated once per transition). Overlapping

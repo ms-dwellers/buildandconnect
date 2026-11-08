@@ -43,3 +43,6 @@ export type CityJob = CityPoint & {
   viewerIsOwner: boolean;
   viewerHasClaimed: boolean;
 };
+
+/** The city this deployment serves; the hero monitor and journey caption show it. */
+export const CITY_NAME = "Calgary";

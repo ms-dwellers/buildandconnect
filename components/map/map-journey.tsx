@@ -13,16 +13,20 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { CITY_NAME } from "@/lib/calgary-area";
 import { revealTiming } from "@/lib/map-reveal";
 import { MapReveal } from "./map-reveal";
 
-type Phase = "idle" | "covering" | "revealing";
+type Phase = "idle" | "approaching" | "covering" | "revealing";
+/** A page-owned beat that plays before the mist, such as a hero camera dolly. */
+export type Approach = { durationMs: number } | null;
 const COVER_MS = revealTiming.covering;
 const REVEAL_MS = revealTiming.revealing;
 const JourneyContext = createContext({
   phase: "idle" as Phase,
   begin: () => {},
   ready: () => {},
+  registerApproach: (_approach: Approach) => {},
 });
 export const useMapJourney = () => useContext(JourneyContext);
 
@@ -35,6 +39,11 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
   const restoreFocus = useRef(false);
   const sourcePath = useRef(pathname);
   const navigationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const approach = useRef<Approach>(null);
+  const approachTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const registerApproach = useCallback((next: Approach) => {
+    approach.current = next;
+  }, []);
   const ready = useCallback(
     () =>
       setPhase((current) => (current === "covering" ? "revealing" : current)),
@@ -43,6 +52,7 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
 
   const complete = useCallback(() => {
     if (navigationTimer.current) clearTimeout(navigationTimer.current);
+    if (approachTimer.current) clearTimeout(approachTimer.current);
     setPhase("idle");
     navigating.current = false;
     restoreFocus.current = true;
@@ -59,6 +69,12 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
       router.push("/map");
     }
   }, [router]);
+  const cover = useCallback(() => {
+    if (!navigating.current) return;
+    setPhase("covering");
+    // Rendering normally advances navigation; retain a deadline for lost contexts/tabs.
+    navigationTimer.current = setTimeout(navigateToMap, COVER_MS + 500);
+  }, [navigateToMap]);
   function begin() {
     if (navigating.current || pathname === "/map") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -69,9 +85,12 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
     requested.current = false;
     sourcePath.current = pathname;
     router.prefetch("/map");
-    setPhase("covering");
-    // Rendering normally advances navigation; retain a deadline for lost contexts/tabs.
-    navigationTimer.current = setTimeout(navigateToMap, COVER_MS + 500);
+    const pending = approach.current;
+    if (pending) {
+      // A visible hero scene approaches its monitor before the mist draws in.
+      setPhase("approaching");
+      approachTimer.current = setTimeout(cover, pending.durationMs);
+    } else cover();
   }
 
   useEffect(() => {
@@ -100,6 +119,7 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
       (pathname !== "/map" && phase === "revealing")
     ) {
       if (navigationTimer.current) clearTimeout(navigationTimer.current);
+      if (approachTimer.current) clearTimeout(approachTimer.current);
       setPhase("idle");
       navigating.current = false;
       restoreFocus.current = false;
@@ -130,19 +150,20 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
   useEffect(
     () => () => {
       if (navigationTimer.current) clearTimeout(navigationTimer.current);
+      if (approachTimer.current) clearTimeout(approachTimer.current);
     },
     [],
   );
 
   return (
-    <JourneyContext.Provider value={{ phase, begin, ready }}>
+    <JourneyContext.Provider value={{ phase, begin, ready, registerApproach }}>
       <div inert={phase !== "idle" || undefined}>{children}</div>
       <div role="status" className="sr-only">
         {phase !== "idle"
-          ? "Travelling to Calgary. Press Escape to skip the animation."
+          ? `Travelling to ${CITY_NAME}. Press Escape to skip the animation.`
           : ""}
       </div>
-      {phase !== "idle" && (
+      {(phase === "covering" || phase === "revealing") && (
         <div
           className="map-journey"
           data-phase={phase}
@@ -159,7 +180,9 @@ export function MapJourneyProvider({ children }: { children: ReactNode }) {
             onComplete={phase === "covering" ? navigateToMap : complete}
           />
           <div className="journey-caption" aria-hidden="true">
-            <p className="mt-3 font-display text-6xl sm:text-8xl">Calgary.</p>
+            <p className="mt-3 font-display text-6xl sm:text-8xl">
+              {CITY_NAME}.
+            </p>
           </div>
         </div>
       )}
