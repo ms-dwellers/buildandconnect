@@ -16,7 +16,7 @@ import {
   POINT_LAYER,
   cityBounds,
   cityOverviewPadding,
-  cityMapConfig,
+  cityMapConfigFromStyles,
   cityPerspective,
   isMapInteraction,
   jobCamera,
@@ -146,15 +146,7 @@ export function useCalgaryMap({
             accessToken: token,
             style: CITY_MAP_STYLE,
             config: {
-              basemap: cityMapConfig({
-                land: color("--map-base"),
-                water: color("--map-water"),
-                greenspace: color("--map-park"),
-                roads: color("--map-road"),
-                motorways: color("--map-arterial"),
-                buildings: color("--map-building"),
-                labels: color("--map-label"),
-              }),
+              basemap: cityMapConfigFromStyles(styles),
             },
             bounds: cityBounds(),
             fitBoundsOptions: {

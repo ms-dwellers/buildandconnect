@@ -64,6 +64,21 @@ export function cityMapConfig(colors: CityMapPalette) {
   };
 }
 
+export function cityMapConfigFromStyles(
+  styles: Pick<CSSStyleDeclaration, "getPropertyValue">,
+) {
+  const color = (name: string) => styles.getPropertyValue(name).trim();
+  return cityMapConfig({
+    land: color("--map-base"),
+    water: color("--map-water"),
+    greenspace: color("--map-park"),
+    roads: color("--map-road"),
+    motorways: color("--map-arterial"),
+    buildings: color("--map-building"),
+    labels: color("--map-label"),
+  });
+}
+
 export function cityPerspective(tilted: boolean, reducedMotion: boolean) {
   return {
     pitch: tilted ? 55 : 0,

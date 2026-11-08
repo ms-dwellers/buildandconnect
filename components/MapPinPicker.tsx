@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { FieldMessage } from "@/components/forms/form-kit";
 import { mapboxToken } from "@/lib/api";
 import { CALGARY_BOUNDS, CALGARY_CENTER } from "@/lib/calgary-area";
-import { CITY_MAP_STYLE } from "@/lib/calgary-map";
+import { CITY_MAP_STYLE, cityMapConfigFromStyles } from "@/lib/calgary-map";
 
 export type Pin = {
   latitude: number;
@@ -46,6 +46,7 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
     if (!token || !containerRef.current) return;
     let disposed = false;
     let map: MapboxMap | undefined;
+    let observer: ResizeObserver | undefined;
     void import("mapbox-gl").then(({ default: sdk }) => {
       if (disposed || !containerRef.current) return;
       const start = latest.current.value ?? CALGARY_CENTER;
@@ -53,6 +54,11 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
         container: containerRef.current,
         accessToken: token,
         style: CITY_MAP_STYLE,
+        config: {
+          basemap: cityMapConfigFromStyles(
+            getComputedStyle(containerRef.current),
+          ),
+        },
         center: [start.longitude, start.latitude],
         zoom: latest.current.value ? 13 : 10.3,
       });
@@ -75,9 +81,12 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
         });
       });
       mapRef.current = map;
+      observer = new ResizeObserver(() => map?.resize());
+      observer.observe(containerRef.current);
     });
     return () => {
       disposed = true;
+      observer?.disconnect();
       map?.remove();
       mapRef.current = null;
       markerRef.current = null;
@@ -218,7 +227,7 @@ export function MapPinPicker({ value, onChange, radiusKm, className }: Props) {
       <FieldMessage className="mb-2">{searchError}</FieldMessage>
       <div
         ref={containerRef}
-        className="h-80 overflow-hidden rounded-xl border"
+        className="h-80 overflow-hidden rounded-xl border sm:h-96"
         aria-label="Map for choosing a location. Click to drop a pin."
       />
       <FieldMessage className="mt-2">{mapError}</FieldMessage>
