@@ -58,7 +58,10 @@ test("sign-in, signup, role selection and onboarding keep one intended destinati
   );
   assert.equal(onboarding.pathname, "/onboarding");
   assert.equal(onboarding.searchParams.get("next"), target);
-  assert.equal(afterAuthentication("developer", target), target);
+  assert.equal(
+    afterAuthentication("developer", target),
+    withNext("/onboarding", target),
+  );
   assert.equal(afterRoleSelection("requester", null), "/projects/new");
   assert.equal(
     afterRoleSelection("developer", null),

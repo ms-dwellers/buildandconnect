@@ -1,15 +1,27 @@
 # Account entry and dashboard flow
 
+## Start with the account
+
+`/` now opens sign-in directly, with the same illustrated account shell used by
+`/sign-in`, `/sign-up`, role selection and developer setup. The map remains
+available from navigation without an account. Password visibility is an explicit
+toggle; credentials are submitted by POST and never persisted in browser storage.
+
+Selecting a role does not save it. The person reviews Developer or Requester and
+uses **Continue as…** to confirm the permanent account type. Requesters then use
+the existing voice/manual project entry rather than a developer questionnaire.
+
 ## Keep the original destination
 
 Protected pages carry their local path, query, and fragment through `next` when
 redirecting to sign-in. Switching between sign-in and signup retains it. New
 accounts choose a role explicitly; developer setup retains the same destination.
-Existing members return directly to it. When there is no destination, new
+Existing developers pass through the profile gate, which skips the form when a
+profile already exists. When there is no destination, new
 developers start setup for `/career` and requesters start at `/projects/new`.
 
 `safeNext` rejects external URLs, backslashes, control characters, oversized
-values, and authentication/setup loops. This is navigation assistance, not an
+values, the account-first homepage, and authentication/setup loops. This is navigation assistance, not an
 authorization boundary: the destination's role gate and Convex ownership checks
 still apply. A person choosing an incompatible account type sees the existing
 role restriction rather than receiving new permissions.
@@ -22,8 +34,13 @@ ignored after a newer refresh or successful sign-out.
 
 ## Short developer setup
 
-`/onboarding` asks for a short bio, tried skills, self-reported experience level,
-city, and weekly availability. Learning goals and causes are optional. Projects,
+`/onboarding` is a four-step form: skills, a short bio and self-reported experience
+level, city and weekly availability, then optional learning goals and causes with
+explicit visibility and volunteer choices. Skill and time shortcuts remain fully
+editable. Each step validates before advancing; Back preserves entries, and the
+current step receives keyboard focus. Nothing is saved until **Save and continue**.
+A full page reload starts the unsaved form again; no profile draft is stored locally.
+Projects,
 detailed preferences, and the search-area map remain available in `/profile`;
 they are not prerequisites to seeing the initial career flow.
 
@@ -32,7 +49,9 @@ opt-in. Availability starts on and collaboration starts flexible, as disclosed b
 the form. This uses the existing profile API and does not infer professional
 years, completed work, pay preferences, or credentials.
 
-Already-configured developers skip setup. Project eligibility screens carry a
+Already-configured developers skip setup and return to their intended destination
+or dashboard. Profile-read errors offer a retry rather than an empty form that
+could overwrite an existing profile. Project eligibility screens carry a
 return destination into profile/area editing, and the corresponding save action
 returns to the project. The map remains available before setup is complete.
 

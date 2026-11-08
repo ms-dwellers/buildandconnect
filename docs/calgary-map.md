@@ -1,6 +1,6 @@
 # Calgary map frontend
 
-Open `/`, select **Find a project**, or visit `/map` directly. The landing-page
+Open `/`, select **Map** in navigation, or visit `/map` directly. The map
 link draws in softly lit mist over 650 ms, navigates underneath it, then waits
 for Mapbox's first loaded render before the cloud banks drift apart over 1000 ms.
 Three translucent layers move at different speeds, with rounded puffs and wisps
@@ -18,7 +18,7 @@ buffer stays within 768 × 512, independent of device pixel ratio. Rendering sto
 when the cover is complete and while the tab is hidden. GPU resources are released
 on exit. WebGL initialization failures or context loss fall back to a CSS fade;
 independent deadlines keep navigation working if animation callbacks are lost.
-The landing-page pixel-art scene is unchanged.
+The account-entry screen reuses the pixel-art garden scene.
 
 The map shows live Convex records through the public `GET /api/map` feed: open
 requester opportunities that have a map pin, and open community requests. No demo

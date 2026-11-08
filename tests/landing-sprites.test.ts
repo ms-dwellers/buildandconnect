@@ -5,23 +5,19 @@ import { landingClouds } from "../lib/landing-clouds.ts";
 
 const spriteDirectory = new URL("../public/sprites/", import.meta.url);
 
-test("landing hero fills the viewport without an outer frame", () => {
+test("homepage goes directly to account entry with the shared garden scene", () => {
   const page = readFileSync(
     new URL("../app/page.tsx", import.meta.url),
     "utf8",
   );
-  const css = readFileSync(
-    new URL("../components/landing/hero-scene.css", import.meta.url),
+  const shell = readFileSync(
+    new URL("../components/app/account-shell.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /className="landing-paper"/);
-  assert.match(page, /className="landing-hero relative isolate w-full/);
-  assert.doesNotMatch(page, /max-w-7xl|rounded-[tb]-xl|min-h-\[820px\]/);
-  assert.match(css, /min-height:\s*calc\(100svh - 6rem\)/);
-  assert.match(
-    css,
-    /font-size:\s*clamp\(2\.5rem, min\(7vw, 10svh\), 6\.5rem\)/,
-  );
+  assert.match(page, /<AccountEntry/);
+  assert.match(page, /safeNext\(next\)/);
+  assert.match(shell, /<HeroScene/);
+  assert.match(shell, /<h1/);
 });
 
 test("the full supplied sprite collection is kept as local SVG assets", () => {

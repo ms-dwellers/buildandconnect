@@ -14,6 +14,7 @@ export function safeNext(value: string | string[] | undefined) {
     const url = new URL(next, "https://local.invalid");
     if (
       url.origin !== "https://local.invalid" ||
+      url.pathname === "/" ||
       /^\/(?:\/|%2f)/i.test(url.pathname) ||
       /^\/(?:sign-in|sign-up|role|onboarding)(?:\/|$)/.test(url.pathname)
     )
@@ -35,6 +36,7 @@ export function afterAuthentication(
   role: "developer" | "requester" | null,
   next: string | null,
 ) {
+  if (role === "developer") return withNext("/onboarding", next);
   return role
     ? (safeNext(next ?? undefined) ?? "/dashboard")
     : withNext("/role", next);

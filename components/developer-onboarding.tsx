@@ -2,53 +2,64 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import {
   RequireRole,
   ErrorAlert,
   LoadingBlock,
 } from "@/components/app/require-role";
+import { AccountShell } from "@/components/app/account-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectPopup,
-  SelectItem,
-} from "@/components/ui/select";
+  Progress,
+  ProgressIndicator,
+  ProgressTrack,
+} from "@/components/ui/progress";
+import { issuesToErrors } from "@/components/forms/form-kit";
 import {
-  TextField,
-  TextAreaField,
-  parseList,
-  issuesToErrors,
-} from "@/components/forms/form-kit";
+  AboutStep,
+  AvailabilityStep,
+  PreferencesStep,
+  SkillsStep,
+} from "@/components/onboarding/profile-steps";
 import { useApi } from "@/lib/use-api";
 import { api } from "@/lib/api";
+import {
+  emptyProfileDraft,
+  onboardingFieldStep,
+  onboardingProfile,
+  onboardingStepErrors,
+  PROFILE_STEPS,
+  type ProfileDraft,
+} from "@/lib/onboarding";
+import { developerSchema } from "@/backend/schemas";
 import type { OwnProfile } from "@/lib/types";
 
-const levels = [
-  { value: "1", label: "Beginner" },
-  { value: "2", label: "Comfortable" },
-  { value: "3", label: "Capable" },
-  { value: "4", label: "Strong" },
-  { value: "5", label: "Expert" },
+const questions = [
+  "What have you tried?",
+  "Tell us a little about yourself",
+  "Make room for a project",
+  "Choose what works for you",
 ];
+const steps = [SkillsStep, AboutStep, AvailabilityStep, PreferencesStep];
 
-export function DeveloperOnboarding({ next = "/career" }: { next?: string }) {
+export function DeveloperOnboarding({ next }: { next?: string | null }) {
   return (
-    <RequireRole roles={["developer"]}>
-      {({ user }) => <Load key={user.id} next={next} />}
-    </RequireRole>
+    <AccountShell title="Your starting point">
+      <RequireRole roles={["developer"]}>
+        {({ user }) => <Load key={user.id} next={next} />}
+      </RequireRole>
+    </AccountShell>
   );
 }
-function Load({ next }: { next: string }) {
+
+function Load({ next }: { next?: string | null }) {
   const profile = useApi<OwnProfile>("/developers/me");
   const router = useRouter();
   useEffect(() => {
-    if (profile.data) router.replace(next);
+    if (profile.data) router.replace(next ?? "/dashboard");
   }, [profile.data, next, router]);
   if (profile.error && profile.error.status !== 404)
     return (
@@ -59,57 +70,86 @@ function Load({ next }: { next: string }) {
       />
     );
   if (profile.loading || profile.data) return <LoadingBlock />;
-  return <StarterProfile next={next} />;
+  return <StarterProfile next={next ?? "/career"} />;
 }
 
 export function StarterProfile({ next = "/career" }: { next?: string }) {
   const router = useRouter();
-  const [level, setLevel] = useState<string | null>(null);
-  const [discoverable, setDiscoverable] = useState(false);
-  const [volunteer, setVolunteer] = useState(false);
+  const [step, setStep] = useState(0);
+  const [draft, setDraft] = useState<ProfileDraft>(emptyProfileDraft);
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
-  const levelTrigger = useRef<HTMLButtonElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const form = useRef<HTMLFormElement>(null);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  useEffect(() => {
+    heading.current?.focus();
+  }, [step]);
+  function update<K extends keyof ProfileDraft>(
+    key: K,
+    value: ProfileDraft[K],
+  ) {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setErrors((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+    setError("");
+  }
+  function showErrors(fields: Record<string, string>, message: string) {
+    setErrors(fields);
+    setError(message);
+    const field = Object.keys(fields)[0];
+    if (field) setStep(onboardingFieldStep(field));
+    requestAnimationFrame(() => {
+      const input =
+        field &&
+        form.current?.querySelector<HTMLElement>(
+          `[name="${CSS.escape(field)}"], [aria-invalid="true"]`,
+        );
+      if (input && input.tabIndex >= 0) input.focus();
+      else heading.current?.focus();
+    });
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy.current) return;
-    if (!level) {
-      setError("Choose your current experience level.");
-      levelTrigger.current?.focus();
+    const fields = onboardingStepErrors(draft, step);
+    if (Object.keys(fields).length) {
+      showErrors(fields, Object.values(fields)[0]);
       return;
     }
-    const data = new FormData(event.currentTarget);
+    setErrors({});
+    setError("");
+    if (step < PROFILE_STEPS.length - 1) {
+      setStep(step + 1);
+      return;
+    }
+    const parsed = developerSchema.safeParse(onboardingProfile(draft));
+    if (!parsed.success) {
+      showErrors(
+        issuesToErrors(
+          parsed.error.issues.map((issue) => ({
+            message: issue.message,
+            path: issue.path.map(String),
+          })),
+        ),
+        "Check the highlighted details.",
+      );
+      return;
+    }
     busy.current = true;
     setPending(true);
-    setError("");
-    setErrors({});
     try {
       const response = await api("/developers/me", {
         method: "PUT",
-        body: JSON.stringify({
-          bio: String(data.get("bio")),
-          city: String(data.get("city")),
-          skills: parseList(data.get("skills")).map((name) => ({
-            name,
-            level: Number(level),
-          })),
-          projects: [],
-          interests: parseList(data.get("interests")),
-          wantsToLearn: parseList(data.get("wantsToLearn")),
-          experienceLevel: Number(level),
-          collaboration: "flexible",
-          weeklyHours: Number(data.get("weeklyHours")),
-          acceptsVolunteer: volunteer,
-          available: true,
-          discoverable,
-        }),
+        body: JSON.stringify(parsed.data),
         signal: AbortSignal.timeout(45_000),
       });
       if (!response.ok) {
-        setError(response.error);
-        setErrors(issuesToErrors(response.issues));
+        showErrors(issuesToErrors(response.issues), response.error);
         return;
       }
       router.replace(next);
@@ -122,109 +162,69 @@ export function StarterProfile({ next = "/career" }: { next?: string }) {
       setPending(false);
     }
   }
+  const Step = steps[step];
   return (
     <Card>
-      <CardPanel className="space-y-5 p-5 sm:p-7">
-        <p className="text-sm text-muted-foreground">
-          Add a few basics to find relevant projects. Past projects, detailed
-          preferences, and a local search area can come later.
-        </p>
-        <Form onSubmit={submit} errors={errors} className="space-y-5">
-          <fieldset disabled={pending} className="space-y-5">
-            <TextAreaField
-              name="bio"
-              label="What do you enjoy building?"
-              required
-              minLength={10}
-              maxLength={2000}
-              rows={3}
-            />
-            <TextField
-              name="skills"
-              label="Skills you have tried"
-              description="Separate skills with commas, for example React, HTML, CSS."
-              required
-              maxLength={3000}
-            />
-            <div className="space-y-2">
-              <Label htmlFor="starting-level">
-                Your current level with these skills
-              </Label>
-              <Select value={level} onValueChange={setLevel} items={levels}>
-                <SelectTrigger
-                  ref={levelTrigger}
-                  id="starting-level"
-                  className="w-full"
-                >
-                  <SelectValue placeholder="Choose your current level" />
-                </SelectTrigger>
-                <SelectPopup>
-                  {levels.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectPopup>
-              </Select>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <TextField name="city" label="City" required maxLength={100} />
-              <TextField
-                name="weeklyHours"
-                label="Hours available per week"
-                type="number"
-                required
-                min={1}
-                max={80}
-              />
-            </div>
-            <TextField
-              name="wantsToLearn"
-              label="What would you like to learn? (optional)"
-              maxLength={3000}
-            />
-            <TextField
-              name="interests"
-              label="Causes you care about (optional)"
-              maxLength={3000}
-            />
-            <div className="flex items-center gap-3">
-              <Switch
-                id="starter-volunteer"
-                checked={volunteer}
-                onCheckedChange={setVolunteer}
-              />
-              <Label htmlFor="starter-volunteer">
-                Include unpaid volunteer projects
-              </Label>
-            </div>
-            <div className="flex items-center gap-3">
-              <Switch
-                id="starter-discovery"
-                checked={discoverable}
-                onCheckedChange={setDiscoverable}
-              />
-              <Label htmlFor="starter-discovery">
-                Let requesters find my profile
-              </Label>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              You can explore privately. Responding to projects requires profile
-              visibility, which you can change later. Collaboration starts as
-              flexible; adjust it in your profile.
-            </p>
+      <CardPanel className="space-y-6 p-5 sm:p-7">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+            <span>{PROFILE_STEPS[step]}</span>
+            <span>
+              {step + 1} of {PROFILE_STEPS.length}
+            </span>
+          </div>
+          <Progress
+            aria-label="Profile setup"
+            value={((step + 1) / PROFILE_STEPS.length) * 100}
+          >
+            <ProgressTrack className="bg-secondary">
+              <ProgressIndicator className="bg-primary" />
+            </ProgressTrack>
+          </Progress>
+        </div>
+        <h2
+          ref={heading}
+          tabIndex={-1}
+          className="text-2xl leading-tight outline-none"
+        >
+          {questions[step]}
+        </h2>
+        <Form
+          ref={form}
+          method="post"
+          onSubmit={submit}
+          errors={errors}
+          className="space-y-6"
+        >
+          <fieldset disabled={pending}>
+            <Step draft={draft} update={update} />
           </fieldset>
-          {error && <ErrorAlert title="Profile not saved" message={error} />}
-          <div className="flex flex-wrap gap-3">
+          {error && (
+            <ErrorAlert
+              title={step === 3 ? "Profile not saved" : "Check this step"}
+              message={error}
+            />
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {step > 0 ? (
+              <Button
+                variant="ghost"
+                disabled={pending}
+                onClick={() => {
+                  setError("");
+                  setErrors({});
+                  setStep(step - 1);
+                }}
+              >
+                <ArrowLeftIcon aria-hidden="true" />
+                Back
+              </Button>
+            ) : (
+              <span />
+            )}
             <Button type="submit" loading={pending}>
-              Save and continue
-            </Button>
-            <Button
-              render={<a href="/map" />}
-              variant="ghost"
-              disabled={pending}
-            >
-              Browse the map first
+              {step === 3 ? "Save and continue" : "Continue"}
+              <ArrowRightIcon aria-hidden="true" />
             </Button>
           </div>
         </Form>

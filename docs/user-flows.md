@@ -28,9 +28,11 @@ problems; developers build experience and working relationships.
 
 ## Developer journey
 
-1. Create an account and a short developer profile with skills, experience,
-   availability, and optional interests. Choose visibility and volunteer consent
-   explicitly; add project evidence, preferences, and a search area later.
+1. Sign in or create an account directly from the homepage. Confirm Developer,
+   then complete four small profile steps with skills, experience, availability,
+   and optional interests. Choose visibility and volunteer consent explicitly;
+   add project evidence, detailed preferences, and a search area later. Existing
+   profiles skip these steps.
 2. Open **Find projects** from navigation or **Find projects for my goals** from
    the dashboard.
 3. Paste a target job description. Review the privacy/AI disclosure and save.

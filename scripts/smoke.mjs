@@ -62,20 +62,16 @@ try {
   assert.match(html, /Build &amp; Connect/);
   assert.match(html, /Build experience\./);
   assert.match(html, /Make a difference\./);
-  assert.match(html, /Start a project/);
-  assert.match(html, /Nearby map/);
+  assert.match(html, /Welcome back/);
+  assert.match(html, /name="email"/);
+  assert.match(html, /name="password"/);
+  assert.match(html, /<form[^>]*method="post"/);
   assert.match(html, /data-slot="button"/);
   assert.match(html, /data-slot="card"/);
-  for (const route of [
-    "/map",
-    "/projects/new",
-    "/sign-up",
-    "/sign-in",
-    "/design-system",
-  ]) {
+  for (const route of ["/map", "/sign-up"]) {
     assert.ok(
       html.includes(`href="${route}"`),
-      `Missing landing-page link: ${route}`,
+      `Missing account-entry link: ${route}`,
     );
   }
   const designSystem = await fetch(`${origin}/design-system`);

@@ -60,15 +60,14 @@ percentages enforced on every component or the map.
 
 - Start directly with headings. No decorative section numbers, eyebrow labels,
   or other heading prefixes. This applies to both the app and this gallery.
-- The landing page uses open spacing, bold League Spartan headings, light paper
-  texture, and an edge-to-edge mint hero with a pixel-art landscape from the
+- The account-first homepage uses open spacing, bold League Spartan headings,
+  and a mint garden panel beside the sign-in form, with a landscape from the
   supplied `public/sprites/` collection. Trees, roses, and grass sit on repeating
   ground tiles above a teal waterfront. Keep
   decorative artwork out of the accessibility tree; do not treat it as map data.
-  The header and hero fill at least the first viewport, without outer gutters or
-  rounded framing. The remaining sections stay scrollable below. Typography
-  adapts to viewport width and height; short screens can scroll rather than clip
-  the heading or actions.
+  On mobile, the decorative garden panel is hidden so account actions come first.
+  The same shell frames account choice and the four-step developer profile.
+  Short screens scroll rather than clip the heading or actions.
 
 - `components/landing/hero-scene.tsx` owns the sprite composition. There is no
   loading reveal or foreground curtain; the heading is available immediately.

@@ -289,6 +289,19 @@
   --popover: var(--dashboard-paper);
 }
 
+.account-surface {
+  --card: var(--dashboard-paper);
+  --popover: var(--dashboard-paper);
+}
+
+.account-surface .hero-scene {
+  --tree-scale: 1;
+}
+
+.account-surface .hero-sky-clouds {
+  opacity: 0.45;
+}
+
 .voice-studio {
   --voice-paper: #f7f5ed;
   --voice-card: #fffdf7;

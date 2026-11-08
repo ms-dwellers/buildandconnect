@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
@@ -20,18 +21,21 @@ export function AuthForm({
   next: string | null;
 }) {
   const router = useRouter();
-  const { refresh, session } = useSession();
+  const { refresh, session, signingOut } = useSession();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [ready, setReady] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const signUp = mode === "sign-up";
-  useEffect(() => setReady(true), []);
   useEffect(() => {
-    if (session.status === "member" && !busy.current)
+    setReady(true);
+  }, []);
+  useEffect(() => {
+    if (session.status === "member" && !busy.current && !signingOut)
       router.replace(afterAuthentication(session.role, next));
-  }, [session, router, next]);
+  }, [session, router, next, signingOut]);
 
   async function continueSession() {
     const current = await refresh();
@@ -44,6 +48,23 @@ export function AuthForm({
       return;
     }
     router.replace(afterAuthentication(current.role, next));
+  }
+
+  async function retryAccount() {
+    if (busy.current) return;
+    busy.current = true;
+    setPending(true);
+    setError(null);
+    try {
+      await continueSession();
+    } catch {
+      setError(
+        "Your account could not be loaded. Check your connection and retry.",
+      );
+    } finally {
+      busy.current = false;
+      setPending(false);
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -80,44 +101,90 @@ export function AuthForm({
         {/* method="post" keeps credentials out of the URL if someone submits
             before hydration; the handler always prevents native submission. */}
         <Form method="post" onSubmit={submit} className="space-y-5">
-          {signUp && (
-            <Field name="name">
-              <FieldLabel>Name</FieldLabel>
-              <Input name="name" required maxLength={100} autoComplete="name" />
-            </Field>
-          )}
-          <Field name="email">
-            <FieldLabel>Email</FieldLabel>
-            <Input name="email" type="email" required autoComplete="email" />
-          </Field>
-          <Field name="password">
-            <FieldLabel>Password</FieldLabel>
-            <Input
-              name="password"
-              type="password"
-              required
-              minLength={signUp ? 12 : undefined}
-              autoComplete={signUp ? "new-password" : "current-password"}
-            />
+          <fieldset disabled={pending || authenticated} className="space-y-5">
             {signUp && (
-              <FieldDescription>At least 12 characters.</FieldDescription>
+              <Field name="name">
+                <FieldLabel>Name</FieldLabel>
+                <Input
+                  name="name"
+                  required
+                  maxLength={100}
+                  autoComplete="name"
+                />
+              </Field>
             )}
-          </Field>
+            <Field name="email">
+              <FieldLabel>Email</FieldLabel>
+              <Input name="email" type="email" required autoComplete="email" />
+            </Field>
+            <Field name="password">
+              <FieldLabel>Password</FieldLabel>
+              <div className="relative w-full">
+                <Input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={signUp ? 12 : undefined}
+                  autoComplete={signUp ? "new-password" : "current-password"}
+                  className="w-full pe-12"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute end-1 top-0.5"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((value) => !value)}
+                >
+                  {showPassword ? (
+                    <EyeOffIcon aria-hidden="true" />
+                  ) : (
+                    <EyeIcon aria-hidden="true" />
+                  )}
+                </Button>
+              </div>
+              {signUp && (
+                <FieldDescription>At least 12 characters.</FieldDescription>
+              )}
+            </Field>
+          </fieldset>
+          {session.status === "unavailable" && !authenticated && (
+            <ErrorAlert
+              title="Your account could not be checked"
+              message={session.message}
+              onRetry={() => void refresh()}
+            />
+          )}
           {error && (
             <ErrorAlert
-              title={signUp ? "Account not created" : "Unable to sign in"}
+              title={
+                authenticated
+                  ? "Unable to continue"
+                  : signUp
+                    ? "Account not created"
+                    : "Unable to sign in"
+              }
               message={error}
             />
           )}
           {authenticated && error && (
-            <Button variant="outline" onClick={() => void continueSession()}>
+            <Button
+              variant="outline"
+              loading={pending}
+              onClick={() => void retryAccount()}
+            >
               Retry loading account
             </Button>
           )}
           <Button
             type="submit"
             loading={pending}
-            disabled={!ready || authenticated}
+            disabled={
+              !ready ||
+              authenticated ||
+              session.status === "loading" ||
+              session.status === "unavailable"
+            }
             className="w-full"
           >
             {signUp ? "Create account" : "Sign in"}
