@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowUpRightIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowUpRightIcon } from "lucide-react";
 import { AppHeader } from "@/components/app/app-shell";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
