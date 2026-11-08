@@ -116,16 +116,6 @@ export default function Home() {
       </main>
       <footer className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-5 border-t px-6 py-7 text-sm sm:px-10">
         <p className="font-medium">Build skills. Make a difference.</p>
-        <div className="flex flex-wrap items-center gap-5">
-          <Button
-            render={<Link href="/design-system" />}
-            variant="link"
-            size="sm"
-            className="px-0 text-muted-foreground"
-          >
-            Design system
-          </Button>
-        </div>
       </footer>
     </div>
   );
