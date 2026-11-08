@@ -52,6 +52,15 @@ enum Route: Hashable {
   case editOpportunity(String)
   case map(String)
   case account
+  case setupProfileFor(ProfileReturn)
+  case profileFor(ProfileReturn)
+  case areaFor(ProfileReturn)
+}
+
+enum ProfileReturn: Hashable {
+  case request(String)
+  case opportunity(String)
+  case career
 }
 
 enum AppTab: Hashable { case home, explore, connections, profile, account }
@@ -120,11 +129,17 @@ enum AuthMode: String, Identifiable {
         guard session != nil else { throw APIError(status: 401, message: "Your session expired.") }
       }
       let wasGuest = member == nil
+      let previousRole = role
       member = try await api.get("/me")
       if wasGuest { selectedTab = .explore }
-      if role == .developer {
-        needsProfileSetup =
-          DraftCache.load(Bool.self, key: "\(identity)/profile/onboarding") ?? needsProfileSetup
+      if role == .developer && (wasGuest || previousRole != .developer || !hasCheckedSession) {
+        needsProfileSetup = true
+        do {
+          let _: Developer = try await api.get("/developers/me")
+          needsProfileSetup = false
+        } catch let error as APIError where error.status == 404 {
+          needsProfileSetup = true
+        }
       }
       sessionError = nil
       if resumeNavigation && role != nil && !needsProfileSetup { resumePendingRoute() }
@@ -183,6 +198,10 @@ enum AuthMode: String, Identifiable {
     let route: Route?
     if parts.count == 2, parts[0] == "opportunities" {
       route = .opportunity(parts[1])
+    } else if parts.count == 2, parts[0] == "requests" {
+      route = .request(parts[1])
+    } else if parts == ["career"] {
+      route = .career
     } else if parts.first == "map",
       let id = URLComponents(url: url, resolvingAgainstBaseURL: false)?
         .queryItems?.first(where: { $0.name == "focus" })?.value
@@ -365,6 +384,9 @@ struct AppNavigation<Content: View>: View {
             case .connections: ConnectionsView()
             case .myOpportunities: RequesterOpportunitiesView()
             case .career: CareerView()
+            case .setupProfileFor(let target): DeveloperOnboardingView(returnTo: target)
+            case .profileFor(let target): ProfileView(returnTo: target)
+            case .areaFor(let target): AreaEditorView(returnTo: target)
             }
           }
           .navigationBarBackButtonHidden()

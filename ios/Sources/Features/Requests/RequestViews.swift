@@ -6,6 +6,7 @@ struct RequestDetailView: View {
   @Environment(AppModel.self) private var app
   @State private var request = Resource<CommunityRequest>()
   @State private var profile = Resource<Developer>()
+  @State private var eligibility = Resource<RequestEligibility>()
   @State private var action = ActionState()
   var body: some View {
     Group {
@@ -80,21 +81,42 @@ struct RequestDetailView: View {
         }
       } else if item.status == "open" {
         if (profile.error as? APIError)?.status == 404 {
-          NavigationLink("Create a profile to pick up ideas", value: Route.setupProfile)
-            .buttonStyle(
-              AppButtonStyle.primary)
+          NavigationLink(
+            "Create a profile to pick up ideas", value: Route.setupProfileFor(.request(id))
+          )
+          .buttonStyle(
+            AppButtonStyle.primary)
         } else if let error = profile.error {
           FailureView(error: error) { await load() }
         } else if let developer = profile.value {
           if developer.location == nil {
-            NavigationLink("Set your area to pick up ideas", value: Route.area).buttonStyle(
-              AppButtonStyle.primary)
+            NavigationLink("Set your area to pick up ideas", value: Route.areaFor(.request(id)))
+              .buttonStyle(
+                AppButtonStyle.primary)
           } else {
+            if let error = eligibility.error {
+              FailureView(error: error) { await load() }
+            } else if let result = eligibility.value {
+              if !result.eligible {
+                Text("Before you can accept").font(Theme.subheading)
+                ForEach(result.ineligibleReasons, id: \.self) {
+                  Text($0).foregroundStyle(Theme.muted)
+                }
+                NavigationLink(
+                  "Review profile and availability", value: Route.profileFor(.request(id))
+                )
+                .buttonStyle(AppButtonStyle())
+                NavigationLink("Adjust your private area", value: Route.areaFor(.request(id)))
+                  .buttonStyle(AppButtonStyle())
+              }
+            } else {
+              ProgressView("Checking eligibility")
+            }
             ConfirmAction(
               label: "Pick up this idea",
               consequence:
                 "The requester will see your name. The server checks your area and eligibility before assigning it exclusively to you.",
-              disabled: action.busy
+              disabled: action.busy || eligibility.loading || eligibility.value?.eligible != true
             ) {
               await mutate("/requests/\(id)/accept")
             }.buttonStyle(AppButtonStyle.primary)
@@ -105,7 +127,12 @@ struct RequestDetailView: View {
   }
   private func load() async {
     await request.load(api, "/requests/\(id)")
-    if app.role == .developer { await profile.load(api, "/developers/me") }
+    if app.role == .developer {
+      await profile.load(api, "/developers/me")
+      if profile.value != nil {
+        await eligibility.load(api, "/requests/\(id)/match")
+      }
+    }
   }
   private func mutate(_ path: String, method: String = "POST", body: [String: String] = [:]) async {
     await action.run {

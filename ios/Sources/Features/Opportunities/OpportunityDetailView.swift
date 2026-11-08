@@ -114,7 +114,9 @@ struct OpportunityDetailView: View {
   @ViewBuilder private func personalFit(_ item: Opportunity) -> some View {
     Text("Your fit").font(Theme.title(27))
     if (ownMatch.error as? APIError)?.status == 404 {
-      NavigationLink("Create profile to see your fit", value: Route.setupProfile).buttonStyle(
+      NavigationLink(
+        "Create profile to see your fit", value: Route.setupProfileFor(.opportunity(id))
+      ).buttonStyle(
         AppButtonStyle.primary)
     } else if let error = ownMatch.error {
       FailureView(error: error) { await load() }
@@ -126,7 +128,8 @@ struct OpportunityDetailView: View {
         } else {
           Text("Not eligible for this opportunity yet").font(Theme.subheading)
           ForEach(fit.ineligibleReasons, id: \.self) { Text($0) }
-          NavigationLink("Review profile and preferences", value: Route.profile)
+          NavigationLink(
+            "Review profile and preferences", value: Route.profileFor(.opportunity(id)))
         }
         interestControls(developerId: nil, canExpress: fit.data != nil && item.status == "open")
       }.paperCard()

@@ -33,6 +33,8 @@ struct AIConsentSection: View {
 }
 
 struct ProfileView: View {
+  var returnTo: ProfileReturn? = nil
+  @Environment(\.dismiss) private var dismiss
   @Environment(AppModel.self) private var app
   @Environment(APIClient.self) private var api
   @State private var profile = Resource<Developer>()
@@ -311,6 +313,7 @@ struct ProfileView: View {
       DraftCache.remove(key: draftKey)
       consent = false
       app.changed()
+      if returnTo != nil { dismiss() }
     }
   }
 }
@@ -327,6 +330,7 @@ struct CollaborationPicker: View {
 }
 
 struct AreaEditorView: View {
+  var returnTo: ProfileReturn? = nil
   @Environment(APIClient.self) private var api
   @Environment(AppModel.self) private var app
   @Environment(\.dismiss) private var dismiss
@@ -341,7 +345,8 @@ struct AreaEditorView: View {
         Section {
           FailureView(error: error) { await load() }
           if (error as? APIError)?.status == 404 {
-            NavigationLink("Create profile", value: Route.setupProfile)
+            NavigationLink(
+              "Create profile", value: returnTo.map(Route.setupProfileFor) ?? Route.setupProfile)
           }
         }
       }

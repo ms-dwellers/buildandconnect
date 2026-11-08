@@ -40,16 +40,18 @@ final class OnboardingTests: XCTestCase {
     app.buttons["role.developer"].tap()
     reveal(app.buttons["role.continue"], in: app)
     app.buttons["role.continue"].tap()
-    let bio = app.descendants(matching: .any).matching(identifier: "onboarding.bio").firstMatch
-    XCTAssertTrue(bio.waitForExistence(timeout: 15))
+    let skill = app.textFields["onboarding.skill.0"]
+    XCTAssertTrue(skill.waitForExistence(timeout: 15))
     capture("Developer onboarding", app: app)
+    skill.tap()
+    skill.typeText("react")
+    continueSetup(in: app)
+    let bio = app.descendants(matching: .any).matching(identifier: "onboarding.bio").firstMatch
+    XCTAssertTrue(bio.waitForExistence(timeout: 5))
     bio.tap()
     bio.typeText("I build accessible community websites with React and TypeScript.")
     continueSetup(in: app)
-    let skill = app.textFields["onboarding.skill.0"]
-    XCTAssertTrue(skill.waitForExistence(timeout: 5))
-    skill.tap()
-    skill.typeText("react")
+    XCTAssertTrue(app.textFields["onboarding.city"].waitForExistence(timeout: 5))
     continueSetup(in: app)
     app.scrollViews.firstMatch.swipeUp()
     let consent = app.switches["Allow AI analysis for this save"].switches.firstMatch
@@ -60,10 +62,7 @@ final class OnboardingTests: XCTestCase {
       predicate: NSPredicate(format: "value == '1'"), object: consent)
     XCTAssertEqual(XCTWaiter.wait(for: [allowed], timeout: 5), .completed)
     continueSetup(in: app)
-    let skipArea = app.buttons["Explore without an area"]
-    XCTAssertTrue(skipArea.waitForExistence(timeout: 15))
-    reveal(skipArea, in: app)
-    skipArea.tap()
+    XCTAssertTrue(app.staticTexts["Find projects for your goals"].waitForExistence(timeout: 15))
     XCTAssertTrue(app.buttons["tab.Profile"].waitForExistence(timeout: 10))
     app.buttons["tab.Profile"].tap()
     XCTAssertTrue(app.staticTexts["City builder"].waitForExistence(timeout: 10))

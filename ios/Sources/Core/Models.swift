@@ -341,6 +341,11 @@ struct OwnMatch: Decodable {
   let status: String
 }
 
+struct RequestEligibility: Decodable {
+  let eligible: Bool
+  let ineligibleReasons: [String]
+}
+
 struct Interest: Decodable, Identifiable {
   let id: String
   let opportunityId: String

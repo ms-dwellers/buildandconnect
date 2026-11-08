@@ -41,7 +41,7 @@ struct CareerView: View {
           if let error = projects.error {
             FailureView(error: error) { await loadProjects() }
             if (error as? APIError)?.status == 404 {
-              NavigationLink("Create your developer profile", value: Route.setupProfile)
+              NavigationLink("Create your developer profile", value: Route.setupProfileFor(.career))
                 .buttonStyle(AppButtonStyle.primary)
             }
           }
@@ -55,8 +55,10 @@ struct CareerView: View {
                 "\(filteredProjects.count) \(filteredProjects.count == 1 ? "project" : "projects") to explore"
               ).font(Theme.title(24))
               if !result.nearbyRequestsAvailable {
-                NavigationLink("Set your private area to include local requests", value: Route.area)
-                  .buttonStyle(AppButtonStyle())
+                NavigationLink(
+                  "Set your private area to include local requests", value: Route.areaFor(.career)
+                )
+                .buttonStyle(AppButtonStyle())
               }
               ForEach(filteredProjects, id: \.stableId) { project in projectCard(project) }
               if filteredProjects.isEmpty {
