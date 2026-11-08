@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
 import { api as convex } from "../../convex/_generated/api.js";
 import type { ApiEnv } from "../api.ts";
 import { analyzeCareerTarget } from "./analysis.ts";
@@ -32,6 +33,20 @@ export function createCareerRoutes(analyze = analyzeCareerTarget) {
         secret: c.env.CONVEX_BRIDGE_SECRET,
         target,
         expectedUpdatedAt: current?.updatedAt ?? 0,
+      }),
+    );
+  });
+  routes.get("/career-projects", async (c) => {
+    const { limit } = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+      })
+      .strict()
+      .parse(c.req.query());
+    return c.json(
+      await c.get("client").query(convex.data.careerRecommendations, {
+        secret: c.env.CONVEX_BRIDGE_SECRET,
+        limit,
       }),
     );
   });

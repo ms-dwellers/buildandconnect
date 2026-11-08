@@ -8,7 +8,11 @@ import {
   careerTargetInputSchema,
 } from "../backend/career/schemas.ts";
 import { careerTarget } from "./fixtures/career.ts";
-import { analysis } from "./fixtures/matching.ts";
+import { analysis, developer, opportunity } from "./fixtures/matching.ts";
+import {
+  careerSkillGaps,
+  scoreCareerProject,
+} from "../backend/career/matching.ts";
 
 test("career extraction validates original quotes, canonical skills, and unique requirement IDs", async () => {
   const ai = {
@@ -105,5 +109,101 @@ test("project activities are additive, normalized, and uniquely addressable", ()
       activities: [{ ...activity, skills: [] }],
     }).success,
     false,
+  );
+});
+
+test("career links connect requirements to concrete activities without awarding credentials", () => {
+  const project = {
+    ...opportunity,
+    analysis: {
+      ...analysis,
+      activities: [
+        {
+          id: "typed-forms",
+          description: "Build typed volunteer forms",
+          skills: ["typescript"],
+        },
+        {
+          id: "staff-login",
+          description: "Implement staff login",
+          skills: ["authentication"],
+        },
+      ],
+    },
+  };
+  const result = scoreCareerProject(
+    careerTarget,
+    { ...developer, wantsToLearn: [] },
+    project,
+  )!;
+  assert.equal(result.careerRelevance.gapRequirementsWithPractice, 2);
+  assert.deepEqual(
+    result.requirementLinks.find(
+      (link) => link.requirementId === "authentication",
+    )?.activityLinks,
+    [{ activityId: "staff-login", skills: ["authentication"] }],
+  );
+  assert.deepEqual(result.unaddressedRequirementIds, ["degree"]);
+  const gaps = careerSkillGaps(careerTarget, developer);
+  assert.equal(
+    gaps.find((gap) => gap.id === "react")?.evidenceStatus,
+    "self_reported",
+  );
+  assert.equal(
+    gaps.find((gap) => gap.id === "degree")?.evidenceStatus,
+    "needs_evidence",
+  );
+  assert.equal(
+    gaps.find((gap) => gap.id === "authentication")?.evidenceStatus,
+    "needs_evidence",
+  );
+});
+
+test("legacy projects retain skill-level relevance without fabricated activities", () => {
+  const match = scoreCareerProject(careerTarget, developer, opportunity)!;
+  assert.equal(match.careerRelevance.gapRequirementsWithPractice, 1);
+  assert.ok(
+    match.requirementLinks.every((link) => link.activityLinks.length === 0),
+  );
+  assert.ok(match.unaddressedRequirementIds.includes("authentication"));
+});
+
+test("private exploration preserves actionable consent and existing practical eligibility gates", () => {
+  const privateDeveloper = { ...developer, discoverable: false };
+  const match = scoreCareerProject(
+    careerTarget,
+    privateDeveloper,
+    opportunity,
+  )!;
+  assert.ok(
+    match.actionIneligibleReasons.includes("Not available for discovery"),
+  );
+  for (const change of [
+    { available: false },
+    { weeklyHours: 1 },
+    { acceptsVolunteer: false },
+    { city: "Calgary" },
+  ])
+    assert.equal(
+      scoreCareerProject(
+        careerTarget,
+        { ...developer, ...change },
+        opportunity,
+      ),
+      null,
+    );
+  assert.equal(
+    scoreCareerProject(careerTarget, developer, {
+      ...opportunity,
+      essentialTechnologies: ["rust"],
+    }),
+    null,
+  );
+  assert.equal(
+    scoreCareerProject(careerTarget, developer, {
+      ...opportunity,
+      status: "closed",
+    }),
+    null,
   );
 });

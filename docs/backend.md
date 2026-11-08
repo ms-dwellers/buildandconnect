@@ -59,6 +59,25 @@ Activities describe work supported by the request, not guaranteed skill gains.
 Existing analyses without activities remain valid. New analysis uses `job-v2`;
 existing records are not automatically reanalyzed or migrated.
 
+`GET /api/developers/me/career-projects?limit=20` returns open opportunities and
+nearby open requests relevant to the saved target. Limits are 1-100; cursors are
+not supported. Missing target/profile returns 404. Without a saved location,
+opportunities still work but `nearbyRequestsAvailable` is false. Candidate pools
+are bounded at 1000 per source; overflow returns 503 instead of a partial ranking.
+
+Results include self-reported requirement evidence, missing skills, activity
+links, unaddressed requirements, and separate career-relevance counts. They rank
+by gap requirements offering practice, then total relevant requirements, then the
+unchanged growth score. Counts are not measures of qualification or skill gains.
+Legacy projects can have skill-level links with empty activity links. Credentials
+and other requirements without skills remain unaddressed. Target/profile update
+timestamps identify the inputs used. Reads make no AI calls or database writes.
+
+Personal career exploration does not require recruiter discoverability. Existing
+availability, location, volunteer, time and essential-technology gates still
+apply. `actionIneligibleReasons` retains existing claim/interest restrictions,
+including discovery consent: a private recommendation does not bypass them.
+
 ## Browser QA console
 
 Run `bun run dev --host 127.0.0.1` and open `/debug` on the printed local
