@@ -1,10 +1,12 @@
 # Calgary map frontend
 
 Open `/`, select **Find a project**, or visit `/map` directly. The landing-page
-link fades a native-size sprite-cloud cover in over 650 ms, navigates beneath it,
-then waits for Mapbox's first loaded render before fading the clouds out over
-900 ms. App-header map links use the same transition. No cloud scaling or sliding
-is applied. Direct map visits show static sprite clouds over the map
+link brings large, overlapping sprite-cloud banks in from both sides over 900 ms,
+navigates beneath the fully opaque cover, then waits for Mapbox's first loaded
+render before moving the banks back out over 1400 ms. An opaque cloud-colored
+veil closes any gaps during navigation. Clouds use whole-number 3×, 4×, or 5×
+sizes for the viewport, preserving their aspect ratios. App-header map links use
+the same transition. Direct map visits show static cloud banks over the map
 while it loads, without replaying the journey. Reduced-motion
 preferences skip it; **Skip animation** or Escape also finishes it immediately.
 

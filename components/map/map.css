@@ -42,8 +42,11 @@
   z-index: 1000;
   overflow: hidden;
   isolation: isolate;
-  animation: cloud-cover var(--map-fade-in) ease-in-out both;
-  will-change: opacity;
+}
+
+.map-journey,
+.map-loading-clouds {
+  --map-cloud-scale: 4;
 }
 
 .map-loading-clouds {
@@ -57,24 +60,55 @@
 .cloud-veil {
   position: absolute;
   inset: 0;
-  background: color-mix(in oklab, var(--map-water) 24%, var(--cloud));
+  background: var(--cloud);
+  animation: cloud-cover var(--map-cover-duration) ease-in both;
 }
 
-.map-cloud-sprites {
+.map-cloud-bank {
   position: absolute;
-  inset: 0;
+  inset-block: 0;
+  width: 60%;
+  animation: map-clouds-gather var(--map-cover-duration)
+    cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+}
+
+.map-cloud-bank-left {
+  left: 0;
+  --cloud-travel: -120vw;
+}
+
+.map-cloud-bank-right {
+  right: 0;
+  --cloud-travel: 120vw;
 }
 
 .map-cloud-sprite {
   position: absolute;
-  left: clamp(0px, var(--cloud-left), calc(100% - var(--cloud-width)));
-  top: clamp(0px, var(--cloud-top), calc(100% - var(--cloud-height)));
+  right: -10%;
+  width: calc(var(--sprite-width) * var(--map-cloud-scale));
+  height: calc(var(--sprite-height) * var(--map-cloud-scale));
   max-width: none;
   image-rendering: pixelated;
 }
 
-.map-cloud-sprite[data-reflected="true"] {
+.map-cloud-bank-right .map-cloud-sprite {
+  right: auto;
+  left: -10%;
   transform: scaleX(-1);
+}
+
+.map-cloud-sprite-tall {
+  top: -10%;
+}
+
+.map-cloud-sprite-low {
+  bottom: -5%;
+}
+
+.map-cloud-sprite-middle {
+  top: 30%;
+  right: -18%;
 }
 
 .journey-caption {
@@ -86,10 +120,39 @@
   justify-content: center;
   color: var(--primary);
   text-shadow: 0 2px 0 var(--cloud);
+  animation: cloud-cover 350ms 450ms ease-out both;
 }
 
-.map-journey[data-phase="revealing"] {
-  animation: clouds-unveil var(--map-fade-out) ease-in-out both;
+.map-journey[data-phase="revealing"] .cloud-veil {
+  animation: clouds-unveil var(--map-reveal-duration) ease-out both;
+}
+
+.map-journey[data-phase="revealing"] .map-cloud-bank {
+  animation: map-clouds-part var(--map-reveal-duration)
+    cubic-bezier(0.55, 0, 0.8, 0.4) both;
+}
+
+.map-journey[data-phase="revealing"] .journey-caption {
+  animation: clouds-unveil 450ms ease-out both;
+}
+
+.map-loading-clouds .cloud-veil,
+.map-loading-clouds .map-cloud-bank {
+  animation: none;
+}
+
+@media (width < 640px) {
+  .map-journey,
+  .map-loading-clouds {
+    --map-cloud-scale: 3;
+  }
+}
+
+@media (width >= 1600px), (height >= 1200px) {
+  .map-journey,
+  .map-loading-clouds {
+    --map-cloud-scale: 5;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -111,6 +174,28 @@
     opacity: 1;
   }
   to {
+    opacity: 0;
+  }
+}
+
+@keyframes map-clouds-gather {
+  from {
+    transform: translateX(var(--cloud-travel));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes map-clouds-part {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(var(--cloud-travel));
     opacity: 0;
   }
 }
