@@ -2,17 +2,16 @@
   position: relative;
   width: 100%;
   max-width: 72rem;
-  height: var(--home-scene-height, 20rem);
   margin-inline: auto;
-  pointer-events: none;
 }
 
 .home-scene canvas {
   display: block;
   width: 100%;
-  height: 100%;
+  height: var(--home-scene-height, 20rem);
   opacity: 0;
   touch-action: pan-y;
+  pointer-events: none;
   transition: opacity 500ms ease-out;
 }
 
@@ -24,44 +23,92 @@
   opacity: 1;
 }
 
+/* During the approach the canvas breaks out of its box and covers the whole
+   viewport (under the mist overlay at z-index 1000); the scene keeps the
+   furniture in place through a view offset while the frame grows. */
+.home-scene[data-expanded] {
+  min-height: var(--home-scene-height, 20rem);
+}
+
+.home-scene[data-expanded] canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  width: 100%;
+  height: 100%;
+}
+
+/* Before WebGL is ready, on narrow screens, and without WebGL at all, the two
+   actions sit in a plain row under the scene. */
+.home-scene-labels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  margin-top: 1.25rem;
+}
+
 .home-scene-label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  margin: 0;
-  translate: -50% -100%;
-  font-size: 0.875rem;
+  transition:
+    translate 150ms ease-out,
+    opacity 150ms ease-out;
+}
+
+.home-scene-action {
+  height: auto;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.625rem 1.25rem;
+  line-height: 1.15;
+}
+
+.home-scene-action-who {
+  font-size: 0.75rem;
   font-weight: 500;
-  color: var(--muted-foreground);
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 150ms ease-out;
+  opacity: 0.8;
 }
 
-.home-scene[data-hover="developer"] .home-scene-label[data-chair="developer"],
-.home-scene[data-hover="partner"] .home-scene-label[data-chair="partner"] {
-  opacity: 1;
-  text-decoration: underline;
-  text-underline-offset: 4px;
+.home-scene-action-what {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
-@media (hover: none) {
-  .home-scene[data-renderer="webgl"] .home-scene-label {
-    opacity: 1;
+/* Once the scene renders on a wide enough canvas, each action floats above
+   its chair at the projected anchor the scene writes into --label-x/--label-y. */
+@media (min-width: 40rem) {
+  .home-scene[data-ready] .home-scene-labels {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .home-scene[data-ready] .home-scene-label {
+    position: absolute;
+    left: var(--label-x, 50%);
+    top: var(--label-y, 50%);
+    translate: -50% -100%;
+    pointer-events: auto;
+  }
+
+  .home-scene[data-ready][data-hover="developer"]
+    .home-scene-label[data-chair="developer"],
+  .home-scene[data-ready][data-hover="partner"]
+    .home-scene-label[data-chair="partner"] {
+    translate: -50% calc(-100% - 4px);
   }
 }
 
 .home-scene[data-phase="approaching"] .home-scene-label,
 .home-scene[data-phase="covering"] .home-scene-label {
   opacity: 0;
+  pointer-events: none;
 }
 
-/* The copy and actions step aside while the camera approaches the monitor. */
+/* The copy steps aside while the camera approaches the monitor. */
 .landing-hero:has(.home-scene[data-phase="approaching"]) .landing-hero-copy,
-.landing-hero:has(.home-scene[data-phase="approaching"]) .landing-hero-actions,
-.landing-hero:has(.home-scene[data-phase="covering"]) .landing-hero-copy,
-.landing-hero:has(.home-scene[data-phase="covering"]) .landing-hero-actions {
+.landing-hero:has(.home-scene[data-phase="covering"]) .landing-hero-copy {
   opacity: 0;
   transition: opacity 300ms ease-in;
 }

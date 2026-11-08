@@ -3,10 +3,10 @@ import {
   SCENE,
   approachProgress,
   cameraRig,
-  dollyPose,
   lerpVec3,
   restPose,
   screenBlend,
+  screenPose,
   type CameraRig,
   type Pose,
   type SceneTokens,
@@ -24,6 +24,16 @@ import {
 export type PickTarget = "developer" | "partner" | "monitor";
 export type LabelTarget = Exclude<PickTarget, "monitor">;
 
+/**
+ * How the canvas grows during the approach: from its box on the page (viewport
+ * coordinates) to the whole viewport. The camera keeps the furniture where it
+ * was on screen while the frame expands around it.
+ */
+export type ApproachExpansion = {
+  box: { x: number; y: number; width: number; height: number };
+  viewport: { width: number; height: number };
+};
+
 export type HomeSceneController = {
   resize(width: number, height: number, pixelRatio: number): void;
   /** Normalised pointer position (-1..1) for the parallax; (0, 0) when away. */
@@ -31,11 +41,11 @@ export type HomeSceneController = {
   pick(x: number, y: number): PickTarget | null;
   setHover(target: PickTarget | null): void;
   setMotion(enabled: boolean): void;
-  startApproach(now: number): void;
+  startApproach(now: number, expansion?: ApproachExpansion): void;
   resetApproach(now: number): void;
   /** Draws a frame; returns true when another frame is wanted. */
   render(now: number): boolean;
-  /** CSS-pixel position of a chair caption anchor, or null when off-screen. */
+  /** CSS-pixel position of a chair's action anchor, or null when off-screen. */
   project(target: LabelTarget): { x: number; y: number } | null;
   dispose(): void;
 };
@@ -167,7 +177,12 @@ export function createHomeScene(
   let motion = true;
   const pointer = { x: 0, y: 0 };
   const parallax = { x: 0, y: 0 };
-  let approachStart: number | null = null;
+  let approach: {
+    start: number;
+    from: Pose;
+    to: Pose;
+    expansion: ApproachExpansion | null;
+  } | null = null;
   let reset: { pose: Pose; start: number } | null = null;
   let currentPose: Pose = restPose(rig);
 
@@ -188,15 +203,48 @@ export function createHomeScene(
     };
   }
 
+  /**
+   * While the canvas grows from its box to the viewport, render the box's
+   * original framing through a view offset so the furniture stays put, and
+   * relax that offset to a plain full-viewport projection as the dolly ends.
+   */
+  function applyExpansion(expansion: ApproachExpansion, progress: number) {
+    const { box, viewport } = expansion;
+    const fullWidth = box.width + (viewport.width - box.width) * progress;
+    const fullHeight = box.height + (viewport.height - box.height) * progress;
+    camera.aspect = fullWidth / fullHeight;
+    camera.setViewOffset(
+      fullWidth,
+      fullHeight,
+      -box.x * (1 - progress),
+      -box.y * (1 - progress),
+      viewport.width,
+      viewport.height,
+    );
+    camera.updateProjectionMatrix();
+  }
+
   function render(now: number) {
     let wantsFrame = false;
     let blend = 0;
-    if (approachStart !== null) {
+    if (approach) {
       const progress = approachProgress(
-        now - approachStart,
+        now - approach.start,
         options.approachMs,
       );
-      applyPose(dollyPose(progress, rig, aspect), 0, 0);
+      if (approach.expansion) applyExpansion(approach.expansion, progress);
+      applyPose(
+        {
+          position: lerpVec3(
+            approach.from.position,
+            approach.to.position,
+            progress,
+          ),
+          target: lerpVec3(approach.from.target, approach.to.target, progress),
+        },
+        0,
+        0,
+      );
       blend = screenBlend(progress);
       wantsFrame = progress < 1;
     } else if (reset) {
@@ -279,14 +327,25 @@ export function createHomeScene(
         parallax.y = 0;
       }
     },
-    startApproach(now) {
-      approachStart = now;
+    startApproach(now, expansion) {
+      const endAspect = expansion
+        ? expansion.viewport.width / expansion.viewport.height
+        : aspect;
+      approach = {
+        start: now,
+        from: currentPose,
+        to: screenPose(rig, endAspect),
+        expansion: expansion ?? null,
+      };
       reset = null;
       this.setHover(null);
     },
     resetApproach(now) {
-      if (approachStart === null) return;
-      approachStart = null;
+      if (!approach) return;
+      approach = null;
+      camera.clearViewOffset();
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
       reset = { pose: currentPose, start: now };
     },
     render,

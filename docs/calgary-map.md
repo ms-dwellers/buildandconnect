@@ -3,7 +3,8 @@
 Open `/`, select **Find a project**, or visit `/map` directly. A page may register
 an approach beat with `useMapJourney().registerApproach({ durationMs })`; it plays
 first, as the `approaching` phase, before anything is drawn over the page. The
-landing hero uses it to move its camera into the on-screen monitor. The mist then
+landing hero uses it to grow its canvas to the full viewport and move its camera
+into the on-screen monitor until the screen fills the page. The mist then
 draws in softly lit over 650 ms, navigates underneath, and waits for Mapbox's first
 loaded render before the cloud banks drift apart over 1000 ms. Three translucent
 layers move at different speeds, with rounded puffs and wisps trailing the opening.
