@@ -23,6 +23,7 @@ import {
   developerPreferencesSchema,
   opportunitySchema,
   requestSchema,
+  ROLES,
   type Role,
 } from "../backend/schemas";
 import { readRequestBody, RequestBodyTooLarge } from "../backend/http";
@@ -308,7 +309,7 @@ export async function handleApi(
       case "PUT /me/role": {
         const input = z
           .object({
-            role: z.enum(["developer", "requester"]),
+            role: z.enum(ROLES),
           })
           .strict()
           .parse(await body(request));

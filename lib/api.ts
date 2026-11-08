@@ -1,6 +1,5 @@
 export type ApiIssue = { path: (string | number)[]; message: string };
-export type SessionUser = { id: string; name: string; email?: string };
-export type Role = "developer" | "requester";
+export type { Role } from "../backend/schemas.ts";
 
 export async function api<T>(
   path: string,
