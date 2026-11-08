@@ -26,8 +26,9 @@ import {
   LoadingBlock,
   RequireRole,
 } from "@/components/app/require-role";
-import { ChoiceGroup } from "@/components/forms/opportunity-form";
 import {
+  ChoiceGroup,
+  FieldMessage,
   FormSection,
   TextAreaField,
   TextField,
@@ -312,11 +313,7 @@ function ProfileForm({
                 </li>
               ))}
             </ul>
-            {errors.skills && (
-              <p role="alert" className="text-sm text-destructive-foreground">
-                {errors.skills}
-              </p>
-            )}
+            <FieldMessage>{errors.skills}</FieldMessage>
             <Button
               variant="outline"
               size="sm"
@@ -403,11 +400,7 @@ function ProfileForm({
                 );
               })}
             </ul>
-            {errors.projects && (
-              <p role="alert" className="text-sm text-destructive-foreground">
-                {errors.projects}
-              </p>
-            )}
+            <FieldMessage>{errors.projects}</FieldMessage>
             <Button
               variant="outline"
               size="sm"

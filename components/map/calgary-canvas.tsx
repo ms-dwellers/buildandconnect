@@ -4,7 +4,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { BoxIcon, CompassIcon, LayersIcon, RotateCcwIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
 import { mapboxToken } from "@/lib/api";
+import { CITY_NAME } from "@/lib/calgary-area";
+import { CITY_REGION } from "@/lib/format";
 import {
   previewPoint,
   previewPosition,
@@ -153,21 +156,22 @@ export function CalgaryCanvas({
         <div className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl border bg-card/95 px-3 shadow-card backdrop-blur-sm sm:px-4">
           <CompassIcon aria-hidden="true" className="size-5 text-primary" />
           <span className="text-sm font-semibold">
-            Calgary<span className="hidden sm:inline">, AB</span>
+            {CITY_NAME}
+            <span className="hidden sm:inline">, {CITY_REGION}</span>
           </span>
         </div>
         {live && (
           <div className="pointer-events-auto flex gap-2">
-            <Button
-              variant="outline"
-              className="min-h-11 bg-card aria-pressed:border-primary aria-pressed:bg-secondary"
+            <Toggle
+              size="lg"
+              className="min-h-11 bg-card"
               aria-label="3D view"
-              aria-pressed={camera.pitch >= 30}
-              onClick={togglePerspective}
+              pressed={camera.pitch >= 30}
+              onPressedChange={() => togglePerspective()}
             >
               <BoxIcon aria-hidden="true" />
               3D<span className="hidden sm:inline"> view</span>
-            </Button>
+            </Toggle>
             <Button
               variant="outline"
               className="min-h-11 bg-card"

@@ -1,5 +1,6 @@
 "use client";
 
+import { FieldMessage } from "@/components/forms/form-kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
 import {
@@ -140,11 +141,7 @@ function RequestCommitment({
       <h3 className="font-semibold">
         {mine ? "You accepted this request" : "Take on this request"}
       </h3>
-      {error && (
-        <p role="alert" className="text-sm">
-          {error}
-        </p>
-      )}
+      <FieldMessage>{error}</FieldMessage>
       {mine ? (
         <>
           <p className="text-sm">
