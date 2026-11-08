@@ -16,6 +16,7 @@ import {
   buildDeveloperBackdrop,
   buildPartnerBackdrop,
   type BackdropField,
+  type PartnerFoliage,
 } from "./backdrops";
 import {
   buildContactShadow,
@@ -69,7 +70,13 @@ const Y_AXIS = new THREE.Vector3(0, 1, 0);
 export function createHomeScene(
   canvas: HTMLCanvasElement,
   tokens: SceneTokens,
-  options: { approachMs: number; cityName: string; fontFamily: string },
+  options: {
+    approachMs: number;
+    cityName: string;
+    fontFamily: string;
+    /** Developer theme uses the autumn GLB; Community keeps procedural pines. */
+    foliage?: PartnerFoliage;
+  },
 ): HomeSceneController {
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -167,10 +174,13 @@ export function createHomeScene(
   scene.add(developer, partner, table, monitor, ...shadows);
 
   // Personality behind each chair: low-poly tech marks for the developer, a
-  // stand of autumn trees for the partner. Both sprout on load; hovering a
-  // chair deepens and animates its side.
+  // stand of trees for the partner (pines, or autumn GLBs in Developer theme).
+  // Both sprout on load; hovering a chair deepens and animates its side.
   const developerBackdrop = buildDeveloperBackdrop(tokens);
-  const partnerBackdrop = buildPartnerBackdrop(tokens);
+  const partnerBackdrop = buildPartnerBackdrop(
+    tokens,
+    options.foliage ?? "pine",
+  );
   const backdrops: BackdropField[] = [developerBackdrop, partnerBackdrop];
   scene.add(developerBackdrop.group, partnerBackdrop.group);
 

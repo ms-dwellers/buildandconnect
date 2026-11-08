@@ -257,6 +257,7 @@ export function HomeScene() {
             approachMs: approachTiming.dolly,
             cityName: CITY_NAME,
             fontFamily,
+            foliage: theme.includes("developer") ? "autumn" : "pine",
           });
         } catch {
           setRenderer("fallback");

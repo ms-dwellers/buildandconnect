@@ -420,12 +420,12 @@
   --dashboard-paper: #5e3218;
   --map-base: #c4a07a;
   --map-community: #e8a070;
-  /* Landing scene: warm key light, autumn canopy (amber/rust), dark shadows. */
+  /* Landing scene under firelight: warm key light, olive pines, dark shadows. */
   --scene-light: #ffe0bd;
   --scene-pine: #24200f;
-  --scene-mint: #e8b060;
-  --scene-teal: #d4843c;
-  --scene-emerald: #c45e28;
+  --scene-mint: #9a9a62;
+  --scene-teal: #5e6b3f;
+  --scene-emerald: #3f4a28;
   --scene-shadow: #2a160c;
   --scene-metal: #8a6a55;
   --scene-metal-edge: #3a2418;

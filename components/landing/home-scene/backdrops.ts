@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { shadeHex, type SceneTokens } from "@/lib/home-scene";
+import { instanceAutumnTree, loadAutumnTreeTemplate } from "./autumn-tree";
 import { buildContactShadow } from "./furniture";
+
+export type PartnerFoliage = "pine" | "autumn";
 
 export type BackdropSide = "developer" | "partner";
 
@@ -8,6 +11,8 @@ export type BackdropField = {
   group: THREE.Group;
   /** Ease toward 0 (rest) or 1 (hovered) each frame. */
   setTarget(intensity: number): void;
+  /** Re-run the sprout animation (used when autumn trees finish loading). */
+  nudge(): void;
   /** Advances sprouting, hover ease, and motion; true when more frames are wanted. */
   update(now: number, motion: boolean): boolean;
   dispose(): void;
@@ -88,6 +93,9 @@ function makeField(
     setTarget(intensity) {
       target = clamp01(intensity);
     },
+    nudge() {
+      born = null;
+    },
     update(now, motion) {
       if (born === null) born = now;
       const next = current + (target - current) * 0.12;
@@ -140,139 +148,76 @@ function makeField(
   };
 }
 
-/**
- * Sketchfab-style low-poly deciduous tree: tapered trunk and a chunky
- * icosahedron canopy (plus one offset blob). We build our own mesh — the
- * Sketchfab file is reference only, not imported.
- */
-function buildAutumnTree(
+/** A low-poly pine: a short trunk and three stacked cones. */
+function buildPine(
   height: number,
   trunk: THREE.Material,
   foliage: THREE.Material[],
-  seed: number,
 ) {
   const tree = new THREE.Group();
-  const unit = height / 1.7;
-  const trunkHeight = 0.55 * unit;
-  const trunkTop = 0.04 * unit;
-  const trunkBottom = 0.07 * unit;
+  const unit = height / 1.6;
+  const trunkHeight = 0.3 * unit;
   tree.add(
     mesh(
-      new THREE.CylinderGeometry(trunkTop, trunkBottom, trunkHeight, 6),
+      new THREE.CylinderGeometry(0.035 * unit, 0.05 * unit, trunkHeight, 7),
       trunk,
       0,
       trunkHeight / 2,
       0,
     ),
   );
-  // Slight lean on the trunk tip so canopies do not stack like cones.
-  const canopyY = trunkHeight * 0.92;
-  const main = mesh(
-    new THREE.IcosahedronGeometry(0.42 * unit, 0),
-    foliage[seed % foliage.length],
-    (seed % 3) * 0.02 * unit,
-    canopyY + 0.12 * unit,
-    0,
-  );
-  main.scale.set(1.05, 0.92 + (seed % 2) * 0.08, 1.0);
-  main.rotation.set(degrees(8 + seed * 7), degrees(seed * 37), degrees(-6));
-  tree.add(main);
-  const side = mesh(
-    new THREE.IcosahedronGeometry(0.26 * unit, 0),
-    foliage[(seed + 1) % foliage.length],
-    0.22 * unit,
-    canopyY - 0.02 * unit,
-    0.12 * unit,
-  );
-  side.scale.set(1.1, 0.85, 0.95);
-  side.rotation.y = degrees(seed * 51);
-  tree.add(side);
-  if (seed % 2 === 0) {
-    const tip = mesh(
-      new THREE.IcosahedronGeometry(0.18 * unit, 0),
-      foliage[(seed + 2) % foliage.length],
-      -0.14 * unit,
-      canopyY + 0.28 * unit,
-      -0.08 * unit,
+  const radii = [0.3, 0.24, 0.17];
+  const heights = [0.5, 0.44, 0.4];
+  let y = trunkHeight * 0.7;
+  radii.forEach((radius, index) => {
+    const coneHeight = heights[index] * unit;
+    tree.add(
+      mesh(
+        new THREE.ConeGeometry(radius * unit, coneHeight, 7),
+        foliage[index],
+        0,
+        y + coneHeight / 2,
+        0,
+      ),
     );
-    tip.scale.set(1, 0.9, 1);
-    tree.add(tip);
-  }
+    y += coneHeight * 0.58;
+  });
   return tree;
 }
 
-function buildAutumnBush(
-  size: number,
-  materials: THREE.Material[],
-  seed: number,
+const PARTNER_TREE_SLOTS = [
+  { x: 1.85, z: -0.95, height: 1.9 },
+  { x: 2.35, z: -0.45, height: 1.45 },
+  { x: 2.75, z: -1.25, height: 2.2 },
+  { x: 3.2, z: -0.7, height: 1.7 },
+  { x: 3.7, z: -1.1, height: 2.05 },
+  { x: 4.15, z: -0.5, height: 1.55 },
+  { x: 4.7, z: -1.3, height: 2.3 },
+  { x: 5.2, z: -0.8, height: 1.8 },
+  { x: 5.8, z: -1.15, height: 2.1 },
+  { x: 6.4, z: -0.6, height: 1.65 },
+  { x: 7.0, z: -1.2, height: 2.2 },
+  { x: 7.6, z: -0.75, height: 1.85 },
+] as const;
+
+function plantPines(
+  group: THREE.Group,
+  items: Sprout[],
+  tokens: SceneTokens,
+  trunk: Tint,
+  foliage: Tint[],
 ) {
-  const shrub = new THREE.Group();
-  const a = mesh(
-    new THREE.IcosahedronGeometry(size * 0.55, 0),
-    materials[seed % materials.length],
-    0,
-    size * 0.4,
-    0,
-  );
-  a.scale.set(1.15, 0.75, 1.05);
-  shrub.add(a);
-  const b = mesh(
-    new THREE.IcosahedronGeometry(size * 0.38, 0),
-    materials[(seed + 1) % materials.length],
-    size * 0.35,
-    size * 0.32,
-    size * 0.15,
-  );
-  b.scale.set(1.05, 0.7, 0.95);
-  shrub.add(b);
-  return shrub;
-}
-
-/**
- * A stand of autumn trees and shrubs behind the partner's wooden chair.
- * Community tokens keep the canopy leafy green; Developer remaps them to
- * amber/rust. Hover deepens toward apricot and coral and strengthens sway.
- */
-export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
-  const group = new THREE.Group();
-  group.userData.backdrop = "partner";
-  const trunk = tint(tokens.woodEdge, shadeHex(tokens.woodEdge, -0.15));
-  const foliage = [
-    tint(tokens.teal, tokens.apricot),
-    tint(shadeHex(tokens.mint, -0.05), tokens.coral),
-    tint(tokens.mint, shadeHex(tokens.apricot, -0.1)),
-  ];
-  const bush = tint(shadeHex(tokens.mint, 0.05), shadeHex(tokens.teal, -0.08));
-  const tints = [trunk, ...foliage, bush];
-  const canopy = [...foliage.map((entry) => entry.material), bush.material];
-  const items: Sprout[] = [];
-
-  const trees = [
-    { x: 1.85, z: -0.95, height: 1.9 },
-    { x: 2.35, z: -0.45, height: 1.45 },
-    { x: 2.75, z: -1.25, height: 2.2 },
-    { x: 3.2, z: -0.7, height: 1.7 },
-    { x: 3.7, z: -1.1, height: 2.05 },
-    { x: 4.15, z: -0.5, height: 1.55 },
-    { x: 4.7, z: -1.3, height: 2.3 },
-    { x: 5.2, z: -0.8, height: 1.8 },
-    { x: 5.8, z: -1.15, height: 2.1 },
-    { x: 6.4, z: -0.6, height: 1.65 },
-    { x: 7.0, z: -1.2, height: 2.2 },
-    { x: 7.6, z: -0.75, height: 1.85 },
-  ];
-  trees.forEach((entry, index) => {
-    const tree = buildAutumnTree(
-      entry.height,
+  PARTNER_TREE_SLOTS.forEach((slot, index) => {
+    const tree = buildPine(
+      slot.height,
       trunk.material,
-      foliage.map((item) => item.material),
-      index,
+      foliage.map((entry) => entry.material),
     );
-    tree.position.set(entry.x, 0, entry.z);
+    tree.position.set(slot.x, 0, slot.z);
     tree.rotation.y = degrees((index * 47) % 360);
     const shadow = buildContactShadow(
-      entry.height * 0.38,
-      entry.height * 0.38,
+      slot.height * 0.42,
+      slot.height * 0.42,
       tokens.shadow,
       0,
       0,
@@ -288,6 +233,40 @@ export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
       phase: index * 1.1,
     });
   });
+}
+
+/**
+ * Trees behind the partner chair. Community keeps procedural pines; Developer
+ * swaps in the low-poly autumn GLB (with a pine fallback if loading fails).
+ */
+export function buildPartnerBackdrop(
+  tokens: SceneTokens,
+  foliage: PartnerFoliage = "pine",
+): BackdropField {
+  const group = new THREE.Group();
+  group.userData.backdrop = "partner";
+  const items: Sprout[] = [];
+  const trunk = tint(tokens.shadow, tokens.woodEdge);
+  const pineFoliage = [
+    tint(tokens.teal, tokens.pine),
+    tint(shadeHex(tokens.teal, 0.25), tokens.emerald),
+    tint(tokens.mint, shadeHex(tokens.emerald, 0.2)),
+  ];
+  const autumn =
+    foliage === "autumn"
+      ? {
+          orange: tint(tokens.apricot, shadeHex(tokens.coral, -0.1)),
+          yellow: tint(tokens.wheat, tokens.apricot),
+          brown: tint(tokens.woodEdge, tokens.shadow),
+        }
+      : null;
+  const bush = autumn
+    ? tint(shadeHex(tokens.apricot, -0.05), shadeHex(tokens.coral, -0.15))
+    : tint(shadeHex(tokens.mint, 0.1), shadeHex(tokens.teal, -0.1));
+  const accent = autumn ? autumn.yellow : pineFoliage[2]!;
+  const tints = autumn
+    ? [autumn.orange, autumn.yellow, autumn.brown, bush]
+    : [trunk, ...pineFoliage, bush];
 
   const bushes = [
     { x: 2.0, z: -0.25, size: 0.42 },
@@ -297,7 +276,25 @@ export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
     { x: 6.15, z: -0.3, size: 0.44 },
   ];
   bushes.forEach((entry, index) => {
-    const shrub = buildAutumnBush(entry.size, canopy, index);
+    const shrub = new THREE.Group();
+    shrub.add(
+      mesh(
+        new THREE.ConeGeometry(entry.size * 0.5, entry.size, 6),
+        bush.material,
+        0,
+        entry.size / 2,
+        0,
+      ),
+    );
+    shrub.add(
+      mesh(
+        new THREE.ConeGeometry(entry.size * 0.36, entry.size * 0.8, 6),
+        accent.material,
+        entry.size * 0.4,
+        entry.size * 0.4,
+        entry.size * 0.2,
+      ),
+    );
     shrub.position.set(entry.x, 0, entry.z);
     group.add(shrub);
     items.push({
@@ -310,7 +307,46 @@ export function buildPartnerBackdrop(tokens: SceneTokens): BackdropField {
     });
   });
 
-  return makeField(group, items, tints, "partner");
+  const field = makeField(group, items, tints, "partner");
+  if (autumn) {
+    void loadAutumnTreeTemplate()
+      .then((template) => {
+        PARTNER_TREE_SLOTS.forEach((slot, index) => {
+          const tree = instanceAutumnTree(template, {
+            orange: autumn.orange.material,
+            yellow: autumn.yellow.material,
+            brown: autumn.brown.material,
+          });
+          tree.position.set(slot.x, 0, slot.z);
+          tree.rotation.y = degrees((index * 47) % 360);
+          const shadow = buildContactShadow(
+            slot.height * 0.42,
+            slot.height * 0.42,
+            tokens.shadow,
+            0,
+            0,
+          );
+          if (shadow) tree.add(shadow);
+          group.add(tree);
+          items.push({
+            group: tree,
+            baseScale: slot.height,
+            baseY: 0,
+            baseYaw: tree.rotation.y,
+            delay: 80 + index * 70,
+            phase: index * 1.1,
+          });
+        });
+        field.nudge();
+      })
+      .catch(() => {
+        plantPines(group, items, tokens, trunk, pineFoliage);
+        field.nudge();
+      });
+  } else {
+    plantPines(group, items, tokens, trunk, pineFoliage);
+  }
+  return field;
 }
 
 type MarkKind =
